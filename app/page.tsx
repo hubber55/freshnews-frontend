@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { supabase } from '../lib/supabase';
 import { Clock, Menu, Search } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
-import { buildPreview } from '../lib/posts';
+import { buildPreview, shortenTitle } from '../lib/posts';
 
 export const revalidate = 60; // Revalidate every 60 seconds
 
@@ -93,11 +93,11 @@ export default async function Home() {
               )}
             </div>
 
-            <h2 className="mb-3 text-[30px] font-extrabold leading-tight text-[#ffd42a] sm:text-[36px]">
-              {heroPost.title}
+            <h2 className="mb-3 text-[30px] font-extrabold leading-tight text-[#ffd42a] sm:text-[36px] title-clamp-home">
+              {shortenTitle(heroPost.title, 110)}
             </h2>
 
-            <p className="mb-4 text-[18px] leading-8 text-[#f1f1f1]">
+            <p className="mb-4 text-[18px] leading-8 text-[#f1f1f1] summary-copy-home">
               {buildPreview(heroPost.summary)}
             </p>
 
@@ -149,11 +149,11 @@ export default async function Home() {
                   )}
                 </div>
 
-                <h3 className="mb-3 text-[24px] font-extrabold leading-tight text-[#ffd42a] sm:text-[28px]">
-                  {post.title}
+                <h3 className="mb-3 text-[24px] font-extrabold leading-tight text-[#ffd42a] sm:text-[28px] title-clamp-home">
+                  {shortenTitle(post.title, 95)}
                 </h3>
 
-                <p className="mb-4 text-[17px] leading-7 text-[#f1f1f1] summary-copy">
+                <p className="mb-4 text-[17px] leading-7 text-[#f1f1f1] summary-copy-home">
                   {buildPreview(post.summary)}
                 </p>
 

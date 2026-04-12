@@ -23,34 +23,80 @@ export function buildPreview(value: string | null | undefined) {
     return '';
   }
 
-  const sentences = clean.match(/[^.!?]+[.!?]?/g)?.map((item) => item.trim()).filter(Boolean) ?? [clean];
-  let preview = '';
+  const maxLength = 210;
+  const earlyStop = clean.slice(0, Math.min(clean.length, 260));
+  const sentenceBreak = earlyStop.search(/[.!?।॥]/);
 
-  for (const sentence of sentences) {
-    const nextValue = preview ? `${preview} ${sentence}` : sentence;
-    preview = nextValue.trim();
-    if (preview.length >= 170 || preview.endsWith('.')) {
-      break;
-    }
+  if (sentenceBreak >= 80) {
+    return earlyStop.slice(0, sentenceBreak + 1).trim();
   }
 
-  if (!/[.!?]$/.test(preview)) {
-    const periodIndex = clean.indexOf('.', Math.min(clean.length - 1, 120));
-    if (periodIndex > 0) {
-      return clean.slice(0, periodIndex + 1).trim();
-    }
+  if (clean.length <= maxLength) {
+    return clean;
   }
 
-  return preview;
+  const sliced = clean.slice(0, maxLength);
+  const lastSpace = sliced.lastIndexOf(' ');
+  const preview = lastSpace > 120 ? sliced.slice(0, lastSpace) : sliced;
+
+  return `${preview.trim()}...`;
 }
 
 export function splitParagraphs(value: string | null | undefined) {
-  return (value ?? '')
+  const clean = value ?? '';
+  const explicitParagraphs = clean
     .split(/\n{2,}/)
     .map((part) => stripHtml(part))
     .filter(Boolean);
+
+  if (explicitParagraphs.length >= 2) {
+    return explicitParagraphs;
+  }
+
+  const flattened = stripHtml(clean);
+  if (!flattened) {
+    return [];
+  }
+
+  const sentences = flattened
+    .split(/(?<=[.!?।॥])\s+/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+
+  if (sentences.length >= 4) {
+    const chunkSize = Math.ceil(sentences.length / 4);
+    const chunks: string[] = [];
+
+    for (let index = 0; index < sentences.length; index += chunkSize) {
+      chunks.push(sentences.slice(index, index + chunkSize).join(' ').trim());
+    }
+
+    return chunks.filter(Boolean);
+  }
+
+  const words = flattened.split(' ').filter(Boolean);
+  const chunks: string[] = [];
+
+  for (let index = 0; index < words.length; index += 45) {
+    chunks.push(words.slice(index, index + 45).join(' ').trim());
+  }
+
+  return chunks.filter(Boolean);
 }
 
 export function getSiteUrl() {
   return process.env.NEXT_PUBLIC_SITE_URL || 'https://freshnews.top';
+}
+
+export function shortenTitle(value: string | null | undefined, maxLength = 95) {
+  const clean = stripHtml(value);
+  if (clean.length <= maxLength) {
+    return clean;
+  }
+
+  const sliced = clean.slice(0, maxLength);
+  const lastSpace = sliced.lastIndexOf(' ');
+  const shortened = lastSpace > 55 ? sliced.slice(0, lastSpace) : sliced;
+
+  return `${shortened.trim()}...`;
 }
