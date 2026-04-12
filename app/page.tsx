@@ -122,7 +122,7 @@ export default async function Home({ searchParams }: HomeProps) {
           </article>
 
           {/* REMAINING CARDS */}
-          <div className="mt-5 space-y-4">
+          <div className="mt-8 space-y-8">
             {remainingPosts.map((post) => (
               <article
                 key={post.id}

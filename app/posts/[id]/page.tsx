@@ -104,11 +104,11 @@ export default async function PostPage({ params }: PageProps) {
     <div className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)]">
       <Header />
 
-      <main className="pb-4">
-        <article className="mx-auto mt-5 w-full max-w-[800px] px-3 sm:px-6">
-          <div className="rounded-2xl bg-[var(--bg-card)] border border-[var(--border)] px-6 py-6 sm:px-12 sm:py-8 overflow-hidden break-words">
+      <main className="pb-8">
+        <article className="mx-auto mt-6 w-full max-w-[850px] px-3 sm:px-6">
+          <div className="rounded-3xl bg-[var(--bg-card)] border border-[var(--border)] px-8 py-8 sm:px-14 sm:py-12 break-words">
             {/* BREADCRUMB */}
-            <div className="mb-4 flex flex-wrap items-center gap-2 text-[12px] text-[var(--text-muted)]" style={{ fontFamily: 'var(--font-en)' }}>
+            <div className="mb-5 flex flex-wrap items-center gap-2 text-[12.5px] text-[var(--text-muted)]" style={{ fontFamily: 'var(--font-en)' }}>
               <Link href="/" className="text-[var(--text-secondary)] hover:text-[#ffd42a]">
                 ഹോം
               </Link>
@@ -117,12 +117,12 @@ export default async function PostPage({ params }: PageProps) {
             </div>
 
             {/* TITLE – yellow */}
-            <h1 className="post-title mb-4 text-[#ffd42a]">
+            <h1 className="post-title mb-5 text-[#ffd42a]">
               {post.title}
             </h1>
 
             {/* META */}
-            <div className="mb-5 flex flex-wrap items-center gap-4 border-t border-b border-[var(--border)] py-3 text-[12px] text-[var(--text-muted)]" style={{ fontFamily: 'var(--font-en)' }}>
+            <div className="mb-6 flex flex-wrap items-center gap-4 border-t border-b border-[var(--border)] py-3 text-[12px] text-[var(--text-muted)]" style={{ fontFamily: 'var(--font-en)' }}>
               {publishedDate && (
                 <span className="flex items-center gap-1">
                   <Clock size={14} />
@@ -133,12 +133,12 @@ export default async function PostPage({ params }: PageProps) {
             </div>
 
             {/* IMAGE */}
-            <div className="mb-6 w-full overflow-hidden rounded-xl">
+            <div className="mb-8 w-full overflow-hidden rounded-xl">
               {post.image_url ? (
                 <img
                   src={post.image_url}
                   alt={post.title}
-                  className="w-full max-h-[480px] object-cover object-center"
+                  className="w-full max-h-[500px] object-cover object-center"
                 />
               ) : (
                 <div className="flex h-48 w-full items-center justify-center bg-[#21262d] text-sm text-[var(--text-muted)]">
@@ -155,7 +155,7 @@ export default async function PostPage({ params }: PageProps) {
             </div>
 
             {/* TAGS – colorful */}
-            <div className="mt-6 flex flex-wrap items-center gap-3 border-t border-[var(--border)] pt-5">
+            <div className="mt-8 flex flex-wrap items-center gap-3 border-t border-[var(--border)] pt-6">
               <span className="text-[12px] font-bold text-white bg-gray-700 px-3 py-1.5 rounded-md" style={{ fontFamily: 'var(--font-en)' }}>Tags</span>
               {post.tags?.slice(0, 4).map((tag: string) => (
                 <TagBadge key={tag} tag={tag} withHash={false} />
@@ -166,10 +166,10 @@ export default async function PostPage({ params }: PageProps) {
             <ShareButtons title={post.title} url={articleUrl} />
 
             {/* BACK TO HOME BUTTON */}
-            <div className="mt-8 text-center">
+            <div className="my-12 text-center pt-4">
               <Link
                 href="/"
-                className="inline-flex items-center gap-2 rounded-lg bg-[#e91e63] px-6 py-3 text-[15px] font-bold text-white shadow-md transition-all hover:bg-[#c2185b] hover:shadow-lg hover:scale-[1.02] active:scale-95"
+                className="inline-flex items-center gap-2 rounded-lg bg-[#e91e63] px-7 py-3.5 text-[16px] font-bold text-white shadow-md transition-all hover:bg-[#c2185b] hover:shadow-lg hover:scale-[1.02] active:scale-95"
               >
                 <Home size={18} strokeWidth={2.5} />
                 Back to Home Page
