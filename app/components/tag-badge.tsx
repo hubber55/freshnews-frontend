@@ -39,7 +39,7 @@ export default function TagBadge({ tag, withHash = true }: TagBadgeProps) {
   return (
     <Link
       href={`/?tag=${encodeURIComponent(trimmed)}`}
-      className={`${colorClass} inline-block rounded-full px-3 py-1 text-[11px] font-bold text-white transition-opacity hover:opacity-80`}
+      className={`${colorClass} inline-block rounded-full px-5 py-1.5 text-[11.5px] font-extrabold text-white transition-opacity hover:opacity-80`}
     >
       {withHash ? `#${trimmed}` : trimmed}
     </Link>

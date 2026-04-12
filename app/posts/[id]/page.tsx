@@ -105,8 +105,8 @@ export default async function PostPage({ params }: PageProps) {
       <Header />
 
       <main className="pb-4">
-        <article className="mx-auto mt-5 w-full max-w-[800px] px-4">
-          <div className="rounded-2xl bg-[var(--bg-card)] border border-[var(--border)] px-7 py-6 sm:px-10 sm:py-8">
+        <article className="mx-auto mt-5 w-full max-w-[800px] px-3 sm:px-6">
+          <div className="rounded-2xl bg-[var(--bg-card)] border border-[var(--border)] px-6 py-6 sm:px-12 sm:py-8 overflow-hidden break-words">
             {/* BREADCRUMB */}
             <div className="mb-4 flex flex-wrap items-center gap-2 text-[12px] text-[var(--text-muted)]" style={{ fontFamily: 'var(--font-en)' }}>
               <Link href="/" className="text-[var(--text-secondary)] hover:text-[#ffd42a]">
@@ -155,9 +155,9 @@ export default async function PostPage({ params }: PageProps) {
             </div>
 
             {/* TAGS – colorful */}
-            <div className="mt-6 flex flex-wrap items-center gap-2 border-t border-[var(--border)] pt-5">
-              <span className="text-[12px] font-bold text-white bg-gray-700 px-2.5 py-1 rounded-md" style={{ fontFamily: 'var(--font-en)' }}>Tags</span>
-              {post.tags?.map((tag: string) => (
+            <div className="mt-6 flex flex-wrap items-center gap-3 border-t border-[var(--border)] pt-5">
+              <span className="text-[12px] font-bold text-white bg-gray-700 px-3 py-1.5 rounded-md" style={{ fontFamily: 'var(--font-en)' }}>Tags</span>
+              {post.tags?.slice(0, 4).map((tag: string) => (
                 <TagBadge key={tag} tag={tag} withHash={false} />
               ))}
             </div>

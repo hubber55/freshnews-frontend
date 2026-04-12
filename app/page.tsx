@@ -119,14 +119,6 @@ export default async function Home({ searchParams }: HomeProps) {
                 </p>
               </div>
             </Link>
-
-            <div className="px-5 pb-4">
-              <div className="flex flex-wrap gap-2">
-                {heroPost.tags?.map((tag: string) => (
-                  <TagBadge key={tag} tag={tag} />
-                ))}
-              </div>
-            </div>
           </article>
 
           {/* REMAINING CARDS */}
@@ -171,14 +163,6 @@ export default async function Home({ searchParams }: HomeProps) {
                     </p>
                   </div>
                 </Link>
-
-                <div className="px-5 pb-4">
-                  <div className="flex flex-wrap gap-2">
-                    {post.tags?.slice(0, 5).map((tag: string) => (
-                      <TagBadge key={tag} tag={tag} />
-                    ))}
-                  </div>
-                </div>
               </article>
             ))}
           </div>
