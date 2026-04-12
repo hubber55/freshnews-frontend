@@ -1,16 +1,11 @@
+import Link from 'next/link';
+
 import { supabase } from '../lib/supabase';
 import { Clock, Menu, Search } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import { buildPreview } from '../lib/posts';
 
 export const revalidate = 60; // Revalidate every 60 seconds
-
-function stripHtml(value: string | null | undefined) {
-  return (value ?? '')
-    .replace(/<[^>]*>/g, ' ')
-    .replace(/&nbsp;/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim();
-}
 
 export default async function Home() {
   const { data: posts } = await supabase
@@ -70,7 +65,7 @@ export default async function Home() {
           </a>
         </div>
 
-        <article className="overflow-hidden rounded-[18px] bg-[#252525] shadow-[0_10px_24px_rgba(0,0,0,0.22)]">
+        <Link href={`/posts/${heroPost.id}`} className="block overflow-hidden rounded-[18px] bg-[#252525] shadow-[0_10px_24px_rgba(0,0,0,0.22)] transition-transform hover:scale-[1.01]">
           <div className="aspect-[16/9] w-full overflow-hidden bg-[#111111]">
             {heroPost.image_url ? (
               <img
@@ -103,7 +98,7 @@ export default async function Home() {
             </h2>
 
             <p className="mb-4 text-[18px] leading-8 text-[#f1f1f1]">
-              {stripHtml(heroPost.summary)}
+              {buildPreview(heroPost.summary)}
             </p>
 
             <div className="flex flex-wrap gap-2">
@@ -118,13 +113,14 @@ export default async function Home() {
               ))}
             </div>
           </div>
-        </article>
+        </Link>
 
         <div className="mt-6 space-y-5">
           {remainingPosts.map((post) => (
-            <article
+            <Link
+              href={`/posts/${post.id}`}
               key={post.id}
-              className="overflow-hidden rounded-[18px] bg-[#252525] shadow-[0_10px_24px_rgba(0,0,0,0.18)]"
+              className="block overflow-hidden rounded-[18px] bg-[#252525] shadow-[0_10px_24px_rgba(0,0,0,0.18)] transition-transform hover:scale-[1.01]"
             >
               <div className="aspect-[16/9] w-full overflow-hidden bg-[#111111]">
                 {post.image_url ? (
@@ -158,7 +154,7 @@ export default async function Home() {
                 </h3>
 
                 <p className="mb-4 text-[17px] leading-7 text-[#f1f1f1] summary-copy">
-                  {stripHtml(post.summary)}
+                  {buildPreview(post.summary)}
                 </p>
 
                 <div className="flex flex-wrap gap-2">
@@ -173,7 +169,7 @@ export default async function Home() {
                   ))}
                 </div>
               </div>
-            </article>
+            </Link>
           ))}
         </div>
       </section>
