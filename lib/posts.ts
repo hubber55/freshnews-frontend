@@ -17,17 +17,16 @@ export function stripHtml(value: string | null | undefined) {
     .trim();
 }
 
-export function buildPreview(value: string | null | undefined) {
+export function buildPreview(value: string | null | undefined, maxLength = 140) {
   const clean = stripHtml(value);
   if (!clean) {
     return '';
   }
 
-  const maxLength = 210;
-  const earlyStop = clean.slice(0, Math.min(clean.length, 260));
+  const earlyStop = clean.slice(0, Math.min(clean.length, maxLength + 60));
   const sentenceBreak = earlyStop.search(/[.!?।॥]/);
 
-  if (sentenceBreak >= 80) {
+  if (sentenceBreak >= 45 && sentenceBreak <= maxLength + 20) {
     return earlyStop.slice(0, sentenceBreak + 1).trim();
   }
 
@@ -37,7 +36,7 @@ export function buildPreview(value: string | null | undefined) {
 
   const sliced = clean.slice(0, maxLength);
   const lastSpace = sliced.lastIndexOf(' ');
-  const preview = lastSpace > 120 ? sliced.slice(0, lastSpace) : sliced;
+  const preview = lastSpace > Math.floor(maxLength * 0.6) ? sliced.slice(0, lastSpace) : sliced;
 
   return `${preview.trim()}...`;
 }

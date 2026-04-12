@@ -65,111 +65,122 @@ export default async function Home() {
           </a>
         </div>
 
-        <Link href={`/posts/${heroPost.id}`} className="block overflow-hidden rounded-[18px] bg-[#252525] shadow-[0_10px_24px_rgba(0,0,0,0.22)] transition-transform hover:scale-[1.01]">
-          <div className="aspect-[16/9] w-full overflow-hidden bg-[#111111]">
-            {heroPost.image_url ? (
-              <img
-                src={heroPost.image_url}
-                alt={heroPost.title}
-                className="h-full w-full object-cover object-center"
-              />
-            ) : (
-              <div className="flex h-full w-full items-center justify-center text-sm text-gray-400">
-                No Image Available
-              </div>
-            )}
-          </div>
-
-          <div className="px-5 py-4 sm:px-6 sm:py-5">
-            <div className="mb-3 flex flex-wrap items-center gap-2 text-xs sm:text-sm">
-              <span className="rounded-full bg-[#ff6a00] px-3 py-1 font-bold uppercase text-white">
-                {heroPost.source_name}
-              </span>
-              {heroPost.published_at && (
-                <span className="flex items-center gap-1 text-[#cfcfcf]">
-                  <Clock size={13} />
-                  {formatDistanceToNow(new Date(heroPost.published_at), { addSuffix: true })}
-                </span>
+        <article className="overflow-hidden rounded-[18px] bg-[#252525] shadow-[0_10px_24px_rgba(0,0,0,0.22)]">
+          <Link href={`/posts/${heroPost.id}`} className="block transition-transform hover:scale-[1.01]">
+            <div className="aspect-[16/9] w-full overflow-hidden bg-[#111111]">
+              {heroPost.image_url ? (
+                <img
+                  src={heroPost.image_url}
+                  alt={heroPost.title}
+                  className="h-full w-full object-cover object-center"
+                />
+              ) : (
+                <div className="flex h-full w-full items-center justify-center text-sm text-gray-400">
+                  No Image Available
+                </div>
               )}
             </div>
 
-            <h2 className="mb-3 text-[30px] font-extrabold leading-tight text-[#ffd42a] sm:text-[36px] title-clamp-home">
-              {shortenTitle(heroPost.title, 110)}
-            </h2>
+            <div className="px-5 py-4 sm:px-6 sm:py-5">
+              <div className="mb-3 flex flex-wrap items-center gap-2 text-xs sm:text-sm">
+                <span className="rounded-full bg-[#ff6a00] px-3 py-1 font-bold uppercase text-white">
+                  {heroPost.source_name}
+                </span>
+                {heroPost.published_at && (
+                  <span className="flex items-center gap-1 text-[#cfcfcf]">
+                    <Clock size={13} />
+                    {formatDistanceToNow(new Date(heroPost.published_at), { addSuffix: true })}
+                  </span>
+                )}
+              </div>
 
-            <p className="mb-4 text-[18px] leading-8 text-[#f1f1f1] summary-copy-home">
-              {buildPreview(heroPost.summary)}
-            </p>
+              <h2 className="mb-3 text-[30px] font-extrabold leading-tight text-[#ffd42a] sm:text-[36px] title-clamp-home">
+                {shortenTitle(heroPost.title, 88)}
+              </h2>
 
+              <p className="mb-4 text-[18px] leading-7 text-[#f1f1f1] summary-copy-home">
+                {buildPreview(heroPost.summary, 120)}
+              </p>
+
+              <div className="text-sm font-semibold text-[#ffb347]">Read full article</div>
+            </div>
+          </Link>
+
+          <div className="px-5 pb-5 sm:px-6 sm:pb-6">
             <div className="flex flex-wrap gap-2">
               {heroPost.tags?.map((tag: string) => (
-                <a
+                <Link
                   key={tag}
                   href={`/?tag=${encodeURIComponent(tag.trim())}`}
                   className="rounded-full border border-[#534400] bg-[#3a3100] px-3 py-1 text-xs font-semibold text-[#ffd42a] transition-colors hover:bg-[#ff6a00] hover:text-white"
                 >
                   #{tag.trim()}
-                </a>
+                </Link>
               ))}
             </div>
           </div>
-        </Link>
+        </article>
 
         <div className="mt-6 space-y-5">
           {remainingPosts.map((post) => (
-            <Link
-              href={`/posts/${post.id}`}
+            <article
               key={post.id}
-              className="block overflow-hidden rounded-[18px] bg-[#252525] shadow-[0_10px_24px_rgba(0,0,0,0.18)] transition-transform hover:scale-[1.01]"
+              className="overflow-hidden rounded-[18px] bg-[#252525] shadow-[0_10px_24px_rgba(0,0,0,0.18)]"
             >
-              <div className="aspect-[16/9] w-full overflow-hidden bg-[#111111]">
-                {post.image_url ? (
-                  <img
-                    src={post.image_url}
-                    alt={post.title}
-                    className="h-full w-full object-cover object-center"
-                  />
-                ) : (
-                  <div className="flex h-full w-full items-center justify-center text-sm text-gray-400">
-                    No Image Available
-                  </div>
-                )}
-              </div>
-
-              <div className="px-5 py-4 sm:px-6 sm:py-5">
-                <div className="mb-3 flex flex-wrap items-center gap-2 text-xs sm:text-sm">
-                  <span className="rounded-full bg-[#ff6a00] px-3 py-1 font-bold uppercase text-white">
-                    {post.source_name}
-                  </span>
-                  {post.published_at && (
-                    <span className="flex items-center gap-1 text-[#cfcfcf]">
-                      <Clock size={13} />
-                      {formatDistanceToNow(new Date(post.published_at), { addSuffix: true })}
-                    </span>
+              <Link href={`/posts/${post.id}`} className="block transition-transform hover:scale-[1.01]">
+                <div className="aspect-[16/9] w-full overflow-hidden bg-[#111111]">
+                  {post.image_url ? (
+                    <img
+                      src={post.image_url}
+                      alt={post.title}
+                      className="h-full w-full object-cover object-center"
+                    />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center text-sm text-gray-400">
+                      No Image Available
+                    </div>
                   )}
                 </div>
 
-                <h3 className="mb-3 text-[24px] font-extrabold leading-tight text-[#ffd42a] sm:text-[28px] title-clamp-home">
-                  {shortenTitle(post.title, 95)}
-                </h3>
+                <div className="px-5 py-4 sm:px-6 sm:py-5">
+                  <div className="mb-3 flex flex-wrap items-center gap-2 text-xs sm:text-sm">
+                    <span className="rounded-full bg-[#ff6a00] px-3 py-1 font-bold uppercase text-white">
+                      {post.source_name}
+                    </span>
+                    {post.published_at && (
+                      <span className="flex items-center gap-1 text-[#cfcfcf]">
+                        <Clock size={13} />
+                        {formatDistanceToNow(new Date(post.published_at), { addSuffix: true })}
+                      </span>
+                    )}
+                  </div>
 
-                <p className="mb-4 text-[17px] leading-7 text-[#f1f1f1] summary-copy-home">
-                  {buildPreview(post.summary)}
-                </p>
+                  <h3 className="mb-3 text-[24px] font-extrabold leading-tight text-[#ffd42a] sm:text-[28px] title-clamp-home">
+                    {shortenTitle(post.title, 82)}
+                  </h3>
 
+                  <p className="mb-4 text-[17px] leading-7 text-[#f1f1f1] summary-copy-home">
+                    {buildPreview(post.summary, 110)}
+                  </p>
+
+                  <div className="text-sm font-semibold text-[#ffb347]">Read full article</div>
+                </div>
+              </Link>
+
+              <div className="px-5 pb-5 sm:px-6 sm:pb-6">
                 <div className="flex flex-wrap gap-2">
                   {post.tags?.slice(0, 4).map((tag: string) => (
-                    <a
+                    <Link
                       key={tag}
                       href={`/?tag=${encodeURIComponent(tag.trim())}`}
                       className="rounded-full border border-[#534400] bg-[#3a3100] px-3 py-1 text-xs font-semibold text-[#ffd42a] transition-colors hover:bg-[#ff6a00] hover:text-white"
                     >
                       #{tag.trim()}
-                    </a>
+                    </Link>
                   ))}
                 </div>
               </div>
-            </Link>
+            </article>
           ))}
         </div>
       </section>
