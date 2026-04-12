@@ -73,32 +73,33 @@ export default async function PostPage({ params }: PageProps) {
   const articleUrl = `${getSiteUrl()}/posts/${post.id}`;
 
   return (
-    <main className="min-h-screen bg-transparent pb-12 text-white">
-      <header className="sticky top-0 z-20 bg-[#222222]">
-        <div className="mx-auto flex h-[88px] w-full max-w-[720px] items-center justify-center px-4">
-          <h1 className="text-[28px] font-black uppercase tracking-[0.14em] text-[#ffd42a] sm:text-[30px]">
-            FRESHNEWS.TOP
+    <main className="min-h-screen bg-[var(--bg-primary)] pb-12 text-[var(--text-primary)]">
+      <header className="sticky top-0 z-20 bg-[var(--bg-card)] border-b border-[var(--border)]">
+        <div className="mx-auto flex h-14 w-full max-w-[800px] items-center justify-center px-4">
+          <h1 className="text-[20px] font-extrabold uppercase tracking-[0.1em] text-[var(--text-primary)]" style={{ fontFamily: 'var(--font-en)' }}>
+            <Link href="/">FRESHNEWS.TOP</Link>
           </h1>
         </div>
       </header>
 
-      <article className="mx-auto mt-8 w-full max-w-[720px] px-4">
-        <div className="rounded-[18px] bg-[#252525] px-5 py-5 shadow-[0_10px_24px_rgba(0,0,0,0.22)] sm:px-6 sm:py-6">
-          <div className="mb-4 flex flex-wrap items-center gap-2 text-sm text-[#cfcfcf]">
-            <Link href="/" className="text-[#cfcfcf] hover:text-white">
+      <article className="mx-auto mt-5 w-full max-w-[800px] px-3">
+        <div className="rounded-2xl bg-[var(--bg-card)] border border-[var(--border)] px-4 py-5 sm:px-5 sm:py-6">
+          {/* BREADCRUMB */}
+          <div className="mb-4 flex flex-wrap items-center gap-2 text-[12px] text-[var(--text-muted)]" style={{ fontFamily: 'var(--font-en)' }}>
+            <Link href="/" className="text-[var(--text-secondary)] hover:text-white">
               ഹോം
             </Link>
             <span>›</span>
             <span>{post.source_name}</span>
-            <span>›</span>
-            <span className="text-white">{post.title}</span>
           </div>
 
-          <h1 className="mb-4 text-[31px] font-extrabold leading-tight text-[#ffd42a] sm:text-[38px]">
+          {/* TITLE */}
+          <h1 className="post-title mb-4 text-[var(--text-primary)]">
             {post.title}
           </h1>
 
-          <div className="mb-5 flex flex-wrap items-center gap-3 text-sm text-[#cfcfcf]">
+          {/* META */}
+          <div className="mb-5 flex flex-wrap items-center gap-4 border-t border-b border-[var(--border)] py-3 text-[12px] text-[var(--text-muted)]" style={{ fontFamily: 'var(--font-en)' }}>
             {publishedDate && (
               <span className="flex items-center gap-1">
                 <Clock size={14} />
@@ -108,50 +109,55 @@ export default async function PostPage({ params }: PageProps) {
             <span>{Math.max(1, Math.ceil(stripHtml(post.summary).split(' ').length / 220))} minute read</span>
           </div>
 
-          <div className="mb-6 aspect-[16/9] w-full overflow-hidden rounded-[14px] bg-[#111111]">
+          {/* IMAGE */}
+          <div className="mb-6 w-full overflow-hidden rounded-xl">
             {post.image_url ? (
               <img
                 src={post.image_url}
                 alt={post.title}
-                className="h-full w-full object-cover object-center"
+                className="w-full max-h-[480px] object-cover object-center"
               />
             ) : (
-              <div className="flex h-full w-full items-center justify-center text-sm text-gray-400">
+              <div className="flex h-48 w-full items-center justify-center bg-[#21262d] text-sm text-gray-400">
                 No Image Available
               </div>
             )}
           </div>
 
-          <div className="article-body text-[18px] leading-8 text-[#f1f1f1]">
+          {/* ARTICLE BODY – 17px, line-height 1.85, paragraph spacing 18px */}
+          <div className="article-body text-[var(--text-primary)]">
             {paragraphs.map((paragraph, index) => (
               <p key={`${post.id}-${index}`}>{paragraph}</p>
             ))}
           </div>
 
-          <div className="mt-6 flex flex-wrap gap-2">
+          {/* TAGS */}
+          <div className="mt-6 flex flex-wrap gap-2 border-t border-[var(--border)] pt-5">
             {post.tags?.map((tag: string) => (
               <a
                 key={tag}
                 href={`/?tag=${encodeURIComponent(tag.trim())}`}
-                className="rounded-full border border-[#534400] bg-[#3a3100] px-3 py-1 text-xs font-semibold text-[#ffd42a] transition-colors hover:bg-[#ff6a00] hover:text-white"
+                className="rounded-full bg-[var(--bg-primary)] px-3.5 py-1.5 text-[12px] font-semibold text-[var(--text-secondary)] transition-colors hover:bg-[var(--accent)] hover:text-white"
               >
                 {tag.trim()}
               </a>
             ))}
           </div>
 
+          {/* SHARE BUTTONS */}
           <ShareButtons title={post.title} url={articleUrl} />
 
-          <div className="mt-8 grid grid-cols-2 gap-4 border-t border-[#373737] pt-6 text-sm text-[#d8d8d8]">
-            <Link href="/" className="rounded border border-[#313131] px-4 py-3 hover:border-[#4a4a4a]">
-              <div className="mb-1 flex items-center gap-1 text-[#cfcfcf]">
+          {/* NAVIGATION */}
+          <div className="mt-8 grid grid-cols-2 gap-4 border-t border-[var(--border)] pt-6 text-[13px] text-[var(--text-secondary)]">
+            <Link href="/" className="rounded-lg border border-[var(--border)] px-4 py-3 hover:border-[var(--text-muted)] transition-colors">
+              <div className="mb-1 flex items-center gap-1 text-[var(--text-muted)]">
                 <ChevronLeft size={14} />
                 <span>Previous News</span>
               </div>
               <div>Back to homepage</div>
             </Link>
-            <Link href="/" className="rounded border border-[#313131] px-4 py-3 text-right hover:border-[#4a4a4a]">
-              <div className="mb-1 flex items-center justify-end gap-1 text-[#cfcfcf]">
+            <Link href="/" className="rounded-lg border border-[var(--border)] px-4 py-3 text-right hover:border-[var(--text-muted)] transition-colors">
+              <div className="mb-1 flex items-center justify-end gap-1 text-[var(--text-muted)]">
                 <span>Latest News</span>
                 <ChevronRight size={14} />
               </div>

@@ -1,25 +1,35 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Malayalam:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap');
 @import "tailwindcss";
 
 :root {
-  --background: #1f1f1f;
-  --foreground: #f4f4f4;
+  --bg-primary: #0d1117;
+  --bg-card: #161b22;
+  --text-primary: #e6edf3;
+  --text-secondary: #8b949e;
+  --text-muted: #6e7681;
+  --accent: #e63946;
+  --border: #30363d;
+  --font-ml: 'Noto Sans Malayalam', sans-serif;
+  --font-en: 'Inter', sans-serif;
 }
 
 * {
   box-sizing: border-box;
+  margin: 0;
+  padding: 0;
 }
 
 html {
-  background: #1f1f1f;
+  background: var(--bg-primary);
 }
 
 body {
-  margin: 0;
   min-width: 320px;
-  background:
-    linear-gradient(180deg, #222222 0, #222222 88px, #2b2b2b 88px, #2b2b2b 100%);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: var(--font-ml);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
 }
 
 a {
@@ -32,28 +42,83 @@ img {
   max-width: 100%;
 }
 
-/* Homepage card summary – strict 2-line clamp */
-.summary-copy-home {
+/* ===== HOMEPAGE CARD TITLE – match Blogger 17px / hero 20px ===== */
+.card-title {
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.45;
   display: -webkit-box;
+  -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
   overflow: hidden;
 }
 
-/* Homepage title – strict 2-line clamp */
-.title-clamp-home {
+.card-title-hero {
+  font-size: 20px;
+  font-weight: 700;
+  line-height: 1.45;
   display: -webkit-box;
+  -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
   overflow: hidden;
 }
 
-/* Detail page article body paragraphs */
+/* ===== HOMEPAGE SNIPPET – match Blogger 13.5px, 2-line clamp ===== */
+.card-snippet {
+  font-size: 13.5px;
+  color: var(--text-secondary);
+  line-height: 1.55;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ===== SOURCE BADGE overlaid on image ===== */
+.source-badge {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 3;
+  display: inline-flex;
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-family: var(--font-en);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.8px;
+  text-transform: uppercase;
+  color: #fff;
+  background: linear-gradient(135deg, #00b894, #00cec9);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+
+/* ===== DETAIL PAGE ===== */
+.post-title {
+  font-size: 22px;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.article-body {
+  font-size: 17px;
+  line-height: 1.85;
+}
+
 .article-body p {
-  margin-bottom: 1.25em;
-  line-height: 1.9;
+  margin-bottom: 18px;
 }
 
 .article-body p:last-child {
   margin-bottom: 0;
+}
+
+/* ===== RESPONSIVE ===== */
+@media (min-width: 640px) {
+  .card-title-hero {
+    font-size: 24px;
+  }
+  .post-title {
+    font-size: 28px;
+  }
 }

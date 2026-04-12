@@ -16,7 +16,7 @@ export default async function Home() {
 
   if (!posts || posts.length === 0) {
     return (
-      <main className="min-h-screen bg-[#1f1f1f] flex items-center justify-center p-4 text-white">
+      <main className="min-h-screen bg-[var(--bg-primary)] flex items-center justify-center p-4 text-white">
         <div className="text-center">
           <h1 className="text-2xl font-bold text-yellow-400 mb-2">No News Available Yet</h1>
           <p className="text-gray-300">The daemon is fetching articles. Check back soon.</p>
@@ -29,90 +29,95 @@ export default async function Home() {
   const remainingPosts = posts.slice(1);
 
   return (
-    <main className="min-h-screen bg-transparent text-white pb-10">
-      <header className="sticky top-0 z-20 bg-[#222222]">
-        <div className="mx-auto flex h-[88px] w-full max-w-[720px] items-center justify-between px-4">
+    <main className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)] pb-10">
+      {/* HEADER */}
+      <header className="sticky top-0 z-20 bg-[var(--bg-card)] border-b border-[var(--border)]">
+        <div className="mx-auto flex h-14 w-full max-w-[800px] items-center justify-between px-4">
           <button
             type="button"
             aria-label="Open menu"
-            className="flex h-10 w-10 items-center justify-center text-[#ff6a00]"
+            className="flex h-10 w-10 items-center justify-center text-[var(--text-secondary)]"
           >
-            <Menu size={24} strokeWidth={2.5} />
+            <Menu size={22} strokeWidth={2.5} />
           </button>
           <div className="text-center">
-            <h1 className="text-[28px] font-black uppercase tracking-[0.14em] text-[#ffd42a] [text-shadow:0_2px_0_rgba(0,0,0,0.4)] sm:text-[30px]">
+            <h1 className="text-[20px] font-extrabold uppercase tracking-[0.1em] text-[var(--text-primary)]" style={{ fontFamily: 'var(--font-en)' }}>
               FRESHNEWS.TOP
             </h1>
           </div>
           <button
             type="button"
             aria-label="Search"
-            className="flex h-10 w-10 items-center justify-center text-white"
+            className="flex h-10 w-10 items-center justify-center text-[var(--text-secondary)]"
           >
-            <Search size={24} strokeWidth={2.5} />
+            <Search size={22} strokeWidth={2.5} />
           </button>
         </div>
       </header>
 
-      <section className="mx-auto mt-8 w-full max-w-[720px] px-4">
-        <div className="mb-6 flex items-end justify-between gap-4 border-b border-[#3a3a3a] pb-3">
+      {/* SECTION HEADER */}
+      <section className="mx-auto mt-5 w-full max-w-[800px] px-3">
+        <div className="mb-4 flex items-end justify-between gap-4 border-b border-[var(--border)] pb-3">
           <div>
-            <div className="text-[18px] font-extrabold uppercase tracking-wide text-white">Latest</div>
-            <div className="mt-2 h-1 w-16 rounded-full bg-[#ff6a00]" />
+            <div className="text-[15px] font-extrabold uppercase tracking-wide text-[var(--text-primary)]" style={{ fontFamily: 'var(--font-en)' }}>Latest</div>
+            <div className="mt-1.5 h-[3px] w-10 rounded-full bg-[var(--accent)]" />
           </div>
-          <a href="/" className="text-sm font-semibold text-white sm:text-base">
+          <a href="/" className="text-[13px] font-semibold text-[var(--text-secondary)]">
             കൂടുതല്‍ കാണിക്കുക
           </a>
         </div>
 
-        <article className="overflow-hidden rounded-[18px] bg-[#252525] shadow-[0_10px_24px_rgba(0,0,0,0.22)]">
-          <Link href={`/posts/${heroPost.id}`} className="block transition-transform hover:scale-[1.01]">
-            <div className="aspect-[16/9] w-full overflow-hidden bg-[#111111]">
+        {/* HERO CARD */}
+        <article className="overflow-hidden rounded-2xl bg-[var(--bg-card)] border border-[var(--border)]">
+          <Link href={`/posts/${heroPost.id}`} className="block">
+            {/* IMAGE with source badge overlay */}
+            <div className="relative w-full overflow-hidden" style={{ paddingTop: '56.25%' }}>
               {heroPost.image_url ? (
                 <img
                   src={heroPost.image_url}
                   alt={heroPost.title}
-                  className="h-full w-full object-cover object-center"
+                  className="absolute inset-0 h-full w-full object-cover object-center"
                 />
               ) : (
-                <div className="flex h-full w-full items-center justify-center text-sm text-gray-400">
+                <div className="absolute inset-0 flex items-center justify-center bg-[#21262d] text-sm text-gray-400">
                   No Image Available
                 </div>
               )}
+              {/* SOURCE BADGE on image */}
+              <span className="source-badge">
+                {heroPost.source_name}
+              </span>
             </div>
 
-            <div className="px-5 py-4 sm:px-6 sm:py-5">
-              <div className="mb-3 flex flex-wrap items-center gap-2 text-xs sm:text-sm">
-                <span className="rounded-full bg-[#ff6a00] px-3 py-1 font-bold uppercase text-white">
-                  {heroPost.source_name}
-                </span>
+            {/* CARD BODY */}
+            <div className="px-4 py-3 sm:px-[18px] sm:py-4">
+              <div className="mb-2 flex items-center gap-2 text-[11.5px] text-[var(--text-muted)]" style={{ fontFamily: 'var(--font-en)' }}>
                 {heroPost.published_at && (
-                  <span className="flex items-center gap-1 text-[#cfcfcf]">
+                  <span className="flex items-center gap-1">
                     <Clock size={13} />
                     {formatDistanceToNow(new Date(heroPost.published_at), { addSuffix: true })}
                   </span>
                 )}
               </div>
 
-              <h2 className="mb-3 text-[30px] font-extrabold leading-tight text-[#ffd42a] sm:text-[36px] title-clamp-home">
-                {shortenTitle(heroPost.title, 88)}
+              <h2 className="card-title-hero mb-2 text-[var(--text-primary)]">
+                {heroPost.title}
               </h2>
 
-              <p className="mb-4 text-[18px] leading-7 text-[#f1f1f1] summary-copy-home">
-                {buildPreview(heroPost.summary, 80)}
+              <p className="card-snippet mb-3">
+                {buildPreview(heroPost.summary, 120)}
               </p>
-
-              <div className="text-sm font-semibold text-[#ffb347]">Read full article</div>
             </div>
           </Link>
 
-          <div className="px-5 pb-5 sm:px-6 sm:pb-6">
+          {/* TAGS */}
+          <div className="px-4 pb-4 sm:px-[18px]">
             <div className="flex flex-wrap gap-2">
               {heroPost.tags?.map((tag: string) => (
                 <Link
                   key={tag}
                   href={`/?tag=${encodeURIComponent(tag.trim())}`}
-                  className="rounded-full border border-[#534400] bg-[#3a3100] px-3 py-1 text-xs font-semibold text-[#ffd42a] transition-colors hover:bg-[#ff6a00] hover:text-white"
+                  className="rounded-full bg-[var(--bg-primary)] px-3 py-1 text-[12px] font-semibold text-[var(--text-secondary)] transition-colors hover:bg-[var(--accent)] hover:text-white"
                 >
                   #{tag.trim()}
                 </Link>
@@ -121,59 +126,62 @@ export default async function Home() {
           </div>
         </article>
 
-        <div className="mt-6 space-y-5">
+        {/* REMAINING CARDS */}
+        <div className="mt-5 space-y-4">
           {remainingPosts.map((post) => (
             <article
               key={post.id}
-              className="overflow-hidden rounded-[18px] bg-[#252525] shadow-[0_10px_24px_rgba(0,0,0,0.18)]"
+              className="overflow-hidden rounded-2xl bg-[var(--bg-card)] border border-[var(--border)]"
             >
-              <Link href={`/posts/${post.id}`} className="block transition-transform hover:scale-[1.01]">
-                <div className="aspect-[16/9] w-full overflow-hidden bg-[#111111]">
+              <Link href={`/posts/${post.id}`} className="block">
+                {/* IMAGE with source badge overlay */}
+                <div className="relative w-full overflow-hidden" style={{ paddingTop: '56.25%' }}>
                   {post.image_url ? (
                     <img
                       src={post.image_url}
                       alt={post.title}
-                      className="h-full w-full object-cover object-center"
+                      className="absolute inset-0 h-full w-full object-cover object-center"
                     />
                   ) : (
-                    <div className="flex h-full w-full items-center justify-center text-sm text-gray-400">
+                    <div className="absolute inset-0 flex items-center justify-center bg-[#21262d] text-sm text-gray-400">
                       No Image Available
                     </div>
                   )}
+                  {/* SOURCE BADGE on image */}
+                  <span className="source-badge">
+                    {post.source_name}
+                  </span>
                 </div>
 
-                <div className="px-5 py-4 sm:px-6 sm:py-5">
-                  <div className="mb-3 flex flex-wrap items-center gap-2 text-xs sm:text-sm">
-                    <span className="rounded-full bg-[#ff6a00] px-3 py-1 font-bold uppercase text-white">
-                      {post.source_name}
-                    </span>
+                {/* CARD BODY */}
+                <div className="px-4 py-3 sm:px-[18px] sm:py-4">
+                  <div className="mb-2 flex items-center gap-2 text-[11.5px] text-[var(--text-muted)]" style={{ fontFamily: 'var(--font-en)' }}>
                     {post.published_at && (
-                      <span className="flex items-center gap-1 text-[#cfcfcf]">
+                      <span className="flex items-center gap-1">
                         <Clock size={13} />
                         {formatDistanceToNow(new Date(post.published_at), { addSuffix: true })}
                       </span>
                     )}
                   </div>
 
-                  <h3 className="mb-3 text-[24px] font-extrabold leading-tight text-[#ffd42a] sm:text-[28px] title-clamp-home">
-                    {shortenTitle(post.title, 82)}
+                  <h3 className="card-title mb-2 text-[var(--text-primary)]">
+                    {post.title}
                   </h3>
 
-                  <p className="mb-4 text-[17px] leading-7 text-[#f1f1f1] summary-copy-home">
-                    {buildPreview(post.summary, 70)}
+                  <p className="card-snippet mb-3">
+                    {buildPreview(post.summary, 100)}
                   </p>
-
-                  <div className="text-sm font-semibold text-[#ffb347]">Read full article</div>
                 </div>
               </Link>
 
-              <div className="px-5 pb-5 sm:px-6 sm:pb-6">
+              {/* TAGS */}
+              <div className="px-4 pb-4 sm:px-[18px]">
                 <div className="flex flex-wrap gap-2">
                   {post.tags?.slice(0, 4).map((tag: string) => (
                     <Link
                       key={tag}
                       href={`/?tag=${encodeURIComponent(tag.trim())}`}
-                      className="rounded-full border border-[#534400] bg-[#3a3100] px-3 py-1 text-xs font-semibold text-[#ffd42a] transition-colors hover:bg-[#ff6a00] hover:text-white"
+                      className="rounded-full bg-[var(--bg-primary)] px-3 py-1 text-[12px] font-semibold text-[var(--text-secondary)] transition-colors hover:bg-[var(--accent)] hover:text-white"
                     >
                       #{tag.trim()}
                     </Link>
