@@ -1,8 +1,16 @@
 import { supabase } from '../lib/supabase';
-import { Clock } from 'lucide-react';
+import { Clock, Menu, Search } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 
 export const revalidate = 60; // Revalidate every 60 seconds
+
+function stripHtml(value: string | null | undefined) {
+  return (value ?? '')
+    .replace(/<[^>]*>/g, ' ')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
 
 export default async function Home() {
   const { data: posts } = await supabase
@@ -13,10 +21,10 @@ export default async function Home() {
 
   if (!posts || posts.length === 0) {
     return (
-      <main className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
+      <main className="min-h-screen bg-[#1f1f1f] flex items-center justify-center p-4 text-white">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-800 mb-2">No News Available Yet</h1>
-          <p className="text-gray-500">The daemon is fetching articles. Check back soon.</p>
+          <h1 className="text-2xl font-bold text-yellow-400 mb-2">No News Available Yet</h1>
+          <p className="text-gray-300">The daemon is fetching articles. Check back soon.</p>
         </div>
       </main>
     );
@@ -26,59 +34,84 @@ export default async function Home() {
   const remainingPosts = posts.slice(1);
 
   return (
-    <main className="min-h-screen bg-[#181818] text-white pb-12">
-      {/* Top Navbar */}
-      <header className="bg-[#0d0d0d] shadow-lg sticky top-0 z-10 border-b border-[#333]">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-          <h1 className="text-2xl sm:text-3xl font-black text-yellow-400 tracking-tight">FRESHNEWS.TOP</h1>
-          <span className="text-xs sm:text-sm font-semibold bg-yellow-900 text-yellow-300 px-3 py-1 rounded-full">Malayalam</span>
+    <main className="min-h-screen bg-transparent text-white pb-10">
+      <header className="sticky top-0 z-20 bg-[#222222]">
+        <div className="mx-auto flex h-[88px] w-full max-w-[720px] items-center justify-between px-4">
+          <button
+            type="button"
+            aria-label="Open menu"
+            className="flex h-10 w-10 items-center justify-center text-[#ff6a00]"
+          >
+            <Menu size={24} strokeWidth={2.5} />
+          </button>
+          <div className="text-center">
+            <h1 className="text-[28px] font-black uppercase tracking-[0.14em] text-[#ffd42a] [text-shadow:0_2px_0_rgba(0,0,0,0.4)] sm:text-[30px]">
+              FRESHNEWS.TOP
+            </h1>
+          </div>
+          <button
+            type="button"
+            aria-label="Search"
+            className="flex h-10 w-10 items-center justify-center text-white"
+          >
+            <Search size={24} strokeWidth={2.5} />
+          </button>
         </div>
       </header>
 
-      <div className="max-w-7xl mx-auto px-3 sm:px-4 mt-6">
-        {/* Hero Post */}
-        <article className="mb-8 bg-[#232323] rounded-xl shadow-lg border border-[#333] overflow-hidden hover:shadow-2xl transition-shadow">
-          {/* Image Container - Fixed Height, Centered */}
-          <div className="w-full h-56 sm:h-72 md:h-80 bg-black flex items-center justify-center overflow-hidden">
+      <section className="mx-auto mt-8 w-full max-w-[720px] px-4">
+        <div className="mb-6 flex items-end justify-between gap-4 border-b border-[#3a3a3a] pb-3">
+          <div>
+            <div className="text-[18px] font-extrabold uppercase tracking-wide text-white">Latest</div>
+            <div className="mt-2 h-1 w-16 rounded-full bg-[#ff6a00]" />
+          </div>
+          <a href="/" className="text-sm font-semibold text-white sm:text-base">
+            കൂടുതല്‍ കാണിക്കുക
+          </a>
+        </div>
+
+        <article className="overflow-hidden rounded-[18px] bg-[#252525] shadow-[0_10px_24px_rgba(0,0,0,0.22)]">
+          <div className="aspect-[16/9] w-full overflow-hidden bg-[#111111]">
             {heroPost.image_url ? (
-              <img 
-                src={heroPost.image_url} 
-                alt={heroPost.title} 
-                className="w-full h-full object-cover"
+              <img
+                src={heroPost.image_url}
+                alt={heroPost.title}
+                className="h-full w-full object-cover object-center"
               />
             ) : (
-              <span className="text-gray-500">No Image Available</span>
+              <div className="flex h-full w-full items-center justify-center text-sm text-gray-400">
+                No Image Available
+              </div>
             )}
           </div>
-          
-          {/* Content */}
-          <div className="p-4 sm:p-6">
-            <div className="flex items-center gap-2 mb-2">
-              <span className="bg-yellow-600 text-white text-xs font-bold px-2 py-1 rounded uppercase">{heroPost.source_name}</span>
+
+          <div className="px-5 py-4 sm:px-6 sm:py-5">
+            <div className="mb-3 flex flex-wrap items-center gap-2 text-xs sm:text-sm">
+              <span className="rounded-full bg-[#ff6a00] px-3 py-1 font-bold uppercase text-white">
+                {heroPost.source_name}
+              </span>
               {heroPost.published_at && (
-                <span className="text-xs text-gray-400 flex items-center gap-1">
-                  <Clock size={12} />
+                <span className="flex items-center gap-1 text-[#cfcfcf]">
+                  <Clock size={13} />
                   {formatDistanceToNow(new Date(heroPost.published_at), { addSuffix: true })}
                 </span>
               )}
             </div>
-            
-            <h2 className="text-xl sm:text-2xl md:text-3xl font-bold leading-tight mb-3 text-yellow-400">
+
+            <h2 className="mb-3 text-[30px] font-extrabold leading-tight text-[#ffd42a] sm:text-[36px]">
               {heroPost.title}
             </h2>
-            
-            <div 
-              className="text-white text-sm sm:text-base leading-relaxed mb-4"
-              dangerouslySetInnerHTML={{ __html: heroPost.summary }}
-            />
-            
-            {/* Clickable Tags */}
-            <div className="flex gap-2 flex-wrap">
+
+            <p className="mb-4 text-[18px] leading-8 text-[#f1f1f1]">
+              {stripHtml(heroPost.summary)}
+            </p>
+
+            <div className="flex flex-wrap gap-2">
               {heroPost.tags?.map((tag: string) => (
                 <a
                   key={tag}
                   href={`/?tag=${encodeURIComponent(tag.trim())}`}
-                  className="text-xs bg-yellow-900 text-yellow-300 px-3 py-1 rounded-full hover:bg-yellow-700 hover:text-white transition-colors cursor-pointer"
+                  className="rounded-full border border-[#534400] bg-[#3a3100] px-3 py-1 text-xs font-semibold text-[#ffd42a] transition-colors hover:bg-[#ff6a00] hover:text-white"
                 >
                   #{tag.trim()}
                 </a>
@@ -87,54 +120,53 @@ export default async function Home() {
           </div>
         </article>
 
-        {/* Posts Grid */}
-        <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="mt-6 space-y-5">
           {remainingPosts.map((post) => (
-            <article 
-              key={post.id} 
-              className="bg-[#232323] rounded-xl shadow-lg border border-[#333] overflow-hidden hover:shadow-2xl transition-shadow cursor-pointer"
+            <article
+              key={post.id}
+              className="overflow-hidden rounded-[18px] bg-[#252525] shadow-[0_10px_24px_rgba(0,0,0,0.18)]"
             >
-              {/* Image Container - Fixed Height */}
-              <div className="w-full h-48 bg-black flex items-center justify-center overflow-hidden">
+              <div className="aspect-[16/9] w-full overflow-hidden bg-[#111111]">
                 {post.image_url ? (
-                  <img 
-                    src={post.image_url} 
-                    alt={post.title} 
-                    className="w-full h-full object-cover"
+                  <img
+                    src={post.image_url}
+                    alt={post.title}
+                    className="h-full w-full object-cover object-center"
                   />
                 ) : (
-                  <span className="text-gray-500 text-sm">No Image</span>
+                  <div className="flex h-full w-full items-center justify-center text-sm text-gray-400">
+                    No Image Available
+                  </div>
                 )}
               </div>
-              
-              {/* Content */}
-              <div className="p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <span className="text-xs font-bold text-yellow-400 uppercase">{post.source_name}</span>
+
+              <div className="px-5 py-4 sm:px-6 sm:py-5">
+                <div className="mb-3 flex flex-wrap items-center gap-2 text-xs sm:text-sm">
+                  <span className="rounded-full bg-[#ff6a00] px-3 py-1 font-bold uppercase text-white">
+                    {post.source_name}
+                  </span>
                   {post.published_at && (
-                    <span className="text-xs text-gray-400 flex items-center gap-1">
-                      <Clock size={10} />
+                    <span className="flex items-center gap-1 text-[#cfcfcf]">
+                      <Clock size={13} />
                       {formatDistanceToNow(new Date(post.published_at), { addSuffix: true })}
                     </span>
                   )}
                 </div>
-                
-                <h3 className="text-base sm:text-lg font-bold leading-tight mb-2 text-yellow-400 line-clamp-2">
+
+                <h3 className="mb-3 text-[24px] font-extrabold leading-tight text-[#ffd42a] sm:text-[28px]">
                   {post.title}
                 </h3>
-                
-                <div 
-                  className="text-white text-sm leading-relaxed mb-3 line-clamp-3"
-                  dangerouslySetInnerHTML={{ __html: post.summary }}
-                />
-                
-                {/* Clickable Tags */}
-                <div className="flex gap-2 flex-wrap">
-                  {post.tags?.slice(0, 3).map((tag: string) => (
+
+                <p className="mb-4 text-[17px] leading-7 text-[#f1f1f1] summary-copy">
+                  {stripHtml(post.summary)}
+                </p>
+
+                <div className="flex flex-wrap gap-2">
+                  {post.tags?.slice(0, 4).map((tag: string) => (
                     <a
                       key={tag}
                       href={`/?tag=${encodeURIComponent(tag.trim())}`}
-                      className="text-xs bg-yellow-900 text-yellow-300 px-2 py-1 rounded-full hover:bg-yellow-700 hover:text-white transition-colors cursor-pointer"
+                      className="rounded-full border border-[#534400] bg-[#3a3100] px-3 py-1 text-xs font-semibold text-[#ffd42a] transition-colors hover:bg-[#ff6a00] hover:text-white"
                     >
                       #{tag.trim()}
                     </a>
@@ -143,8 +175,8 @@ export default async function Home() {
               </div>
             </article>
           ))}
-        </section>
-      </div>
+        </div>
+      </section>
     </main>
   );
 }

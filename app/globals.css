@@ -1,0 +1,40 @@
+@import "tailwindcss";
+
+:root {
+  --background: #1f1f1f;
+  --foreground: #f4f4f4;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  background: #1f1f1f;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  background:
+    linear-gradient(180deg, #222222 0, #222222 88px, #2b2b2b 88px, #2b2b2b 100%);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+img {
+  display: block;
+  max-width: 100%;
+}
+
+.summary-copy {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
+}
