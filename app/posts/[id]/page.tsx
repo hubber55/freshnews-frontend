@@ -122,7 +122,7 @@ export default async function PostPage({ params }: PageProps) {
             )}
           </div>
 
-          <div className="space-y-5 text-[18px] leading-8 text-[#f1f1f1]">
+          <div className="article-body text-[18px] leading-8 text-[#f1f1f1]">
             {paragraphs.map((paragraph, index) => (
               <p key={`${post.id}-${index}`}>{paragraph}</p>
             ))}

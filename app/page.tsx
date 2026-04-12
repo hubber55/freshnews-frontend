@@ -99,7 +99,7 @@ export default async function Home() {
               </h2>
 
               <p className="mb-4 text-[18px] leading-7 text-[#f1f1f1] summary-copy-home">
-                {buildPreview(heroPost.summary, 120)}
+                {buildPreview(heroPost.summary, 80)}
               </p>
 
               <div className="text-sm font-semibold text-[#ffb347]">Read full article</div>
@@ -160,7 +160,7 @@ export default async function Home() {
                   </h3>
 
                   <p className="mb-4 text-[17px] leading-7 text-[#f1f1f1] summary-copy-home">
-                    {buildPreview(post.summary, 110)}
+                    {buildPreview(post.summary, 70)}
                   </p>
 
                   <div className="text-sm font-semibold text-[#ffb347]">Read full article</div>

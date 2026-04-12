@@ -17,6 +17,10 @@ export function stripHtml(value: string | null | undefined) {
     .trim();
 }
 
+/**
+ * Build a short snippet for homepage cards.
+ * For Malayalam text a char-limit of ~100 is roughly 2 lines.
+ */
 export function buildPreview(value: string | null | undefined, maxLength = 140) {
   const clean = stripHtml(value);
   if (!clean) {
@@ -41,18 +45,44 @@ export function buildPreview(value: string | null | undefined, maxLength = 140) 
   return `${preview.trim()}...`;
 }
 
+/**
+ * Split a summary (which may contain HTML paragraph / br tags) into
+ * real paragraphs for the detail page.
+ *
+ * Strategy:
+ *   1. Convert </p>, <br>, <br/> into \n\n  BEFORE stripping the rest of the
+ *      HTML so that paragraph boundaries survive.
+ *   2. Split on double-newlines.
+ *   3. If that yields fewer than 2 chunks, fall back to sentence-based splitting.
+ */
 export function splitParagraphs(value: string | null | undefined) {
-  const clean = value ?? '';
-  const explicitParagraphs = clean
+  const raw = value ?? '';
+
+  // -- Step 1: convert block-level boundaries to double-newlines -----------
+  const withBreaks = raw
+    .replace(/<\/p\s*>/gi, '\n\n')            // end of paragraph
+    .replace(/<br\s*\/?>/gi, '\n\n')           // <br> / <br/>
+    .replace(/<\/div\s*>/gi, '\n\n')           // end of div
+    .replace(/<\/li\s*>/gi, '\n\n')            // end of list item
+    .replace(/<\/h[1-6]\s*>/gi, '\n\n');       // end of heading
+
+  // -- Step 2: strip remaining tags, then split on newline clusters --------
+  const stripped = withBreaks
+    .replace(/<[^>]*>/g, '')                   // remove remaining tags
+    .replace(/&nbsp;/g, ' ')
+    .replace(/[ \t]+/g, ' ');                  // collapse spaces (keep newlines)
+
+  const explicitParagraphs = stripped
     .split(/\n{2,}/)
-    .map((part) => stripHtml(part))
+    .map((part) => part.trim())
     .filter(Boolean);
 
   if (explicitParagraphs.length >= 2) {
     return explicitParagraphs;
   }
 
-  const flattened = stripHtml(clean);
+  // -- Step 3: fallback – sentence-based splitting -------------------------
+  const flattened = stripped.replace(/\n+/g, ' ').replace(/\s+/g, ' ').trim();
   if (!flattened) {
     return [];
   }
@@ -73,6 +103,7 @@ export function splitParagraphs(value: string | null | undefined) {
     return chunks.filter(Boolean);
   }
 
+  // Very short content – split by word count
   const words = flattened.split(' ').filter(Boolean);
   const chunks: string[] = [];
 

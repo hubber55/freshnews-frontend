@@ -32,25 +32,28 @@ img {
   max-width: 100%;
 }
 
-.summary-copy {
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 3;
-  overflow: hidden;
-}
-
+/* Homepage card summary – strict 2-line clamp */
 .summary-copy-home {
   display: -webkit-box;
   -webkit-box-orient: vertical;
-  -webkit-line-clamp: 3;
+  -webkit-line-clamp: 2;
   overflow: hidden;
-  max-height: calc(1.75rem * 3);
 }
 
+/* Homepage title – strict 2-line clamp */
 .title-clamp-home {
   display: -webkit-box;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
   overflow: hidden;
-  max-height: calc(1.4em * 2);
+}
+
+/* Detail page article body paragraphs */
+.article-body p {
+  margin-bottom: 1.25em;
+  line-height: 1.9;
+}
+
+.article-body p:last-child {
+  margin-bottom: 0;
 }
