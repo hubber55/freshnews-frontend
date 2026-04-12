@@ -106,7 +106,7 @@ export default async function PostPage({ params }: PageProps) {
 
       <main className="pb-4">
         <article className="mx-auto mt-5 w-full max-w-[800px] px-4">
-          <div className="rounded-2xl bg-[var(--bg-card)] border border-[var(--border)] px-5 py-5 sm:px-6 sm:py-6">
+          <div className="rounded-2xl bg-[var(--bg-card)] border border-[var(--border)] px-7 py-6 sm:px-10 sm:py-8">
             {/* BREADCRUMB */}
             <div className="mb-4 flex flex-wrap items-center gap-2 text-[12px] text-[var(--text-muted)]" style={{ fontFamily: 'var(--font-en)' }}>
               <Link href="/" className="text-[var(--text-secondary)] hover:text-[#ffd42a]">
@@ -155,8 +155,8 @@ export default async function PostPage({ params }: PageProps) {
             </div>
 
             {/* TAGS – colorful */}
-            <div className="mt-6 flex flex-wrap gap-2 border-t border-[var(--border)] pt-5">
-              <span className="text-[13px] font-bold text-[var(--text-secondary)] mr-1" style={{ fontFamily: 'var(--font-en)' }}>Tags:</span>
+            <div className="mt-6 flex flex-wrap items-center gap-2 border-t border-[var(--border)] pt-5">
+              <span className="text-[12px] font-bold text-white bg-gray-700 px-2.5 py-1 rounded-md" style={{ fontFamily: 'var(--font-en)' }}>Tags</span>
               {post.tags?.map((tag: string) => (
                 <TagBadge key={tag} tag={tag} withHash={false} />
               ))}
@@ -165,13 +165,13 @@ export default async function PostPage({ params }: PageProps) {
             {/* SHARE BUTTONS */}
             <ShareButtons title={post.title} url={articleUrl} />
 
-            {/* BACK TO HOME – vivid big button */}
+            {/* BACK TO HOME BUTTON */}
             <div className="mt-8 text-center">
               <Link
                 href="/"
-                className="inline-flex items-center gap-2 rounded-xl bg-[#ffd42a] px-8 py-4 text-[18px] font-extrabold text-[#0d1117] shadow-lg transition-all hover:bg-[#ffe566] hover:shadow-xl hover:scale-[1.02] active:scale-95"
+                className="inline-flex items-center gap-2 rounded-lg bg-[#e91e63] px-6 py-3 text-[15px] font-bold text-white shadow-md transition-all hover:bg-[#c2185b] hover:shadow-lg hover:scale-[1.02] active:scale-95"
               >
-                <Home size={22} strokeWidth={2.5} />
+                <Home size={18} strokeWidth={2.5} />
                 Back to Home Page
               </Link>
             </div>

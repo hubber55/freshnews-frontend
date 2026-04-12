@@ -66,7 +66,7 @@ img {
 /* ===== HOMEPAGE SNIPPET ===== */
 .card-snippet {
   font-size: 13.5px;
-  color: var(--text-secondary);
+  color: #ffffff;
   line-height: 1.55;
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -89,7 +89,7 @@ img {
   letter-spacing: 0.8px;
   text-transform: uppercase;
   color: #fff;
-  background: linear-gradient(135deg, #00b894, #00cec9);
+  background: #e91e63;
   box-shadow: 0 2px 8px rgba(0,0,0,0.3);
 }
 
