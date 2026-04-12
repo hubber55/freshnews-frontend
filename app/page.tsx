@@ -1,4 +1,4 @@
-import { supabase } from '@/lib/supabase';
+import { supabase } from '../lib/supabase';
 import { Clock } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 
