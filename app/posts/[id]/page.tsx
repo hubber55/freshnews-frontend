@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { Clock, ChevronLeft, ChevronRight, Home } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -92,6 +92,14 @@ export default async function PostPage({ params }: PageProps) {
 
   if (!post) {
     notFound();
+  }
+
+  if (post.is_deleted) {
+    if (post.redirect_to) {
+      redirect(post.redirect_to);
+    } else {
+      redirect('/');
+    }
   }
 
   const paragraphs = splitParagraphs(post.summary);

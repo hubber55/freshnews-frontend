@@ -7,6 +7,8 @@ export type PostRecord = {
   tags?: string[] | null;
   published_at?: string | null;
   original_url?: string | null;
+  is_deleted?: boolean;
+  redirect_to?: string | null;
 };
 
 export function stripHtml(value: string | null | undefined) {

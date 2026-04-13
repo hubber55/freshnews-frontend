@@ -21,6 +21,7 @@ export default async function Home({ searchParams }: HomeProps) {
   let query = supabase
     .from('posts')
     .select('*')
+    .eq('is_deleted', false)
     .order('published_at', { ascending: false })
     .limit(50);
 
