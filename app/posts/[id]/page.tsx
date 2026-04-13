@@ -157,24 +157,34 @@ export default async function PostPage({ params }: PageProps) {
 
             {/* ARTICLE BODY */}
             <div className="article-body text-[var(--text-primary)]">
-              {paragraphs.map((paragraph, index) => (
-                <p key={`${post.id}-${index}`}>{paragraph}</p>
-              ))}
+              {paragraphs.map((paragraph, index) => {
+                const isCredit = paragraph.includes('Photo and News Source:');
+                return (
+                  <p 
+                    key={`${post.id}-${index}`}
+                    className={isCredit 
+                      ? "text-[10px] italic opacity-50 mt-10 mb-2 leading-relaxed tracking-wide" 
+                      : "mb-6 leading-loose"}
+                  >
+                    {paragraph}
+                  </p>
+                );
+              })}
             </div>
 
             {/* TAGS – colorful */}
             <div className="mt-8 flex flex-wrap items-center gap-3 border-t border-[var(--border)] pt-6">
               <span className="text-[12px] font-bold text-white bg-gray-700 px-3 py-1.5 rounded-md" style={{ fontFamily: 'var(--font-en)' }}>Tags</span>
-              {post.tags?.slice(0, 4).map((tag: string) => (
-                <TagBadge key={tag} tag={tag} withHash={false} />
+              {post.tags?.slice(0, 5).map((tag: string, i: number) => (
+                <TagBadge key={tag} tag={tag} withHash={false} index={i} />
               ))}
             </div>
 
             {/* SHARE BUTTONS */}
             <ShareButtons title={post.title} url={articleUrl} />
 
-            {/* BACK TO HOME BUTTON */}
-            <div className="mt-12 text-center border-t border-[var(--border)] pt-10 mb-8">
+            {/* BACK TO HOME BUTTON with Liberal Spacing */}
+            <div className="mt-56 text-center border-t border-[var(--border)] pt-20 mb-16">
               <Link
                 href="/"
                 className="inline-flex items-center gap-2 rounded-lg bg-[#e91e63] px-7 py-3.5 text-[16px] font-bold text-white shadow-md transition-all hover:bg-[#c2185b] hover:shadow-lg hover:scale-[1.02] active:scale-95"
@@ -202,9 +212,9 @@ export default async function PostPage({ params }: PageProps) {
                   <div className="min-w-0 flex-1">
                     <div className="mb-1 flex items-center gap-1 text-[11px] font-semibold text-[var(--text-muted)]" style={{ fontFamily: 'var(--font-en)' }}>
                       <ChevronLeft size={12} />
-                      വളരെ പഴയ
+                      Previous
                     </div>
-                    <div className="text-[13px] font-semibold leading-tight text-[var(--text-secondary)] group-hover:text-[#ffd42a] transition-colors line-clamp-2">
+                    <div className="text-[13px] font-semibold leading-tight text-[#00fbff] group-hover:text-[#ffd42a] transition-colors line-clamp-2">
                       {prevPost.title}
                     </div>
                   </div>
@@ -221,10 +231,10 @@ export default async function PostPage({ params }: PageProps) {
                 >
                   <div className="min-w-0 flex-1 text-right">
                     <div className="mb-1 flex items-center justify-end gap-1 text-[11px] font-semibold text-[var(--text-muted)]" style={{ fontFamily: 'var(--font-en)' }}>
-                      വളരെ പുതിയ
+                      Next
                       <ChevronRight size={12} />
                     </div>
-                    <div className="text-[13px] font-semibold leading-tight text-[var(--text-secondary)] group-hover:text-[#ffd42a] transition-colors line-clamp-2">
+                    <div className="text-[13px] font-semibold leading-tight text-[#ff0095] group-hover:text-[#ffd42a] transition-colors line-clamp-2">
                       {nextPost.title}
                     </div>
                   </div>
@@ -237,7 +247,13 @@ export default async function PostPage({ params }: PageProps) {
                   )}
                 </Link>
               ) : (
-                <div />
+                <Link
+                  href="/"
+                  className="group flex items-center justify-center gap-2 rounded-xl border border-dashed border-[var(--border)] p-3 text-[13px] font-bold text-[#ff0095] transition-all hover:bg-[var(--bg-card)] hover:border-[#ff0095]"
+                >
+                  Go Latest
+                  <ChevronRight size={16} />
+                </Link>
               )}
             </div>
           </div>

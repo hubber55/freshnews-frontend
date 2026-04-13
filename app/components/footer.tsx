@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Script from 'next/script';
 
 const FOOTER_LINKS = [
   { href: '/', label: 'Home' },
@@ -44,6 +45,36 @@ export default function Footer() {
           </p>
         </div>
       </div>
+
+      {/* Statcounter code for fresh News */}
+      <Script id="statcounter-config" strategy="afterInteractive">
+        {`
+          var sc_project=12790414; 
+          var sc_invisible=1; 
+          var sc_security="4b11f9fd"; 
+        `}
+      </Script>
+      <Script
+        src="https://www.statcounter.com/counter/counter.js"
+        strategy="afterInteractive"
+      />
+      <noscript>
+        <div className="statcounter">
+          <a
+            title="Web Analytics Made Easy - Statcounter"
+            href="https://statcounter.com/"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <img
+              className="statcounter"
+              src="https://c.statcounter.com/12790414/0/4b11f9fd/1/"
+              alt="Web Analytics Made Easy - Statcounter"
+              referrerPolicy="no-referrer-when-downgrade"
+            />
+          </a>
+        </div>
+      </noscript>
     </footer>
   );
 }

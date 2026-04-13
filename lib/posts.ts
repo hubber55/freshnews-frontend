@@ -79,38 +79,25 @@ export function splitParagraphs(value: string | null | undefined) {
     .map((part) => part.trim())
     .filter(Boolean);
 
-  if (explicitParagraphs.length >= 2) {
+  // If we already have good paragraphs, just return them
+  if (explicitParagraphs.length >= 3) {
     return explicitParagraphs;
   }
 
-  // -- Step 3: fallback – sentence-based splitting -------------------------
+  // -- Step 3: fallback – word-based grouping for continuous blocks ---------
+  // This ensures that even if AI didn't provide paragraphs, we FORCE them
+  // for readability on the site (splitting every 45-50 words).
   const flattened = stripped.replace(/\n+/g, ' ').replace(/\s+/g, ' ').trim();
   if (!flattened) {
     return [];
   }
 
-  const sentences = flattened
-    .split(/(?<=[.!?।॥])\s+/)
-    .map((item) => item.trim())
-    .filter(Boolean);
-
-  if (sentences.length >= 4) {
-    const chunkSize = Math.ceil(sentences.length / 4);
-    const chunks: string[] = [];
-
-    for (let index = 0; index < sentences.length; index += chunkSize) {
-      chunks.push(sentences.slice(index, index + chunkSize).join(' ').trim());
-    }
-
-    return chunks.filter(Boolean);
-  }
-
-  // Very short content – split by word count
   const words = flattened.split(' ').filter(Boolean);
   const chunks: string[] = [];
+  const wordsPerParagraph = 45;
 
-  for (let index = 0; index < words.length; index += 45) {
-    chunks.push(words.slice(index, index + 45).join(' ').trim());
+  for (let i = 0; i < words.length; i += wordsPerParagraph) {
+    chunks.push(words.slice(i, i + wordsPerParagraph).join(' ').trim());
   }
 
   return chunks.filter(Boolean);
