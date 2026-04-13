@@ -3,13 +3,18 @@ import { notFound } from 'next/navigation'
 import Link from 'next/link'
 import EditPostForm from './EditPostForm'
 
-export default async function EditPostPage({ params }: { params: { id: string } }) {
+export default async function EditPostPage({ 
+  params 
+}: { 
+  params: Promise<{ id: string }> 
+}) {
+  const { id } = await params;
   const supabase = await createClient()
 
   const { data: post, error } = await supabase
     .from('posts')
     .select('*')
-    .eq('id', params.id)
+    .eq('id', id)
     .single()
 
   if (error || !post) {
