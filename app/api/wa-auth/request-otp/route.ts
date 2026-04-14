@@ -24,7 +24,8 @@ async function sendOtpViaOpenWa(toDigits: string, otp: string) {
   //   POST /api/messages/send-text
   // and sometimes:
   //   POST /api/default/messages/send-text
-  const path = process.env.OPEN_WA_SENDTEXT_PATH || '/api/messages/send-text';
+  const rawPath = process.env.OPEN_WA_SENDTEXT_PATH || '/api/messages/send-text';
+  const path = rawPath.startsWith('/') ? rawPath : `/${rawPath}`;
   const apiKey = process.env.OPEN_WA_API_KEY || '';
 
   if (!baseUrl) {
@@ -38,11 +39,21 @@ async function sendOtpViaOpenWa(toDigits: string, otp: string) {
   const headers: Record<string, string> = { 'content-type': 'application/json' };
   if (apiKey) headers['x-api-key'] = apiKey;
 
-  const res = await fetch(`${baseUrl}${path}`, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify({ chatId, text }),
-  });
+  const body = JSON.stringify({ chatId, text });
+
+  const doPost = async (p: string) =>
+    fetch(`${baseUrl}${p}`, {
+      method: 'POST',
+      headers,
+      body,
+    });
+
+  let res = await doPost(path);
+  // If the instance is session-based, retry with /api/default/... on 404.
+  if (res.status === 404 && path.startsWith('/api/') && !path.startsWith('/api/default/')) {
+    const retryPath = path.replace(/^\/api\//, '/api/default/');
+    res = await doPost(retryPath);
+  }
 
   if (!res.ok) {
     const text = await res.text().catch(() => '');
