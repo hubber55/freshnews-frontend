@@ -6,23 +6,28 @@ import { formatDistanceToNow } from 'date-fns';
 import { hasMinimumWords, limitWords } from '../lib/posts';
 import Header from './components/header';
 import Footer from './components/footer';
+import TrackedLink from './components/TrackedLink';
 
 export const revalidate = 60;
 
 type HomeProps = {
-  searchParams: Promise<{ tag?: string }>;
+  searchParams: Promise<{ tag?: string; page?: string }>;
 };
 
 export default async function Home({ searchParams }: HomeProps) {
   const params = await searchParams;
   const activeTag = params.tag?.trim() || '';
+  const page = Math.max(1, Number.parseInt(params.page ?? '1', 10) || 1);
+  const pageSize = 50;
+  const overfetch = 200;
+  const from = (page - 1) * pageSize;
 
   let query = supabase
     .from('posts')
     .select('*')
     .eq('is_deleted', false)
     .order('published_at', { ascending: false })
-    .limit(70);
+    .range(from, from + overfetch - 1);
 
   // If a tag is selected, filter by it (Supabase array contains)
   if (activeTag) {
@@ -30,7 +35,9 @@ export default async function Home({ searchParams }: HomeProps) {
   }
 
   const { data: posts } = await query;
-  const eligiblePosts = (posts ?? []).filter((post) => hasMinimumWords(post.summary, 70));
+  const eligiblePostsAll = (posts ?? []).filter((post) => hasMinimumWords(post.summary, 70));
+  const eligiblePosts = eligiblePostsAll.slice(0, pageSize);
+  const hasNextPage = eligiblePostsAll.length > pageSize || (posts?.length ?? 0) === overfetch;
 
   if (eligiblePosts.length === 0) {
     return (
@@ -55,8 +62,9 @@ export default async function Home({ searchParams }: HomeProps) {
     );
   }
 
-  const heroPost = eligiblePosts[0];
-  const remainingPosts = eligiblePosts.slice(1);
+  const heroPost = page === 1 ? eligiblePosts[0] : null;
+  const remainingPosts = page === 1 ? eligiblePosts.slice(1) : eligiblePosts;
+  const baseParams = activeTag ? `tag=${encodeURIComponent(activeTag)}&` : '';
 
   return (
     <div className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)]">
@@ -82,39 +90,41 @@ export default async function Home({ searchParams }: HomeProps) {
           </div>
 
           {/* HERO CARD */}
-          <article className="overflow-hidden rounded-2xl bg-[var(--bg-card)] border border-[var(--border)]">
-            <Link href={`/posts/${heroPost.id}`} className="block">
-              <div className="relative w-full overflow-hidden" style={{ paddingTop: '56.25%' }}>
-                {heroPost.image_url ? (
-                  <img
-                    src={heroPost.image_url}
-                    alt={heroPost.title}
-                    className="absolute inset-0 h-full w-full object-cover object-center"
-                  />
-                ) : (
-                  <div className="absolute inset-0 flex items-center justify-center bg-[#21262d] text-sm text-[var(--text-muted)]">
-                    No Image Available
-                  </div>
-                )}
-                <span className="source-badge">{heroPost.source_name}</span>
-              </div>
-
-              <div className="px-5 py-3 sm:py-4">
-                <div className="mb-2 flex items-center gap-2 text-[11.5px] text-[var(--text-muted)]" style={{ fontFamily: 'var(--font-en)' }}>
-                  {heroPost.published_at && (
-                    <span className="flex items-center gap-1">
-                      <Clock size={13} />
-                      {formatDistanceToNow(new Date(heroPost.published_at), { addSuffix: true })}
-                    </span>
+          {heroPost && (
+            <article className="overflow-hidden rounded-2xl bg-[var(--bg-card)] border border-[var(--border)]">
+              <TrackedLink href={`/posts/${heroPost.id}`} className="block" trackEvent={{ postId: heroPost.id, eventType: 'click' }}>
+                <div className="relative w-full overflow-hidden" style={{ paddingTop: '56.25%' }}>
+                  {heroPost.image_url ? (
+                    <img
+                      src={heroPost.image_url}
+                      alt={heroPost.title}
+                      className="absolute inset-0 h-full w-full object-cover object-center"
+                    />
+                  ) : (
+                    <div className="absolute inset-0 flex items-center justify-center bg-[#21262d] text-sm text-[var(--text-muted)]">
+                      No Image Available
+                    </div>
                   )}
+                  <span className="source-badge">{heroPost.source_name}</span>
                 </div>
 
-                <h2 className="card-title-hero mb-2 text-white">
-                  {limitWords(heroPost.title, 10)}
-                </h2>
-              </div>
-            </Link>
-          </article>
+                <div className="px-5 py-3 sm:py-4">
+                  <div className="mb-2 flex items-center gap-2 text-[11.5px] text-[var(--text-muted)]" style={{ fontFamily: 'var(--font-en)' }}>
+                    {heroPost.published_at && (
+                      <span className="flex items-center gap-1">
+                        <Clock size={13} />
+                        {formatDistanceToNow(new Date(heroPost.published_at), { addSuffix: true })}
+                      </span>
+                    )}
+                  </div>
+
+                  <h2 className="card-title-hero mb-2 text-white">
+                    {limitWords(heroPost.title, 10)}
+                  </h2>
+                </div>
+              </TrackedLink>
+            </article>
+          )}
 
           {/* REMAINING CARDS */}
           <div className="mt-6 space-y-7">
@@ -123,7 +133,7 @@ export default async function Home({ searchParams }: HomeProps) {
                 key={post.id}
                 className="overflow-hidden rounded-2xl bg-[var(--bg-card)] border border-[var(--border)]"
               >
-                <Link href={`/posts/${post.id}`} className="block">
+                <TrackedLink href={`/posts/${post.id}`} className="block" trackEvent={{ postId: post.id, eventType: 'click' }}>
                   <div className="relative w-full overflow-hidden" style={{ paddingTop: '56.25%' }}>
                     {post.image_url ? (
                       <img
@@ -153,9 +163,40 @@ export default async function Home({ searchParams }: HomeProps) {
                       {limitWords(post.title, 10)}
                     </h3>
                   </div>
-                </Link>
+                </TrackedLink>
               </article>
             ))}
+          </div>
+
+          {/* PAGINATION */}
+          <div className="mt-10 flex items-center justify-between border-t border-[var(--border)] pt-6">
+            {page > 1 ? (
+              <Link
+                href={`/?${baseParams}page=${page - 1}`}
+                className="rounded-lg border border-[var(--border)] bg-[var(--bg-card)] px-4 py-2 text-[13px] font-bold text-white hover:border-white/30"
+                style={{ fontFamily: 'var(--font-en)' }}
+              >
+                ← Previous
+              </Link>
+            ) : (
+              <span />
+            )}
+
+            <span className="text-[12px] font-semibold text-[var(--text-muted)]" style={{ fontFamily: 'var(--font-en)' }}>
+              Page {page}
+            </span>
+
+            {hasNextPage ? (
+              <Link
+                href={`/?${baseParams}page=${page + 1}`}
+                className="rounded-lg border border-[var(--border)] bg-[var(--bg-card)] px-4 py-2 text-[13px] font-bold text-white hover:border-white/30"
+                style={{ fontFamily: 'var(--font-en)' }}
+              >
+                Next →
+              </Link>
+            ) : (
+              <span />
+            )}
           </div>
         </section>
       </main>

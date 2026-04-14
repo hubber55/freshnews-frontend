@@ -203,7 +203,7 @@ export default async function PostPage({ params }: PageProps) {
             </div>
 
             {/* SHARE BUTTONS */}
-            <ShareButtons title={post.title} url={articleUrl} />
+            <ShareButtons postId={post.id} title={post.title} url={articleUrl} />
 
             {/* BACK TO HOME BUTTON with Liberal Spacing */}
             <div className="mt-56 text-center border-t border-[var(--border)] pt-20 mb-16">
