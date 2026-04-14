@@ -64,23 +64,19 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
   const siteUrl = getSiteUrl();
   const articleUrl = `${siteUrl}/posts/${post.id}`;
-  const description = stripHtml(post.summary).slice(0, 220);
 
   return {
     title: `${post.title} | FreshNews.top`,
-    description,
     alternates: { canonical: articleUrl },
     openGraph: {
       type: 'article',
       url: articleUrl,
       title: post.title,
-      description,
       images: post.image_url ? [{ url: post.image_url, alt: post.title }] : undefined,
     },
     twitter: {
       card: post.image_url ? 'summary_large_image' : 'summary',
       title: post.title,
-      description,
       images: post.image_url ? [post.image_url] : undefined,
     },
   };
