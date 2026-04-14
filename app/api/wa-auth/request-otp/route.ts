@@ -20,7 +20,11 @@ function hashOtp(otp: string) {
 
 async function sendOtpViaOpenWa(toDigits: string, otp: string) {
   const baseUrl = (process.env.OPEN_WA_BASE_URL || '').replace(/\/+$/, '');
-  const path = process.env.OPEN_WA_SENDTEXT_PATH || '/sendText';
+  // wa-automate / open-wa easy API commonly exposes:
+  //   POST /api/messages/send-text
+  // and sometimes:
+  //   POST /api/default/messages/send-text
+  const path = process.env.OPEN_WA_SENDTEXT_PATH || '/api/messages/send-text';
   const apiKey = process.env.OPEN_WA_API_KEY || '';
 
   if (!baseUrl) {
@@ -29,7 +33,7 @@ async function sendOtpViaOpenWa(toDigits: string, otp: string) {
 
   // open-wa commonly expects chatId like "911234567890@c.us"
   const chatId = `${toDigits}@c.us`;
-  const message = `Your FreshNews OTP is: ${otp}`;
+  const text = `Your FreshNews OTP is: ${otp}`;
 
   const headers: Record<string, string> = { 'content-type': 'application/json' };
   if (apiKey) headers['x-api-key'] = apiKey;
@@ -37,7 +41,7 @@ async function sendOtpViaOpenWa(toDigits: string, otp: string) {
   const res = await fetch(`${baseUrl}${path}`, {
     method: 'POST',
     headers,
-    body: JSON.stringify({ chatId, message }),
+    body: JSON.stringify({ chatId, text }),
   });
 
   if (!res.ok) {
@@ -79,4 +83,3 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: e?.message || 'Failed' }, { status: 500 });
   }
 }
-
