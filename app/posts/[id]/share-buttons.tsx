@@ -10,6 +10,8 @@ type ShareButtonsProps = {
 export default function ShareButtons({ title, url }: ShareButtonsProps) {
   const encodedUrl = encodeURIComponent(url);
   const encodedTitle = encodeURIComponent(title);
+  const whatsappTagline = '_Latest News- Also Submit your News/ Classifieds for free_';
+  const encodedWhatsappTagline = encodeURIComponent(whatsappTagline);
   const [copied, setCopied] = useState(false);
 
   const handleNativeShare = async () => {
@@ -111,7 +113,7 @@ export default function ShareButtons({ title, url }: ShareButtonsProps) {
 
         {/* WhatsApp */}
         <a
-          href={`https://api.whatsapp.com/send?text=${encodedTitle}%20${encodedUrl}`}
+          href={`https://api.whatsapp.com/send?text=${encodedTitle}%0A${encodedUrl}%0A%0A${encodedWhatsappTagline}`}
           target="_blank"
           rel="noopener noreferrer"
           className="inline-flex items-center gap-2 rounded-lg bg-[#075e54] px-5 py-3 text-sm font-bold text-white shadow-md transition-all hover:brightness-110 hover:shadow-lg active:scale-95"
