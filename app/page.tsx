@@ -64,7 +64,7 @@ export default async function Home({ searchParams }: HomeProps) {
 
       <main className="pb-4">
         {/* SECTION HEADER */}
-        <section className="mx-auto mt-5 w-full max-w-[800px] px-4">
+        <section className="mx-auto mt-5 w-full max-w-[800px] px-5 sm:px-6">
           <div className="mb-4 flex items-end justify-between gap-4 border-b border-[var(--border)] pb-3">
             <div>
               <div className="text-[15px] font-extrabold uppercase tracking-wide text-[var(--text-primary)]" style={{ fontFamily: 'var(--font-en)' }}>
@@ -117,7 +117,7 @@ export default async function Home({ searchParams }: HomeProps) {
           </article>
 
           {/* REMAINING CARDS */}
-          <div className="mt-6 space-y-4">
+          <div className="mt-6 space-y-7">
             {remainingPosts.map((post) => (
               <article
                 key={post.id}

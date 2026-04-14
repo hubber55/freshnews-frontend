@@ -44,7 +44,7 @@ img {
 
 /* ===== HOMEPAGE CARD TITLE ===== */
 .card-title {
-  font-size: 17px;
+  font-size: 18px;
   font-weight: 700;
   line-height: 1.45;
   display: -webkit-box;
@@ -54,7 +54,7 @@ img {
 }
 
 .card-title-hero {
-  font-size: 20px;
+  font-size: 21px;
   font-weight: 700;
   line-height: 1.45;
   display: -webkit-box;
@@ -134,7 +134,7 @@ img {
 /* ===== RESPONSIVE ===== */
 @media (min-width: 640px) {
   .card-title-hero {
-    font-size: 24px;
+    font-size: 25px;
   }
   .post-title {
     font-size: 28px;
