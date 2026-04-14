@@ -19,6 +19,29 @@ export function stripHtml(value: string | null | undefined) {
     .trim();
 }
 
+export function hasMinimumWords(value: string | null | undefined, minWords = 70) {
+  const clean = stripHtml(value);
+  if (!clean) {
+    return false;
+  }
+
+  return clean.split(/\s+/).filter(Boolean).length >= minWords;
+}
+
+export function limitWords(value: string | null | undefined, maxWords = 10) {
+  const clean = stripHtml(value);
+  if (!clean) {
+    return '';
+  }
+
+  const words = clean.split(/\s+/).filter(Boolean);
+  if (words.length <= maxWords) {
+    return clean;
+  }
+
+  return `${words.slice(0, maxWords).join(' ')}...`;
+}
+
 /**
  * Build a short snippet for homepage cards.
  * For Malayalam text a char-limit of ~100 is roughly 2 lines.
@@ -86,7 +109,7 @@ export function splitParagraphs(value: string | null | undefined) {
 
   // -- Step 3: fallback – word-based grouping for continuous blocks ---------
   // This ensures that even if AI didn't provide paragraphs, we FORCE them
-  // for readability on the site (splitting every 45-50 words).
+  // for readability on the site (splitting every ~70 words).
   const flattened = stripped.replace(/\n+/g, ' ').replace(/\s+/g, ' ').trim();
   if (!flattened) {
     return [];
@@ -94,7 +117,7 @@ export function splitParagraphs(value: string | null | undefined) {
 
   const words = flattened.split(' ').filter(Boolean);
   const chunks: string[] = [];
-  const wordsPerParagraph = 45;
+  const wordsPerParagraph = 70;
 
   for (let i = 0; i < words.length; i += wordsPerParagraph) {
     chunks.push(words.slice(i, i + wordsPerParagraph).join(' ').trim());

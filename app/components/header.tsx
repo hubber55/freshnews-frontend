@@ -12,7 +12,11 @@ const NAV_LINKS = [
   { href: '/contact', label: 'Contact Us' },
 ];
 
-export default function Header() {
+type HeaderProps = {
+  titleColorClass?: string;
+};
+
+export default function Header({ titleColorClass = 'text-[#ffd42a]' }: HeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false);
 
   return (
@@ -28,7 +32,7 @@ export default function Header() {
             <Menu size={22} strokeWidth={2.5} />
           </button>
           <Link href="/" className="text-center">
-            <span className="text-[20px] font-extrabold uppercase tracking-[0.1em] text-[#ffd42a]" style={{ fontFamily: 'var(--font-en)' }}>
+            <span className={`text-[20px] font-extrabold uppercase tracking-[0.1em] ${titleColorClass}`} style={{ fontFamily: 'var(--font-en)' }}>
               FRESHNEWS.TOP
             </span>
           </Link>

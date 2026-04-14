@@ -5,7 +5,7 @@ import { Clock, ChevronLeft, ChevronRight, Home } from 'lucide-react';
 import { format } from 'date-fns';
 
 import { supabase } from '../../../lib/supabase';
-import { getSiteUrl, splitParagraphs, stripHtml, type PostRecord } from '../../../lib/posts';
+import { getSiteUrl, limitWords, splitParagraphs, stripHtml, type PostRecord } from '../../../lib/posts';
 import ShareButtons from './share-buttons';
 import Header from '../../components/header';
 import Footer from '../../components/footer';
@@ -103,6 +103,29 @@ export default async function PostPage({ params }: PageProps) {
   }
 
   const paragraphs = splitParagraphs(post.summary);
+  const bodyItems = paragraphs.flatMap((paragraph) => {
+    const creditPrefix = 'Photo and News Source:';
+    const creditIndex = paragraph.indexOf(creditPrefix);
+
+    if (creditIndex < 0) {
+      return [{ text: paragraph, isCredit: false }];
+    }
+
+    const before = paragraph.slice(0, creditIndex).trim();
+    const after = paragraph.slice(creditIndex + creditPrefix.length).trim();
+    const result: Array<{ text: string; isCredit: boolean }> = [];
+
+    if (before) {
+      result.push({ text: before, isCredit: false });
+    }
+
+    result.push({
+      text: `${creditPrefix}${after ? ` ${after}` : ''}`,
+      isCredit: true,
+    });
+
+    return result;
+  });
   const publishedDate = post.published_at ? new Date(post.published_at) : null;
   const articleUrl = `${getSiteUrl()}/posts/${post.id}`;
 
@@ -124,8 +147,8 @@ export default async function PostPage({ params }: PageProps) {
               <span>{post.source_name}</span>
             </div>
 
-            {/* TITLE – yellow */}
-            <h1 className="post-title mb-5 text-[#ffd42a]">
+            {/* TITLE */}
+            <h1 className="post-title mb-5 text-[#00cfff]">
               {post.title}
             </h1>
 
@@ -157,16 +180,15 @@ export default async function PostPage({ params }: PageProps) {
 
             {/* ARTICLE BODY */}
             <div className="article-body text-[var(--text-primary)]">
-              {paragraphs.map((paragraph, index) => {
-                const isCredit = paragraph.includes('Photo and News Source:');
+              {bodyItems.map((item, index) => {
                 return (
                   <p 
                     key={`${post.id}-${index}`}
-                    className={isCredit 
-                      ? "text-[10px] italic opacity-50 mt-10 mb-2 leading-relaxed tracking-wide" 
+                    className={item.isCredit 
+                      ? "text-[10px] italic opacity-60 mt-12 mb-2 leading-relaxed tracking-wide" 
                       : "mb-6 leading-loose"}
                   >
-                    {paragraph}
+                    {item.text}
                   </p>
                 );
               })}
@@ -187,7 +209,7 @@ export default async function PostPage({ params }: PageProps) {
             <div className="mt-56 text-center border-t border-[var(--border)] pt-20 mb-16">
               <Link
                 href="/"
-                className="inline-flex items-center gap-2 rounded-lg bg-[#e91e63] px-7 py-3.5 text-[16px] font-bold text-white shadow-md transition-all hover:bg-[#c2185b] hover:shadow-lg hover:scale-[1.02] active:scale-95"
+                className="inline-flex items-center gap-2 rounded-lg bg-[#90ee90] px-7 py-3.5 text-[16px] font-bold text-[#0d1117] shadow-md transition-all hover:bg-[#74d774] hover:shadow-lg hover:scale-[1.02] active:scale-95"
               >
                 <Home size={18} strokeWidth={2.5} />
                 Back to Home Page
@@ -214,8 +236,8 @@ export default async function PostPage({ params }: PageProps) {
                       <ChevronLeft size={12} />
                       Previous
                     </div>
-                    <div className="text-[13px] font-semibold leading-tight text-[#00fbff] group-hover:text-[#ffd42a] transition-colors line-clamp-2">
-                      {prevPost.title}
+                    <div className="text-[13px] font-semibold leading-tight text-[#ffd42a] group-hover:text-[#ffe98a] transition-colors line-clamp-2">
+                      {limitWords(prevPost.title, 10)}
                     </div>
                   </div>
                 </Link>
@@ -234,8 +256,8 @@ export default async function PostPage({ params }: PageProps) {
                       Next
                       <ChevronRight size={12} />
                     </div>
-                    <div className="text-[13px] font-semibold leading-tight text-[#ff0095] group-hover:text-[#ffd42a] transition-colors line-clamp-2">
-                      {nextPost.title}
+                    <div className="text-[13px] font-semibold leading-tight text-[#90ee90] group-hover:text-[#b5f5b5] transition-colors line-clamp-2">
+                      {limitWords(nextPost.title, 10)}
                     </div>
                   </div>
                   {nextPost.image_url && (
@@ -249,7 +271,7 @@ export default async function PostPage({ params }: PageProps) {
               ) : (
                 <Link
                   href="/"
-                  className="group flex items-center justify-center gap-2 rounded-xl border border-dashed border-[var(--border)] p-3 text-[13px] font-bold text-[#ff0095] transition-all hover:bg-[var(--bg-card)] hover:border-[#ff0095]"
+                  className="group flex items-center justify-center gap-2 rounded-xl border border-dashed border-[var(--border)] p-3 text-[13px] font-bold text-[#90ee90] transition-all hover:bg-[var(--bg-card)] hover:border-[#90ee90]"
                 >
                   Go Latest
                   <ChevronRight size={16} />

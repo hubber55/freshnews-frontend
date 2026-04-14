@@ -3,10 +3,9 @@ import Link from 'next/link';
 import { supabase } from '../lib/supabase';
 import { Clock } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
-import { buildPreview } from '../lib/posts';
+import { hasMinimumWords, limitWords } from '../lib/posts';
 import Header from './components/header';
 import Footer from './components/footer';
-import TagBadge from './components/tag-badge';
 
 export const revalidate = 60;
 
@@ -23,7 +22,7 @@ export default async function Home({ searchParams }: HomeProps) {
     .select('*')
     .eq('is_deleted', false)
     .order('published_at', { ascending: false })
-    .limit(50);
+    .limit(70);
 
   // If a tag is selected, filter by it (Supabase array contains)
   if (activeTag) {
@@ -31,19 +30,20 @@ export default async function Home({ searchParams }: HomeProps) {
   }
 
   const { data: posts } = await query;
+  const eligiblePosts = (posts ?? []).filter((post) => hasMinimumWords(post.summary, 70));
 
-  if (!posts || posts.length === 0) {
+  if (eligiblePosts.length === 0) {
     return (
       <div className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)]">
-        <Header />
+        <Header titleColorClass="text-white" />
         <main className="flex items-center justify-center p-8">
           <div className="text-center">
-            <h2 className="text-2xl font-bold text-[#ffd42a] mb-2">
+            <h2 className="text-2xl font-bold text-white mb-2">
               {activeTag ? `No articles tagged "${activeTag}"` : 'No News Available Yet'}
             </h2>
             <p className="text-[var(--text-secondary)]">
               {activeTag ? (
-                <Link href="/" className="text-[#ffd42a] hover:underline">← Back to all news</Link>
+                <Link href="/" className="text-white hover:underline">← Back to all news</Link>
               ) : (
                 'The daemon is fetching articles. Check back soon.'
               )}
@@ -55,12 +55,12 @@ export default async function Home({ searchParams }: HomeProps) {
     );
   }
 
-  const heroPost = posts[0];
-  const remainingPosts = posts.slice(1);
+  const heroPost = eligiblePosts[0];
+  const remainingPosts = eligiblePosts.slice(1);
 
   return (
     <div className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)]">
-      <Header />
+      <Header titleColorClass="text-white" />
 
       <main className="pb-4">
         {/* SECTION HEADER */}
@@ -77,9 +77,7 @@ export default async function Home({ searchParams }: HomeProps) {
                 ← All News
               </Link>
             ) : (
-              <span className="text-[13px] font-semibold text-[var(--text-secondary)]">
-                കൂടുതല്‍ കാണിക്കുക
-              </span>
+              null
             )}
           </div>
 
@@ -111,13 +109,9 @@ export default async function Home({ searchParams }: HomeProps) {
                   )}
                 </div>
 
-                <h2 className="card-title-hero mb-2 text-[#ffd42a]">
-                  {heroPost.title}
+                <h2 className="card-title-hero mb-2 text-white">
+                  {limitWords(heroPost.title, 10)}
                 </h2>
-
-                <p className="card-snippet mb-3">
-                  {buildPreview(heroPost.summary, 120)}
-                </p>
               </div>
             </Link>
           </article>
@@ -155,13 +149,9 @@ export default async function Home({ searchParams }: HomeProps) {
                       )}
                     </div>
 
-                    <h3 className="card-title mb-2 text-[#ffd42a]">
-                      {post.title}
+                    <h3 className="card-title mb-2 text-white">
+                      {limitWords(post.title, 10)}
                     </h3>
-
-                    <p className="card-snippet mb-3">
-                      {buildPreview(post.summary, 100)}
-                    </p>
                   </div>
                 </Link>
               </article>
