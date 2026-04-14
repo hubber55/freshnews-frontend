@@ -28,9 +28,6 @@ export default function AuthCallbackPage() {
         // Most recovery/magic links land with tokens in the hash fragment.
         if (access_token && refresh_token) {
           await supabase.auth.setSession({ access_token, refresh_token });
-        } else {
-          // Fallback for flows that might use code in query.
-          await supabase.auth.getSessionFromUrl({ storeSession: true });
         }
       } catch {
         // ignore
