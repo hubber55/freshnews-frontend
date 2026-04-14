@@ -8,16 +8,20 @@ type ShareButtonsProps = {
 };
 
 export default function ShareButtons({ title, url }: ShareButtonsProps) {
+  const whatsappTagline = '_Latest News- Also Submit your News/ Classifieds for free_';
+  const whatsappMessage = `${title}\n${url}\n\n${whatsappTagline}`;
   const encodedUrl = encodeURIComponent(url);
   const encodedTitle = encodeURIComponent(title);
-  const whatsappTagline = '_Latest News- Also Submit your News/ Classifieds for free_';
-  const encodedWhatsappTagline = encodeURIComponent(whatsappTagline);
+  const encodedWhatsappMessage = encodeURIComponent(whatsappMessage);
   const [copied, setCopied] = useState(false);
 
   const handleNativeShare = async () => {
     if (typeof navigator !== 'undefined' && navigator.share) {
       try {
-        await navigator.share({ title, url });
+        await navigator.share({
+          title,
+          text: `${title}\n${url}\n\n${whatsappTagline}`,
+        });
         return;
       } catch {
         // User cancelled or share failed – fall through to clipboard
@@ -113,7 +117,7 @@ export default function ShareButtons({ title, url }: ShareButtonsProps) {
 
         {/* WhatsApp */}
         <a
-          href={`https://api.whatsapp.com/send?text=${encodedTitle}%0A${encodedUrl}%0A%0A${encodedWhatsappTagline}`}
+          href={`https://wa.me/?text=${encodedWhatsappMessage}`}
           target="_blank"
           rel="noopener noreferrer"
           className="inline-flex items-center gap-2 rounded-lg bg-[#075e54] px-5 py-3 text-sm font-bold text-white shadow-md transition-all hover:brightness-110 hover:shadow-lg active:scale-95"
