@@ -3,6 +3,8 @@ import Script from 'next/script';
 
 const FOOTER_LINKS = [
   { href: '/', label: 'Home' },
+  { href: '/login', label: 'Login' },
+  { href: '/signup', label: 'Sign Up' },
   { href: '/about', label: 'About Us' },
   { href: '/privacy', label: 'Privacy Policy' },
   { href: '/tos', label: 'Terms of Service' },
