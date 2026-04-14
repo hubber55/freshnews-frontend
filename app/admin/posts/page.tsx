@@ -99,9 +99,17 @@ export default async function AdminPostsPage() {
                 <td className="px-6 py-4 text-[var(--text-muted)]">
                   {post.published_at ? format(new Date(post.published_at), 'MMM d, yyyy') : 'N/A'}
                 </td>
-                <td className="px-6 py-4 font-semibold text-white">{m.clickSessions}</td>
-                <td className="px-6 py-4 text-[12px] text-[var(--text-secondary)]" style={{ fontFamily: 'var(--font-en)' }}>
-                  FB {m.fb} · X {m.x} · TG {m.telegram} · WA {m.whatsapp} · Native {m.native}
+                <td className="px-6 py-4 font-semibold">
+                  <span className={m.clickSessions > 0 ? 'text-[#00cfff]' : 'text-white'}>{m.clickSessions}</span>
+                </td>
+                <td className="px-6 py-4 text-[12px]" style={{ fontFamily: 'var(--font-en)' }}>
+                  <span className={m.fb > 0 ? 'text-[#00cfff] font-bold' : 'text-[var(--text-secondary)]'}>FB {m.fb}</span>
+                  <span className="text-[var(--text-secondary)]"> · </span>
+                  <span className={m.telegram > 0 ? 'text-[#ff0095] font-bold' : 'text-[var(--text-secondary)]'}>TG {m.telegram}</span>
+                  <span className="text-[var(--text-secondary)]"> · </span>
+                  <span className={m.whatsapp > 0 ? 'text-[#ffd42a] font-bold' : 'text-[var(--text-secondary)]'}>WA {m.whatsapp}</span>
+                  <span className="text-[var(--text-secondary)]"> · </span>
+                  <span className={m.native > 0 ? 'text-[#90ee90] font-bold' : 'text-[var(--text-secondary)]'}>Native {m.native}</span>
                 </td>
                 <td className="px-6 py-4">
                   {post.is_deleted ? (
