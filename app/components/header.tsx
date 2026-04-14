@@ -6,6 +6,8 @@ import { Menu, X, Search } from 'lucide-react';
 
 const NAV_LINKS = [
   { href: '/', label: 'Home' },
+  { href: '/login', label: 'Login' },
+  { href: '/signup', label: 'Sign Up' },
   { href: '/about', label: 'About Us' },
   { href: '/privacy', label: 'Privacy Policy' },
   { href: '/tos', label: 'Terms of Service' },
