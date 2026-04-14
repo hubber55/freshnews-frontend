@@ -11,7 +11,7 @@ export default function ShareButtons({ title, url }: ShareButtonsProps) {
   const whatsappTagline = '_Latest News- Also Submit your News/ Classifieds for free_';
   const encodedUrl = encodeURIComponent(url);
   const encodedTitle = encodeURIComponent(title);
-  const encodedWhatsappUrlOnly = encodeURIComponent(url);
+  const encodedWhatsappUrlAndTagline = encodeURIComponent(`${url}\n\n${whatsappTagline}`);
   const [copied, setCopied] = useState(false);
 
   const handleNativeShare = async () => {
@@ -19,7 +19,8 @@ export default function ShareButtons({ title, url }: ShareButtonsProps) {
       try {
         await navigator.share({
           title,
-          text: `${title}\n${url}\n\n${whatsappTagline}`,
+          text: whatsappTagline,
+          url,
         });
         return;
       } catch {
@@ -44,7 +45,7 @@ export default function ShareButtons({ title, url }: ShareButtonsProps) {
     }
 
     if (typeof window !== 'undefined') {
-      window.open(`https://wa.me/?text=${encodedWhatsappUrlOnly}`, '_blank', 'noopener,noreferrer');
+      window.open(`https://wa.me/?text=${encodedWhatsappUrlAndTagline}`, '_blank', 'noopener,noreferrer');
     }
   };
 
