@@ -207,9 +207,10 @@ export default async function PostPage({ params }: PageProps) {
 
             {/* BACK TO HOME BUTTON with Liberal Spacing */}
             <div className="mt-56 text-center border-t border-[var(--border)] pt-20 mb-16">
+              <div className="h-8" />
               <Link
                 href="/"
-                className="inline-flex items-center gap-2 rounded-lg bg-[#90ee90] px-7 py-3.5 text-[16px] font-bold text-[#0d1117] shadow-md transition-all hover:bg-[#74d774] hover:shadow-lg hover:scale-[1.02] active:scale-95"
+                className="inline-flex items-center gap-2 rounded-lg bg-[#000080] px-7 py-3.5 text-[16px] font-bold text-white shadow-md transition-all hover:bg-[#000066] hover:shadow-lg hover:scale-[1.02] active:scale-95"
               >
                 <Home size={18} strokeWidth={2.5} />
                 Back to Home Page
