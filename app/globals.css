@@ -101,12 +101,12 @@ img {
 }
 
 .article-body {
-  font-size: 17px;
-  line-height: 1.85;
+  font-size: 19px;
+  line-height: 1.9;
 }
 
 .article-body p {
-  margin-bottom: 18px;
+  margin-bottom: 22px;
 }
 
 .article-body p:last-child {
@@ -138,5 +138,8 @@ img {
   }
   .post-title {
     font-size: 28px;
+  }
+  .article-body {
+    font-size: 20px;
   }
 }
