@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@/app/utils/supabase/client';
 
 function parseHashParams(hash: string) {
@@ -15,9 +14,6 @@ function parseHashParams(hash: string) {
 }
 
 export default function AuthCallbackPage() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-
   useEffect(() => {
     const run = async () => {
       const supabase = createClient();
@@ -36,7 +32,8 @@ export default function AuthCallbackPage() {
       try {
         const { data } = await supabase.auth.getUser();
         if (data?.user) {
-          const next = searchParams.get('next') || '/admin/posts';
+          const params = new URLSearchParams(window.location.search);
+          const next = params.get('next') || '/admin/posts';
           window.location.replace(next);
           return;
         }
@@ -49,7 +46,7 @@ export default function AuthCallbackPage() {
     };
 
     run();
-  }, [router, searchParams]);
+  }, []);
 
   return (
     <main className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)] flex items-center justify-center p-6">
