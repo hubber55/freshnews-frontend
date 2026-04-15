@@ -41,7 +41,10 @@ async function sendOtpViaOpenWa(toDigits: string, otp: string) {
   const headers: Record<string, string> = { 'content-type': 'application/json' };
   if (apiKey) headers['x-api-key'] = apiKey;
 
-  const body = JSON.stringify({ args: { to, content: text } });
+  // Some Easy API builds expect args as an ordered array for path requests.
+  // We'll try the object form first (as shown in Swagger) and fall back to array form.
+  const bodyObject = JSON.stringify({ args: { to, content: text } });
+  const bodyArray = JSON.stringify({ args: [to, text] });
 
   const resolveUrl = (p: string) => {
     // Safe join even if baseUrl includes a path segment.
@@ -49,11 +52,11 @@ async function sendOtpViaOpenWa(toDigits: string, otp: string) {
     return new URL(p.replace(/^\//, ''), u).toString();
   };
 
-  const doPost = async (p: string) =>
+  const doPost = async (p: string, requestBody: string) =>
     fetch(resolveUrl(p), {
       method: 'POST',
       headers,
-      body,
+      body: requestBody,
     });
 
   const candidates = Array.from(
@@ -73,9 +76,16 @@ async function sendOtpViaOpenWa(toDigits: string, otp: string) {
   for (const p of candidates) {
     const url = resolveUrl(p);
     tried.push(url);
-    res = await doPost(p);
+    res = await doPost(p, bodyObject);
     if (res.ok) return;
     lastBody = await res.text().catch(() => '');
+    // If server couldn't parse args, retry once with array form.
+    if (res.ok) return;
+    if (res.status === 200 && lastBody.includes('Please set arguments')) {
+      res = await doPost(p, bodyArray);
+      if (res.ok) return;
+      lastBody = await res.text().catch(() => '');
+    }
     if (res.status !== 404) break;
   }
 
