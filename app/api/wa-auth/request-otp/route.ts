@@ -33,14 +33,15 @@ async function sendOtpViaOpenWa(toDigits: string, otp: string) {
     throw new Error('Missing OPEN_WA_BASE_URL');
   }
 
-  // open-wa commonly expects chatId like "911234567890@c.us"
-  const chatId = `${toDigits}@c.us`;
+  // Swagger for this instance shows:
+  // POST /sendText with JSON { args: { to: "xxxxxxxx@c.us", content: "..." } }
+  const to = `${toDigits}@c.us`;
   const text = `Your FreshNews OTP is: ${otp}`;
 
   const headers: Record<string, string> = { 'content-type': 'application/json' };
   if (apiKey) headers['x-api-key'] = apiKey;
 
-  const body = JSON.stringify({ chatId, text });
+  const body = JSON.stringify({ args: { to, content: text } });
 
   const resolveUrl = (p: string) => {
     // Safe join even if baseUrl includes a path segment.
