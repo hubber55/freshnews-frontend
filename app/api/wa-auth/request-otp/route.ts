@@ -19,7 +19,8 @@ function hashOtp(otp: string) {
 }
 
 async function sendOtpViaOpenWa(toDigits: string, otp: string) {
-  const baseUrl = (process.env.OPEN_WA_BASE_URL || '').replace(/\/+$/, '');
+  const baseUrlRaw = (process.env.OPEN_WA_BASE_URL || '').trim();
+  const baseUrl = baseUrlRaw.replace(/\/+$/, '');
   // wa-automate / open-wa easy API commonly exposes:
   //   POST /api/messages/send-text
   // and sometimes:
@@ -41,23 +42,47 @@ async function sendOtpViaOpenWa(toDigits: string, otp: string) {
 
   const body = JSON.stringify({ chatId, text });
 
+  const resolveUrl = (p: string) => {
+    // Safe join even if baseUrl includes a path segment.
+    const u = new URL(baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`);
+    return new URL(p.replace(/^\//, ''), u).toString();
+  };
+
   const doPost = async (p: string) =>
-    fetch(`${baseUrl}${p}`, {
+    fetch(resolveUrl(p), {
       method: 'POST',
       headers,
       body,
     });
 
-  let res = await doPost(path);
-  // If the instance is session-based, retry with /api/default/... on 404.
-  if (res.status === 404 && path.startsWith('/api/') && !path.startsWith('/api/default/')) {
-    const retryPath = path.replace(/^\/api\//, '/api/default/');
-    res = await doPost(retryPath);
+  const candidates = Array.from(
+    new Set([
+      path,
+      path.startsWith('/api/') && !path.startsWith('/api/default/') ? path.replace(/^\/api\//, '/api/default/') : null,
+      path.startsWith('/api/default/') ? path.replace(/^\/api\/default\//, '/api/') : null,
+      '/api/messages/send-text',
+      '/api/default/messages/send-text',
+    ].filter(Boolean) as string[])
+  );
+
+  let res: Response | null = null;
+  let lastBody = '';
+  const tried: string[] = [];
+
+  for (const p of candidates) {
+    const url = resolveUrl(p);
+    tried.push(url);
+    res = await doPost(p);
+    if (res.ok) return;
+    lastBody = await res.text().catch(() => '');
+    if (res.status !== 404) break;
   }
 
+  if (!res) {
+    throw new Error(`open-wa sendText failed: no response (tried: ${tried.join(', ')})`);
+  }
   if (!res.ok) {
-    const text = await res.text().catch(() => '');
-    throw new Error(`open-wa sendText failed: ${res.status} ${text}`);
+    throw new Error(`open-wa sendText failed: ${res.status} ${lastBody} (tried: ${tried.join(', ')})`);
   }
 }
 
