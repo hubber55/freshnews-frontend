@@ -55,7 +55,7 @@ export async function POST(req: Request) {
     await supabase.from('wa_otps').update({ consumed_at: nowIso }).eq('id', row.id);
 
     // Upsert user (table expected: wa_users)
-    const displayName = (name || '').slice(0, 80) || null;
+    const displayName = (name || '').slice(0, 15) || null;
     const { data: existing } = await supabase
       .from('wa_users')
       .select('id, name')
@@ -98,4 +98,3 @@ export async function POST(req: Request) {
     return NextResponse.json({ ok: false, error: e?.message || 'Failed' }, { status: 500 });
   }
 }
-

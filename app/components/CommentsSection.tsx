@@ -20,6 +20,10 @@ export default function CommentsSection({ postId }: CommentsSectionProps) {
   const [userName, setUserName] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+
+  const wordCount = newComment.trim() ? newComment.trim().split(/\s+/).length : 0;
+  const exceedsWordLimit = wordCount > 100;
 
   useEffect(() => {
     // Fetch comments
@@ -37,8 +41,13 @@ export default function CommentsSection({ postId }: CommentsSectionProps) {
 
   const submitComment = async () => {
     if (!newComment.trim()) return;
+    if (exceedsWordLimit) {
+      setError('Comment can have at most 100 words.');
+      return;
+    }
     setBusy(true);
     setError(null);
+    setSuccess(null);
 
     try {
       const res = await fetch('/api/comments', {
@@ -48,8 +57,8 @@ export default function CommentsSection({ postId }: CommentsSectionProps) {
       });
       const data = await res.json();
       if (!data.ok) throw new Error(data.error);
-      setComments(prev => [data.comment, ...prev]);
       setNewComment('');
+      setSuccess(data.message || 'Comments will be moderated and published soon');
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : 'Failed to post comment');
     } finally {
@@ -60,7 +69,7 @@ export default function CommentsSection({ postId }: CommentsSectionProps) {
   return (
     <div className="mt-12 border-t border-[var(--border)] pt-8">
       <h3 className="text-xl font-bold text-white mb-4">
-        {userName ? `Enter Your Comments - ${userName}` : (
+        {userName ? 'Post your comment (No hate, vulgar comments)' : (
           <>
             Enter Your Comments - <Link href="/login" className="text-[#00cfff] hover:underline">Login/Signup</Link>
           </>
@@ -76,12 +85,18 @@ export default function CommentsSection({ postId }: CommentsSectionProps) {
             rows={3}
             className="w-full rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-4 py-3 text-white focus:border-[#ffd42a] focus:outline-none focus:ring-1 focus:ring-[#ffd42a] resize-none"
           />
+          <p className={`mt-2 text-xs ${exceedsWordLimit ? 'text-red-400' : 'text-[var(--text-muted)]'}`}>
+            {wordCount}/100 words
+          </p>
           {error && (
             <p className="mt-2 text-sm text-red-400">{error}</p>
           )}
+          {success && (
+            <p className="mt-2 text-sm text-green-400">{success}</p>
+          )}
           <button
             onClick={submitComment}
-            disabled={busy || !newComment.trim()}
+            disabled={busy || !newComment.trim() || exceedsWordLimit}
             className="mt-3 rounded-lg bg-[#ffd42a] px-6 py-2 font-bold text-[#0d1117] hover:brightness-110 disabled:opacity-50"
           >
             {busy ? 'Posting...' : 'Post Comment'}

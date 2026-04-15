@@ -3,13 +3,53 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 
+const COUNTRY_OPTIONS = [
+  { code: '91', label: 'India' },
+  { code: '1', label: 'USA/Canada' },
+  { code: '44', label: 'UK' },
+  { code: '971', label: 'UAE' },
+  { code: '966', label: 'Saudi Arabia' },
+  { code: '974', label: 'Qatar' },
+  { code: '65', label: 'Singapore' },
+  { code: '61', label: 'Australia' },
+];
+
+const MAX_UNIQUE_NUMBERS = 3;
+const BAN_MS = 4 * 60 * 60 * 1000;
+
+type WaSession = {
+  tried_numbers?: string[];
+  banned_until?: number;
+};
+
 function maskHint(masked: string) {
   if (!masked) return '';
   return `An OTP was sent to WhatsApp number "${masked}".`;
 }
 
+function onlyDigits(value: string) {
+  return value.replace(/[^\d]/g, '');
+}
+
+function getSessionData(): WaSession {
+  try {
+    return JSON.parse(sessionStorage.getItem('wa_session') || '{}') as WaSession;
+  } catch {
+    return {};
+  }
+}
+
+function setSessionData(data: WaSession) {
+  sessionStorage.setItem('wa_session', JSON.stringify(data));
+}
+
+function buildFullWhatsappNumber(countryCode: string, localNumber: string) {
+  return `${onlyDigits(countryCode)}${onlyDigits(localNumber)}`;
+}
+
 export default function SignupPage() {
   const [name, setName] = useState('');
+  const [countryCode, setCountryCode] = useState('91');
   const [whatsappNumber, setWhatsappNumber] = useState('');
   const [otpSentTo, setOtpSentTo] = useState<string | null>(null);
   const [otp, setOtp] = useState('');
@@ -18,34 +58,52 @@ export default function SignupPage() {
   const [isBanned, setIsBanned] = useState(false);
 
   useEffect(() => {
-    const sessionData = JSON.parse(sessionStorage.getItem('wa_session') || '{}');
+    const sessionData = getSessionData();
     const now = Date.now();
     if (sessionData.banned_until && now < sessionData.banned_until) {
       setIsBanned(true);
-      setError(`Too many edits. Try again after ${new Date(sessionData.banned_until).toLocaleTimeString()}.`);
+      setError(`Too many OTP requests for different numbers. Try again after ${new Date(sessionData.banned_until).toLocaleTimeString()}.`);
     }
   }, []);
 
-  const incrementEditCount = () => {
-    const sessionData = JSON.parse(sessionStorage.getItem('wa_session') || '{}');
-    sessionData.edit_count = (sessionData.edit_count || 0) + 1;
-    sessionData.last_edit = Date.now();
-    if (sessionData.edit_count >= 3) {
-      sessionData.banned_until = Date.now() + 4 * 60 * 60 * 1000; // 4 hours
-      setIsBanned(true);
-      setError(`Too many edits. Try again after ${new Date(sessionData.banned_until).toLocaleTimeString()}.`);
+  const checkAndTrackOtpAttempt = (fullNumber: string) => {
+    const sessionData = getSessionData();
+    const tried = Array.isArray(sessionData.tried_numbers) ? sessionData.tried_numbers : [];
+    if (!tried.includes(fullNumber)) {
+      tried.push(fullNumber);
     }
-    sessionStorage.setItem('wa_session', JSON.stringify(sessionData));
+
+    if (tried.length > MAX_UNIQUE_NUMBERS) {
+      sessionData.banned_until = Date.now() + BAN_MS;
+      sessionData.tried_numbers = tried;
+      setSessionData(sessionData);
+      setIsBanned(true);
+      setError(`Too many OTP requests for different numbers. Try again after ${new Date(sessionData.banned_until).toLocaleTimeString()}.`);
+      return false;
+    }
+
+    sessionData.tried_numbers = tried;
+    setSessionData(sessionData);
+    return true;
   };
 
   const requestOtp = async () => {
+    const fullWhatsappNumber = buildFullWhatsappNumber(countryCode, whatsappNumber);
+    if (!fullWhatsappNumber || fullWhatsappNumber.length < 10) {
+      setError('Please enter a valid WhatsApp number');
+      return;
+    }
+    if (!checkAndTrackOtpAttempt(fullWhatsappNumber)) {
+      return;
+    }
+
     setBusy(true);
     setError(null);
     try {
       const res = await fetch('/api/wa-auth/request-otp', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ name, whatsappNumber }),
+        body: JSON.stringify({ name, whatsappNumber: fullWhatsappNumber }),
       });
       const json = await res.json();
       if (!json.ok) throw new Error(json.error || 'Failed to send OTP');
@@ -61,10 +119,11 @@ export default function SignupPage() {
     setBusy(true);
     setError(null);
     try {
+      const fullWhatsappNumber = buildFullWhatsappNumber(countryCode, whatsappNumber);
       const res = await fetch('/api/wa-auth/verify-otp', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ name, whatsappNumber, otp }),
+        body: JSON.stringify({ name, whatsappNumber: fullWhatsappNumber, otp }),
       });
       const json = await res.json();
       if (!json.ok) throw new Error(json.error || 'Invalid OTP');
@@ -112,18 +171,33 @@ export default function SignupPage() {
               <label className="mb-2 block text-sm font-bold text-[var(--text-secondary)]">WhatsApp Number</label>
               <div className="flex gap-3">
                 <select
-                  value="91"
-                  disabled
+                  value={countryCode}
+                  onChange={(e) => setCountryCode(e.target.value)}
+                  disabled={isBanned}
                   className="w-20 rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-3 py-3 text-white"
                 >
-                  <option value="91">+91</option>
+                  {COUNTRY_OPTIONS.map((country) => (
+                    <option key={country.code} value={country.code}>
+                      +{country.code}
+                    </option>
+                  ))}
                 </select>
+                <div className="w-28 flex items-center rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-3 py-3">
+                  <span className="text-white mr-1">+</span>
+                  <input
+                    value={countryCode}
+                    onChange={(e) => setCountryCode(onlyDigits(e.target.value))}
+                    disabled={isBanned}
+                    inputMode="numeric"
+                    placeholder="Code"
+                    className="w-full bg-transparent text-white focus:outline-none"
+                  />
+                </div>
                 <input
                   value={whatsappNumber}
                   onChange={(e) => {
                     if (!isBanned) {
-                      setWhatsappNumber(e.target.value);
-                      incrementEditCount();
+                      setWhatsappNumber(onlyDigits(e.target.value));
                     }
                   }}
                   disabled={isBanned}
@@ -196,4 +270,3 @@ export default function SignupPage() {
     </div>
   );
 }
-

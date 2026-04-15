@@ -73,7 +73,7 @@ export async function POST(req: Request) {
     const supabase = createClient(supabaseUrl, key);
 
     await supabase.from('wa_otps').insert({
-      name: (name || '').slice(0, 80) || null,
+      name: (name || '').slice(0, 15) || null,
       whatsapp_number: digits,
       otp_hash: otpHash,
       expires_at: expiresAt,
