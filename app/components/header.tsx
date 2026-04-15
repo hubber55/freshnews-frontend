@@ -1,13 +1,21 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Menu, X, Search } from 'lucide-react';
+import { Menu, X, Search, LogOut } from 'lucide-react';
 
-const NAV_LINKS = [
+const GUEST_LINKS = [
   { href: '/', label: 'Home' },
   { href: '/login', label: 'Login' },
   { href: '/signup', label: 'Sign Up' },
+  { href: '/about', label: 'About Us' },
+  { href: '/privacy', label: 'Privacy Policy' },
+  { href: '/tos', label: 'Terms of Service' },
+  { href: '/contact', label: 'Contact Us' },
+];
+
+const LOGGED_IN_LINKS = [
+  { href: '/', label: 'Home' },
   { href: '/about', label: 'About Us' },
   { href: '/privacy', label: 'Privacy Policy' },
   { href: '/tos', label: 'Terms of Service' },
@@ -20,6 +28,24 @@ type HeaderProps = {
 
 export default function Header({ titleColorClass = 'text-[#ffd42a]' }: HeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [userName, setUserName] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Fetch user name
+    fetch('/api/auth/me')
+      .then(res => res.json())
+      .then(data => setUserName(data.name || null))
+      .catch(() => setUserName(null));
+  }, []);
+
+  const isLoggedIn = !!userName;
+  const navLinks = isLoggedIn ? LOGGED_IN_LINKS : GUEST_LINKS;
+
+  const handleLogout = async () => {
+    await fetch('/api/auth/logout', { method: 'POST' });
+    setUserName(null);
+    window.location.href = '/';
+  };
 
   return (
     <>
@@ -71,7 +97,12 @@ export default function Header({ titleColorClass = 'text-[#ffd42a]' }: HeaderPro
               </button>
             </div>
             <div className="flex-1 overflow-y-auto py-2">
-              {NAV_LINKS.map((link) => (
+              {isLoggedIn && (
+                <div className="px-6 py-3.5 text-[15px] font-bold text-[#ffd42a] border-b border-[var(--border)]/30">
+                  Hi, {userName}
+                </div>
+              )}
+              {navLinks.map((link) => (
                 <Link
                   key={link.href}
                   href={link.href}
@@ -81,6 +112,18 @@ export default function Header({ titleColorClass = 'text-[#ffd42a]' }: HeaderPro
                   {link.label}
                 </Link>
               ))}
+              {isLoggedIn && (
+                <button
+                  onClick={() => {
+                    handleLogout();
+                    setMenuOpen(false);
+                  }}
+                  className="w-full text-left px-6 py-3.5 text-[15px] font-semibold text-[var(--text-primary)] hover:bg-[var(--border)] hover:text-red-400 transition-colors border-b border-[var(--border)]/30 flex items-center gap-2"
+                >
+                  <LogOut size={16} />
+                  Logout
+                </button>
+              )}
             </div>
             <div className="px-6 py-4 border-t border-[var(--border)] text-[11px] text-[var(--text-muted)]" style={{ fontFamily: 'var(--font-en)' }}>
               © {new Date().getFullYear()} FreshNews.top

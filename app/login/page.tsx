@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 
 function maskHint(masked: string) {
@@ -14,6 +14,28 @@ export default function LoginPage() {
   const [otp, setOtp] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isBanned, setIsBanned] = useState(false);
+
+  useEffect(() => {
+    const sessionData = JSON.parse(sessionStorage.getItem('wa_session') || '{}');
+    const now = Date.now();
+    if (sessionData.banned_until && now < sessionData.banned_until) {
+      setIsBanned(true);
+      setError(`Too many edits. Try again after ${new Date(sessionData.banned_until).toLocaleTimeString()}.`);
+    }
+  }, []);
+
+  const incrementEditCount = () => {
+    const sessionData = JSON.parse(sessionStorage.getItem('wa_session') || '{}');
+    sessionData.edit_count = (sessionData.edit_count || 0) + 1;
+    sessionData.last_edit = Date.now();
+    if (sessionData.edit_count >= 3) {
+      sessionData.banned_until = Date.now() + 4 * 60 * 60 * 1000; // 4 hours
+      setIsBanned(true);
+      setError(`Too many edits. Try again after ${new Date(sessionData.banned_until).toLocaleTimeString()}.`);
+    }
+    sessionStorage.setItem('wa_session', JSON.stringify(sessionData));
+  };
 
   const requestOtp = async () => {
     setBusy(true);
@@ -55,11 +77,14 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)] px-4 py-10">
-      <div className="mx-auto w-full max-w-[520px]">
+      <div className="mx-auto w-full max-w-[600px]">
         <div className="rounded-3xl border border-[var(--border)] bg-[var(--bg-card)] p-8 shadow-2xl">
-          <h1 className="text-center text-3xl font-extrabold text-white" style={{ fontFamily: 'var(--font-en)' }}>
-            Login
+          <h1 className="text-center text-4xl font-extrabold text-[#ffd42a] uppercase tracking-wide" style={{ fontFamily: 'var(--font-en)' }}>
+            FRESHNEWS.TOP
           </h1>
+          <h2 className="text-center text-2xl font-extrabold text-white mt-2" style={{ fontFamily: 'var(--font-en)' }}>
+            Login
+          </h2>
           <p className="mt-2 text-center text-sm text-[var(--text-muted)]">
             Use WhatsApp OTP to continue.
           </p>
@@ -73,12 +98,27 @@ export default function LoginPage() {
           <div className="mt-6 space-y-4">
             <div>
               <label className="mb-2 block text-sm font-bold text-[var(--text-secondary)]">WhatsApp Number</label>
-              <input
-                value={whatsappNumber}
-                onChange={(e) => setWhatsappNumber(e.target.value)}
-                placeholder="91xxxxxxxxxx"
-                className="w-full rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-4 py-3 text-white focus:border-[#00cfff] focus:outline-none focus:ring-1 focus:ring-[#00cfff]"
-              />
+              <div className="flex gap-3">
+                <select
+                  value="91"
+                  disabled
+                  className="w-20 rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-3 py-3 text-white"
+                >
+                  <option value="91">+91</option>
+                </select>
+                <input
+                  value={whatsappNumber}
+                  onChange={(e) => {
+                    if (!isBanned) {
+                      setWhatsappNumber(e.target.value);
+                      incrementEditCount();
+                    }
+                  }}
+                  disabled={isBanned}
+                  placeholder="xxxxxxxxxx"
+                  className="flex-1 rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-4 py-3 text-white focus:border-[#00cfff] focus:outline-none focus:ring-1 focus:ring-[#00cfff] disabled:opacity-50"
+                />
+              </div>
             </div>
 
             {!otpSentTo ? (
@@ -100,6 +140,11 @@ export default function LoginPage() {
                   <input
                     value={otp}
                     onChange={(e) => setOtp(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && otp.length >= 4) {
+                        verifyOtp();
+                      }
+                    }}
                     inputMode="numeric"
                     placeholder="6-digit OTP"
                     className="w-full rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-4 py-3 text-white focus:border-[#ffd42a] focus:outline-none focus:ring-1 focus:ring-[#ffd42a]"

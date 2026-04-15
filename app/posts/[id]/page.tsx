@@ -10,6 +10,7 @@ import ShareButtons from './share-buttons';
 import Header from '../../components/header';
 import Footer from '../../components/footer';
 import TagBadge from '../../components/tag-badge';
+import CommentsSection from '../../components/CommentsSection';
 
 type PageProps = {
   params: Promise<{
@@ -193,6 +194,9 @@ export default async function PostPage({ params }: PageProps) {
                 );
               })}
             </div>
+
+            {/* COMMENTS SECTION */}
+            <CommentsSection postId={post.id} />
 
             {/* TAGS – colorful */}
             <div className="mt-8 flex flex-wrap items-center gap-3 border-t border-[var(--border)] pt-6">
