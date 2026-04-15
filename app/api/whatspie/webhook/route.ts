@@ -1,6 +1,11 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
+export async function GET() {
+  // Whatspie calls this endpoint via POST. A GET helps quick browser checks.
+  return NextResponse.json({ ok: true });
+}
+
 export async function POST(req: Request) {
   const payload = await req.json().catch(() => null);
 
@@ -21,4 +26,3 @@ export async function POST(req: Request) {
 
   return res;
 }
-
