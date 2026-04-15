@@ -18,82 +18,34 @@ function hashOtp(otp: string) {
   return crypto.createHash('sha256').update(otp).digest('hex');
 }
 
-async function sendOtpViaOpenWa(toDigits: string, otp: string) {
-  const baseUrlRaw = (process.env.OPEN_WA_BASE_URL || '').trim();
-  const baseUrl = baseUrlRaw.replace(/\/+$/, '');
-  // wa-automate / open-wa easy API commonly exposes:
-  //   POST /api/messages/send-text
-  // and sometimes:
-  //   POST /api/default/messages/send-text
-  const rawPath = process.env.OPEN_WA_SENDTEXT_PATH || '/api/messages/send-text';
-  const path = rawPath.startsWith('/') ? rawPath : `/${rawPath}`;
-  const apiKey = process.env.OPEN_WA_API_KEY || '';
+async function sendOtpViaWhatspie(receiverDigits: string, otp: string) {
+  const token = (process.env.WHATSPIE_API_TOKEN || '').trim();
+  const device = (process.env.WHATSPIE_DEVICE || '').trim();
 
-  if (!baseUrl) {
-    throw new Error('Missing OPEN_WA_BASE_URL');
-  }
+  if (!token) throw new Error('Missing WHATSPIE_API_TOKEN');
+  if (!device) throw new Error('Missing WHATSPIE_DEVICE');
 
-  // Swagger for this instance shows:
-  // POST /sendText with JSON { args: { to: "xxxxxxxx@c.us", content: "..." } }
-  const to = `${toDigits}@c.us`;
-  const text = `Your FreshNews OTP is: ${otp}`;
+  const message = `Your FreshNews OTP is: ${otp}`;
 
-  const headers: Record<string, string> = { 'content-type': 'application/json' };
-  if (apiKey) headers['x-api-key'] = apiKey;
+  const res = await fetch('https://api.whatspie.com/messages', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
+    },
+    body: JSON.stringify({
+      device,
+      receiver: receiverDigits,
+      type: 'chat',
+      params: { text: message },
+      simulate_typing: 1,
+    }),
+  });
 
-  // Some Easy API builds expect args as an ordered array for path requests.
-  // We'll try the object form first (as shown in Swagger) and fall back to array form.
-  const bodyObject = JSON.stringify({ args: { to, content: text } });
-  const bodyArray = JSON.stringify({ args: [to, text] });
-
-  const resolveUrl = (p: string) => {
-    // Safe join even if baseUrl includes a path segment.
-    const u = new URL(baseUrl.endsWith('/') ? baseUrl : `${baseUrl}/`);
-    return new URL(p.replace(/^\//, ''), u).toString();
-  };
-
-  const doPost = async (p: string, requestBody: string) =>
-    fetch(resolveUrl(p), {
-      method: 'POST',
-      headers,
-      body: requestBody,
-    });
-
-  const candidates = Array.from(
-    new Set([
-      path,
-      path.startsWith('/api/') && !path.startsWith('/api/default/') ? path.replace(/^\/api\//, '/api/default/') : null,
-      path.startsWith('/api/default/') ? path.replace(/^\/api\/default\//, '/api/') : null,
-      '/api/messages/send-text',
-      '/api/default/messages/send-text',
-    ].filter(Boolean) as string[])
-  );
-
-  let res: Response | null = null;
-  let lastBody = '';
-  const tried: string[] = [];
-
-  for (const p of candidates) {
-    const url = resolveUrl(p);
-    tried.push(url);
-    res = await doPost(p, bodyObject);
-    if (res.ok) return;
-    lastBody = await res.text().catch(() => '');
-    // If server couldn't parse args, retry once with array form.
-    if (res.ok) return;
-    if (res.status === 200 && lastBody.includes('Please set arguments')) {
-      res = await doPost(p, bodyArray);
-      if (res.ok) return;
-      lastBody = await res.text().catch(() => '');
-    }
-    if (res.status !== 404) break;
-  }
-
-  if (!res) {
-    throw new Error(`open-wa sendText failed: no response (tried: ${tried.join(', ')})`);
-  }
+  const json = await res.json().catch(() => null);
   if (!res.ok) {
-    throw new Error(`open-wa sendText failed: ${res.status} ${lastBody} (tried: ${tried.join(', ')})`);
+    throw new Error(`Whatspie send failed: ${res.status} ${JSON.stringify(json)}`);
   }
 }
 
@@ -123,7 +75,7 @@ export async function POST(req: Request) {
       consumed_at: null,
     });
 
-    await sendOtpViaOpenWa(digits, otp);
+    await sendOtpViaWhatspie(digits, otp);
 
     return NextResponse.json({ ok: true, masked: maskNumber(digits) });
   } catch (e: any) {
