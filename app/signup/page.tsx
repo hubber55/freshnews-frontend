@@ -102,7 +102,8 @@ export default function SignupPage() {
               <input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder="Your name"
+                placeholder="Your name (max 15 characters)"
+                maxLength={15}
                 className="w-full rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-4 py-3 text-white focus:border-[#90ee90] focus:outline-none focus:ring-1 focus:ring-[#90ee90]"
               />
             </div>

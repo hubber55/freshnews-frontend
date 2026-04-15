@@ -99,7 +99,7 @@ export default function Header({ titleColorClass = 'text-[#ffd42a]' }: HeaderPro
             <div className="flex-1 overflow-y-auto py-2">
               {isLoggedIn && (
                 <div className="px-6 py-3.5 text-[15px] font-bold text-[#ffd42a] border-b border-[var(--border)]/30">
-                  Hi, {userName}
+                  Welcome {userName}
                 </div>
               )}
               {navLinks.map((link) => (

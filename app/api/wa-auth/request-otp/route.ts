@@ -56,6 +56,11 @@ export async function POST(req: Request) {
     if (!digits) {
       return NextResponse.json({ ok: false, error: 'Invalid WhatsApp number' }, { status: 400 });
     }
+    
+    // Validate name length (max 15 characters)
+    if (name && name.length > 15) {
+      return NextResponse.json({ ok: false, error: 'Name must be 15 characters or less' }, { status: 400 });
+    }
 
     const otp = String(Math.floor(100000 + Math.random() * 900000));
     const otpHash = hashOtp(otp);
