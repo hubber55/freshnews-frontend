@@ -13,11 +13,7 @@ export default function CreatePostForm() {
           {state.error}
         </div>
       )}
-      {state?.success && (
-        <div className="mb-4 rounded-lg bg-green-500/10 p-3 text-sm text-green-500 border border-green-500/20">
-          {state.success}
-        </div>
-      )}
+
       
       <form action={formAction} className="space-y-5">
         <div>
