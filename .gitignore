@@ -1,3 +1,36 @@
+# ── Python ──────────────────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+*.egg
+*.egg-info/
+dist/
+build/
+
+# ── Environment / Secrets ────────────────────────────────────
+.env
+*.env
+secrets.json
+token.json
+
+# ── Logs ────────────────────────────────────────────────────
+*.log
+freshnews.log
+
+# ── OS Files ─────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ── IDE ──────────────────────────────────────────────────────
+.vscode/
+.idea/
+*.swp
 # See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
 # dependencies
