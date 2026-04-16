@@ -42,13 +42,16 @@ export async function updateSession(request: NextRequest) {
     }
   }
 
-  // If user is logged in, redirect them out of login page
-  if (request.nextUrl.pathname === '/admin/login') {
-    if (user) {
-      const url = request.nextUrl.clone()
-      url.pathname = '/admin'
-      return NextResponse.redirect(url)
-    }
+  // If user is logged in and on /admin, let them pass
+  if (request.nextUrl.pathname === '/admin' && user) {
+    return supabaseResponse;
+  }
+
+  // If user is logged in, redirect them out of login page to the dashboard
+  if (request.nextUrl.pathname === '/admin/login' && user) {
+    const url = request.nextUrl.clone();
+    url.pathname = '/admin';
+    return NextResponse.redirect(url);
   }
 
   return supabaseResponse
