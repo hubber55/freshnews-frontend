@@ -6,7 +6,7 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)]">
       <header className="sticky top-0 z-50 flex items-center justify-between border-b border-[var(--border)] bg-[#0d1117]/80 px-6 py-4 backdrop-blur-md">
-        <Link href="/admin/posts" className="text-xl font-black text-[#ffd42a]">
+        <Link href="/admin" className="text-xl font-black text-[#ffd42a]">
           Admin Dashboard
         </Link>
 

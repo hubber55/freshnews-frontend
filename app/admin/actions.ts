@@ -25,7 +25,7 @@ export async function login(formData: FormData) {
   }
 
   // Next.js router handles redirects securely
-  redirect('/admin/posts')
+  redirect('/admin')
 }
 
 export async function logout() {
