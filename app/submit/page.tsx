@@ -3,6 +3,11 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUser } from '@/lib/useUser';
+import { createClient } from '@/lib/supabase/client';
+
+// Define types for better state management
+type Category = { id: number; name: string };
+type Subcategory = { id: number; name: string; category_id: number };
 
 export default function SubmitPage() {
   const supabase = createClient();
@@ -25,11 +30,11 @@ export default function SubmitPage() {
   const [newsImageType, setNewsImageType] = useState('url');
   const [newsImageUrl, setNewsImageUrl] = useState('');
   const [newsImageFile, setNewsImageFile] = useState<File | null>(null);
-  const [categories, setCategories] = useState<any[]>([]);
-  const [subcategories, setSubcategories] = useState<any[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [subcategories, setSubcategories] = useState<Subcategory[]>([]);
   const [selectedCategory, setSelectedCategory] = useState('');
   const [selectedSubcategory, setSelectedSubcategory] = useState('');
-  const [filteredSubcategories, setFilteredSubcategories] = useState<any[]>([]);
+  const [filteredSubcategories, setFilteredSubcategories] = useState<Subcategory[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -171,24 +176,29 @@ export default function SubmitPage() {
             <div>
               <label className="mb-2 block text-sm font-bold text-[var(--text-secondary)]">Category</label>
               <select
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e.target.value)}
                 className="w-full rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-4 py-3 text-white focus:border-[#00cfff] focus:outline-none focus:ring-1 focus:ring-[#00cfff]"
               >
                 <option value="">Select Category</option>
-                {/* TODO: Fetch categories from admin-defined list */}
+                {categories.map((cat) => (
+                  <option key={cat.id} value={cat.id}>{cat.name}</option>
+                ))}
               </select>
             </div>
 
             <div>
               <label className="mb-2 block text-sm font-bold text-[var(--text-secondary)]">Subcategory</label>
               <select
-                value={subcategory}
-                onChange={(e) => setSubcategory(e.target.value)}
+                value={selectedSubcategory}
+                onChange={(e) => setSelectedSubcategory(e.target.value)}
+                disabled={!selectedCategory}
                 className="w-full rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-4 py-3 text-white focus:border-[#00cfff] focus:outline-none focus:ring-1 focus:ring-[#00cfff]"
               >
                 <option value="">Select Subcategory</option>
-                {/* TODO: Fetch subcategories based on category */}
+                {filteredSubcategories.map((sub) => (
+                  <option key={sub.id} value={sub.id}>{sub.name}</option>
+                ))}
               </select>
             </div>
 
@@ -332,7 +342,7 @@ export default function SubmitPage() {
 
             <button
               type="submit"
-              disabled={isSubmitting}
+              disabled={isSubmitting || loading}
               className="w-full rounded-xl bg-[#00cfff] px-4 py-3 font-extrabold text-[#0d1117] shadow-md hover:brightness-110 disabled:opacity-60"
             >
               {isSubmitting ? 'Submitting...' : 'Submit'}
