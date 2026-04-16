@@ -42,6 +42,7 @@ export default function Home({ searchParams }: { searchParams: { tag?: string; p
   const [hasNextPage, setHasNextPage] = useState(false);
   const activeTag = searchParams.tag?.trim() || '';
 
+  // Force new deployment to clear Vercel cache and fix build error
   useEffect(() => {
     const currentPage = Math.max(1, Number.parseInt(searchParams.page ?? '1', 10) || 1);
     setPage(currentPage);
