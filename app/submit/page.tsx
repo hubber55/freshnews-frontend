@@ -2,12 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { getCurrentUser } from '@/lib/auth';
-import { createClient } from '@/app/utils/supabase/client';
+import { useUser } from '@/lib/useUser';
 
 export default function SubmitPage() {
   const supabase = createClient();
   const router = useRouter();
+  const { user, loading } = useUser();
   const [type, setType] = useState('news'); // news, classified, ad
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
@@ -34,15 +34,13 @@ export default function SubmitPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    async function checkUser() {
-      const user = await getCurrentUser();
-      if (!user) {
-        router.push('/login');
-      }
+    if (!loading && !user) {
+      router.push('/login');
     }
-    checkUser();
-    fetchCategoriesAndSubcategories();
-  }, [router]);
+    if (user) {
+      fetchCategoriesAndSubcategories();
+    }
+  }, [user, loading, router]);
 
   async function fetchCategoriesAndSubcategories() {
     const { data: cats, error: catError } = await supabase.from('ad_categories').select('*').order('name');
