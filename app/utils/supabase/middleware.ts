@@ -42,6 +42,7 @@ export async function updateSession(request: NextRequest) {
     }
   }
 
+  // Force new deployment to clear Vercel cache
   // If user is logged in and on /admin, let them pass
   if (request.nextUrl.pathname === '/admin' && user) {
     return supabaseResponse;
