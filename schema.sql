@@ -80,7 +80,52 @@ FROM ranked r
 WHERE p.id = r.id
   AND r.rn > 1;
 
--- 4) Enforce uniqueness at DB layer for future inserts
-CREATE UNIQUE INDEX IF NOT EXISTS posts_original_url_fingerprint_unique
-ON public.posts(original_url_fingerprint)
-WHERE original_url_fingerprint IS NOT NULL;
+-- Categories for Ads/Classifieds
+CREATE TABLE public.ad_categories (
+    id SERIAL PRIMARY KEY,
+    name TEXT NOT NULL UNIQUE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Subcategories
+CREATE TABLE public.ad_subcategories (
+    id SERIAL PRIMARY KEY,
+    category_id INTEGER NOT NULL REFERENCES public.ad_categories(id) ON DELETE CASCADE,
+    name TEXT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+    UNIQUE(category_id, name)
+);
+
+CREATE TABLE public.submissions (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES public.wa_users(id) ON DELETE CASCADE,
+    type TEXT NOT NULL, -- 'news', 'classified', or 'ad'
+    title VARCHAR(70) NOT NULL,
+    content VARCHAR(500) NOT NULL,
+    tags TEXT[],
+    category_id INTEGER REFERENCES public.ad_categories(id),
+    subcategory_id INTEGER REFERENCES public.ad_subcategories(id),
+    image_url TEXT,
+    external_url TEXT,
+    hyperlink_text TEXT,
+    is_premium BOOLEAN DEFAULT FALSE,
+    status TEXT DEFAULT 'pending', -- 'pending', 'approved', 'rejected'
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE TABLE public.ad_news (
+    id SERIAL PRIMARY KEY,
+    submission_id INTEGER NOT NULL REFERENCES public.submissions(id) ON DELETE CASCADE,
+    title VARCHAR(70) NOT NULL,
+    content VARCHAR(500) NOT NULL,
+    tags TEXT[],
+    image_url TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE TABLE public.admin_settings (
+    key TEXT PRIMARY KEY,
+    value TEXT
+);
+
+INSERT INTO public.admin_settings (key, value) VALUES ('admin_whatsapp_number', '') ON CONFLICT (key) DO NOTHING;

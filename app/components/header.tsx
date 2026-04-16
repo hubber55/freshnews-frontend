@@ -9,6 +9,8 @@ const GUEST_LINKS = [
   { href: '/', label: 'Home' },
   { href: '/login', label: 'Login' },
   { href: '/signup', label: 'Sign Up' },
+  { href: '/submit', label: 'Submit' },
+  { href: '/classifieds', label: 'Classifieds' },
   { href: '/about', label: 'About Us' },
   { href: '/privacy', label: 'Privacy Policy' },
   { href: '/tos', label: 'Terms of Service' },

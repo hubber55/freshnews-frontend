@@ -1,43 +1,90 @@
-import Link from 'next/link';
+'use client';
 
-import { supabase } from '../lib/supabase';
+import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import { Clock } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { hasMinimumWords, limitWords } from '../lib/posts';
 import Header from './components/header';
 import Footer from './components/footer';
 import TrackedLink from './components/TrackedLink';
+import { createClient } from '@/app/utils/supabase/client';
 
-export const revalidate = 60;
+function mergeNewsAndAds(news: any[], ads: any[], refreshCount: number) {
+  const merged = [];
+  let adIndex = 0;
+  let newsIndex = 0;
 
-type HomeProps = {
-  searchParams: Promise<{ tag?: string; page?: string }>;
-};
+  const adPositions = [2, 5, 8];
+  let adPosition = adPositions[Math.min(refreshCount, adPositions.length - 1)];
 
-export default async function Home({ searchParams }: HomeProps) {
-  const params = await searchParams;
-  const activeTag = params.tag?.trim() || '';
-  const page = Math.max(1, Number.parseInt(params.page ?? '1', 10) || 1);
-  const pageSize = 50;
-  const overfetch = 200;
-  const from = (page - 1) * pageSize;
-
-  let query = supabase
-    .from('posts')
-    .select('*')
-    .eq('is_deleted', false)
-    .order('published_at', { ascending: false })
-    .range(from, from + overfetch - 1);
-
-  // If a tag is selected, filter by it (Supabase array contains)
-  if (activeTag) {
-    query = query.contains('tags', [activeTag]);
+  while (newsIndex < news.length || adIndex < ads.length) {
+    if (newsIndex === adPosition && adIndex < ads.length) {
+      merged.push({ ...ads[adIndex], isAd: true });
+      adIndex++;
+      adPosition += adPositions[Math.min(refreshCount, adPositions.length - 1)] + 1;
+    } else if (newsIndex < news.length) {
+      merged.push(news[newsIndex]);
+      newsIndex++;
+    } else {
+      break;
+    }
   }
 
-  const { data: posts } = await query;
-  const eligiblePostsAll = (posts ?? []).filter((post) => hasMinimumWords(post.summary, 70));
-  const eligiblePosts = eligiblePostsAll.slice(0, pageSize);
-  const hasNextPage = eligiblePostsAll.length > pageSize || (posts?.length ?? 0) === overfetch;
+  return merged;
+}
+
+export default function Home({ searchParams }: { searchParams: { tag?: string; page?: string } }) {
+  const supabase = createClient();
+  const [posts, setPosts] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
+  const [hasNextPage, setHasNextPage] = useState(false);
+  const activeTag = searchParams.tag?.trim() || '';
+
+  useEffect(() => {
+    const currentPage = Math.max(1, Number.parseInt(searchParams.page ?? '1', 10) || 1);
+    setPage(currentPage);
+
+    const refreshCount = parseInt(sessionStorage.getItem('refreshCount') || '0', 10);
+    sessionStorage.setItem('refreshCount', (refreshCount + 1).toString());
+
+    async function fetchData() {
+      setLoading(true);
+      const pageSize = 50;
+      const overfetch = 200;
+      const from = (currentPage - 1) * pageSize;
+
+      let newsQuery = supabase
+        .from('posts')
+        .select('*')
+        .eq('is_deleted', false)
+        .order('published_at', { ascending: false })
+        .range(from, from + overfetch - 1);
+
+      if (activeTag) {
+        newsQuery = newsQuery.contains('tags', [activeTag]);
+      }
+
+      const { data: newsData } = await newsQuery;
+      const eligibleNews = (newsData ?? []).filter((post) => hasMinimumWords(post.summary, 70));
+
+      const { data: adsData } = await supabase
+        .from('submissions')
+        .select('*')
+        .eq('type', 'ad')
+        .eq('status', 'approved')
+        .order('created_at', { ascending: false });
+
+      const mergedFeed = mergeNewsAndAds(eligibleNews, adsData || [], refreshCount);
+
+      setPosts(mergedFeed.slice(0, pageSize));
+      setHasNextPage(mergedFeed.length > pageSize || (newsData?.length ?? 0) === overfetch);
+      setLoading(false);
+    }
+
+    fetchData();
+  }, [searchParams, activeTag]);
 
   if (eligiblePosts.length === 0) {
     return (

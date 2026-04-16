@@ -49,13 +49,14 @@ function buildFullWhatsappNumber(countryCode: string, localNumber: string) {
 
 export default function SignupPage() {
   const [name, setName] = useState('');
-  const [countryCode, setCountryCode] = useState('91');
-  const [whatsappNumber, setWhatsappNumber] = useState('');
-  const [otpSentTo, setOtpSentTo] = useState<string | null>(null);
-  const [otp, setOtp] = useState('');
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [isBanned, setIsBanned] = useState(false);
+  const [email, setEmail] = useState('');
+    const [countryCode, setCountryCode] = useState('91');
+    const [whatsappNumber, setWhatsappNumber] = useState('');
+    const [otpSentTo, setOtpSentTo] = useState<string | null>(null);
+    const [otp, setOtp] = useState('');
+    const [busy, setBusy] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const [isBanned, setIsBanned] = useState(false);
 
   useEffect(() => {
     const sessionData = getSessionData();
@@ -123,7 +124,7 @@ export default function SignupPage() {
       const res = await fetch('/api/wa-auth/verify-otp', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ name, whatsappNumber: fullWhatsappNumber, otp }),
+        body: JSON.stringify({ name, email, whatsappNumber: fullWhatsappNumber, otp }),
       });
       const json = await res.json();
       if (!json.ok) throw new Error(json.error || 'Invalid OTP');
@@ -163,6 +164,17 @@ export default function SignupPage() {
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Your name (max 15 characters)"
                 maxLength={15}
+                className="w-full rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-4 py-3 text-white focus:border-[#90ee90] focus:outline-none focus:ring-1 focus:ring-[#90ee90]"
+              />
+            </div>
+
+            <div>
+              <label className="mb-2 block text-sm font-bold text-[var(--text-secondary)]">Email</label>
+              <input
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="your@email.com (max 40 characters)"
+                maxLength={40}
                 className="w-full rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-4 py-3 text-white focus:border-[#90ee90] focus:outline-none focus:ring-1 focus:ring-[#90ee90]"
               />
             </div>
