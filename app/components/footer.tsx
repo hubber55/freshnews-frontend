@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import Script from 'next/script';
+import Image from 'next/image';
 
 const FOOTER_LINKS = [
   { href: '/', label: 'Home' },
@@ -18,9 +19,12 @@ export default function Footer() {
         {/* Logo */}
         <div className="text-center mb-5">
           <Link href="/">
-            <span className="text-[22px] font-extrabold text-[#ffd42a] uppercase tracking-wider" style={{ fontFamily: 'var(--font-en)' }}>
-              FRESHNEWS.TOP
-            </span>
+            <Image
+              src="/logos/favicon_32.png" // Assuming this path and extension
+              alt="FreshNews.top Favicon"
+              width={32} // Adjust width as needed
+              height={32} // Adjust height as needed
+            />
           </Link>
           <p className="mt-2 text-[13px] text-[var(--text-muted)]">
             Your Trusted Malayalam News Source

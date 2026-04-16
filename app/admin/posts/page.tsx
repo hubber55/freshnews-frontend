@@ -14,7 +14,7 @@ export default async function AdminPostsPage() {
 
   const { data: posts, error } = await supabase
     .from('posts')
-    .select('id, title, source_name, published_at, is_deleted')
+    .select('id, title, source_name, published_at, is_deleted, image_url')
     .order('published_at', { ascending: false })
 
   if (error) {
@@ -72,6 +72,12 @@ export default async function AdminPostsPage() {
     <div>
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-2xl font-bold text-white">Manage Posts</h1>
+        <Link
+          href="/admin/posts/new"
+          className="rounded-lg bg-[#e91e63] px-4 py-2 text-sm font-bold text-white shadow-md transition-all hover:bg-[#c2185b] active:scale-95"
+        >
+          Create New Post
+        </Link>
       </div>
 
       <div className="overflow-hidden rounded-xl border border-[var(--border)] bg-[#161b22]">
@@ -83,6 +89,7 @@ export default async function AdminPostsPage() {
               <th className="px-6 py-4">Date</th>
               <th className="px-6 py-4">Clicks (Sessions)</th>
               <th className="px-6 py-4">Shares</th>
+              <th className="px-6 py-4">Image</th>
               <th className="px-6 py-4">Status</th>
               <th className="px-6 py-4 text-right">Actions</th>
             </tr>
@@ -110,6 +117,13 @@ export default async function AdminPostsPage() {
                   <span className={m.whatsapp > 0 ? 'text-[#ffd42a] font-bold' : 'text-[var(--text-secondary)]'}>WA {m.whatsapp}</span>
                   <span className="text-[var(--text-secondary)]"> · </span>
                   <span className={m.native > 0 ? 'text-[#90ee90] font-bold' : 'text-[var(--text-secondary)]'}>Native {m.native}</span>
+                </td>
+                <td className="px-6 py-4">
+                  {post.image_url ? (
+                    <span className="rounded bg-green-500/20 px-2 py-1 text-xs font-bold text-[#00b894]">Yes</span>
+                  ) : (
+                    <span className="rounded bg-red-500/20 px-2 py-1 text-xs font-bold text-red-500">No</span>
+                  )}
                 </td>
                 <td className="px-6 py-4">
                   {post.is_deleted ? (

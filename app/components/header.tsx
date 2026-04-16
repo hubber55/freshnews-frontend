@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Menu, X, Search, LogOut } from 'lucide-react';
+import Image from 'next/image';
 
 const GUEST_LINKS = [
   { href: '/', label: 'Home' },
@@ -59,10 +60,14 @@ export default function Header({ titleColorClass = 'text-[#ffd42a]' }: HeaderPro
           >
             <Menu size={22} strokeWidth={2.5} />
           </button>
-          <Link href="/" className="text-center">
-            <span className={`text-[20px] font-extrabold uppercase tracking-[0.1em] ${titleColorClass}`} style={{ fontFamily: 'var(--font-en)' }}>
-              FRESHNEWS.TOP
-            </span>
+          <Link href="/" className="relative block h-10 w-36">
+            <Image
+              src="/logos/banner_1920x600.png"
+              alt="FreshNews.top Logo"
+              fill
+              priority
+              style={{ objectFit: 'contain' }}
+            />
           </Link>
           <button
             type="button"
@@ -85,9 +90,15 @@ export default function Header({ titleColorClass = 'text-[#ffd42a]' }: HeaderPro
           {/* Drawer */}
           <nav className="relative z-10 w-[280px] h-full bg-[var(--bg-card)] border-r border-[var(--border)] shadow-2xl flex flex-col animate-slide-in">
             <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--border)]">
-              <span className="text-[18px] font-extrabold text-[#ffd42a] uppercase tracking-wider" style={{ fontFamily: 'var(--font-en)' }}>
-                FRESHNEWS
-              </span>
+              <div className="relative h-8 w-24">
+                <Image
+                  src="/logos/banner_1920x600.png"
+                  alt="FreshNews.top Logo"
+                  fill
+                  priority
+                  style={{ objectFit: 'contain' }}
+                />
+              </div>
               <button
                 type="button"
                 onClick={() => setMenuOpen(false)}
