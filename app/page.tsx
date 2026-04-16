@@ -86,7 +86,7 @@ export default function Home({ searchParams }: { searchParams: { tag?: string; p
     fetchData();
   }, [searchParams, activeTag]);
 
-  if (eligiblePosts.length === 0) {
+  if (posts.length === 0) {
     return (
       <div className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)]">
         <Header titleColorClass="text-white" />
@@ -109,8 +109,8 @@ export default function Home({ searchParams }: { searchParams: { tag?: string; p
     );
   }
 
-  const heroPost = page === 1 ? eligiblePosts[0] : null;
-  const remainingPosts = page === 1 ? eligiblePosts.slice(1) : eligiblePosts;
+  const heroPost = page === 1 ? posts[0] : null;
+  const remainingPosts = page === 1 ? posts.slice(1) : posts;
   const baseParams = activeTag ? `tag=${encodeURIComponent(activeTag)}&` : '';
 
   return (
