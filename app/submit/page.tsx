@@ -21,7 +21,8 @@ function SubmitContent() {
   const [type, setType] = useState(typeParam || 'news'); // news, classified, ad, event
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
-  const [tags, setTags] = useState('');
+  const [tags, setTags] = useState<string[]>([]);
+  const [tagInput, setTagInput] = useState('');
   const [imageType, setImageType] = useState('url');
   const [imageUrl, setImageUrl] = useState('');
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -128,7 +129,7 @@ function SubmitContent() {
     formData.append('type', type);
     formData.append('title', title);
     formData.append('content', content);
-    formData.append('tags', tags);
+    formData.append('tags', tags.join(','));
     formData.append('categoryId', selectedCategory);
     formData.append('subcategoryId', selectedSubcategory);
     if (imageFile) {
@@ -256,11 +257,45 @@ function SubmitContent() {
             </div>
 
             <div>
-              <label className="mb-2 block text-sm font-bold text-[var(--text-secondary)]">Tags (comma separated)</label>
+              <label className="mb-2 block text-sm font-bold text-[var(--text-secondary)]">
+                Tags
+                <span className="ml-2 text-xs font-normal text-[var(--text-muted)]">
+                  (please enter upto 5 tags, comma separated - maximum 20 characters each)
+                </span>
+              </label>
+              <div className="flex flex-wrap gap-2 mb-2">
+                {tags.map((tag, index) => (
+                  <span
+                    key={index}
+                    className="inline-flex items-center gap-1 rounded-full bg-[#ff69b4] px-3 py-1 text-xs font-semibold text-white"
+                  >
+                    {tag}
+                    <button
+                      type="button"
+                      onClick={() => setTags(tags.filter((_, i) => i !== index))}
+                      className="ml-1 hover:text-red-200"
+                    >
+                      ×
+                    </button>
+                  </span>
+                ))}
+              </div>
               <input
-                value={tags}
-                onChange={(e) => setTags(e.target.value)}
-                className="w-full rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-4 py-3 text-white focus:border-[#00cfff] focus:outline-none focus:ring-1 focus:ring-[#00cfff]"
+                value={tagInput}
+                onChange={(e) => setTagInput(e.target.value.slice(0, 20))}
+                onKeyDown={(e) => {
+                  if (e.key === ',' || e.key === 'Enter') {
+                    e.preventDefault();
+                    const newTag = tagInput.trim();
+                    if (newTag && tags.length < 5 && !tags.includes(newTag)) {
+                      setTags([...tags, newTag]);
+                    }
+                    setTagInput('');
+                  }
+                }}
+                placeholder={tags.length >= 5 ? 'Maximum 5 tags reached' : 'Type tag and press comma or Enter'}
+                disabled={tags.length >= 5}
+                className="w-full rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-4 py-3 text-white focus:border-[#00cfff] focus:outline-none focus:ring-1 focus:ring-[#00cfff] disabled:opacity-50"
               />
             </div>
 
