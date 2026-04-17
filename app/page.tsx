@@ -1,7 +1,8 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Clock } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { hasMinimumWords, limitWords } from '../lib/posts';
@@ -35,12 +36,27 @@ function mergeNewsAndAds(news: any[], ads: any[], refreshCount: number) {
 }
 
 export default function Home({ searchParams }: { searchParams: { tag?: string; page?: string } }) {
+  const router = useRouter();
   const supabase = createClient();
   const [posts, setPosts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [hasNextPage, setHasNextPage] = useState(false);
   const activeTag = searchParams.tag?.trim() || '';
+
+  // Restore scroll position on mount
+  useEffect(() => {
+    const savedScrollY = sessionStorage.getItem('homeScrollPosition');
+    if (savedScrollY) {
+      window.scrollTo(0, parseInt(savedScrollY, 10));
+      sessionStorage.removeItem('homeScrollPosition');
+    }
+  }, []);
+
+  // Save scroll position before leaving
+  const saveScrollPosition = useCallback(() => {
+    sessionStorage.setItem('homeScrollPosition', window.scrollY.toString());
+  }, []);
 
   // Force new deployment to clear Vercel cache and fix build error
   useEffect(() => {
@@ -164,6 +180,7 @@ export default function Home({ searchParams }: { searchParams: { tag?: string; p
                       src={heroPost.image_url}
                       alt={heroPost.title}
                       className="absolute inset-0 h-full w-full object-cover object-center"
+                      loading="eager"
                     />
                   ) : (
                     <div className="absolute inset-0 flex items-center justify-center bg-[#21262d] text-sm text-[var(--text-muted)]">
@@ -193,18 +210,24 @@ export default function Home({ searchParams }: { searchParams: { tag?: string; p
 
           {/* REMAINING CARDS */}
           <div className="mt-6 space-y-7">
-            {remainingPosts.map((post) => (
+            {remainingPosts.map((post, index) => (
               <article
                 key={post.id}
                 className="overflow-hidden rounded-2xl bg-[var(--bg-card)] border border-[var(--border)]"
               >
-                <TrackedLink href={`/posts/${post.id}`} className="block" trackEvent={{ postId: post.id, eventType: 'click' }}>
+                <TrackedLink
+                  href={`/posts/${post.id}`}
+                  className="block"
+                  trackEvent={{ postId: post.id, eventType: 'click' }}
+                  onClick={saveScrollPosition}
+                >
                   <div className="relative w-full overflow-hidden" style={{ paddingTop: '56.25%' }}>
                     {post.image_url ? (
                       <img
                         src={post.image_url}
                         alt={post.title}
                         className="absolute inset-0 h-full w-full object-cover object-center"
+                        loading={index < 9 ? 'eager' : 'lazy'}
                       />
                     ) : (
                       <div className="absolute inset-0 flex items-center justify-center bg-[#21262d] text-sm text-[var(--text-muted)]">

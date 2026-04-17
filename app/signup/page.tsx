@@ -140,13 +140,10 @@ export default function SignupPage() {
   return (
     <>
       <Header />
-      <div className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)] px-4 py-10">
+      <div className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)] px-4 pt-20 pb-10">
         <div className="mx-auto w-full max-w-[600px]">
           <div className="rounded-3xl border border-[var(--border)] bg-[var(--bg-card)] p-8 shadow-2xl">
-            <h1 className="text-center text-4xl font-extrabold text-[#ffd42a] uppercase tracking-wide" style={{ fontFamily: 'var(--font-en)' }}>
-              FRESHNEWS.TOP
-            </h1>
-            <h2 className="text-center text-2xl font-extrabold text-white mt-2" style={{ fontFamily: 'var(--font-en)' }}>
+            <h2 className="text-center text-2xl font-extrabold text-white" style={{ fontFamily: 'var(--font-en)' }}>
               Sign Up
             </h2>
             <p className="mt-2 text-center text-sm text-[var(--text-muted)]">
