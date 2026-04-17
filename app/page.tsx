@@ -44,11 +44,17 @@ export default function Home({ searchParams }: { searchParams: { tag?: string; p
   const [hasNextPage, setHasNextPage] = useState(false);
   const activeTag = searchParams.tag?.trim() || '';
 
+  // Generate cache key based on search params
+  const cacheKey = `posts_${activeTag || 'all'}_${searchParams.page || '1'}`;
+
   // Restore scroll position on mount
   useEffect(() => {
     const savedScrollY = sessionStorage.getItem('homeScrollPosition');
     if (savedScrollY) {
-      window.scrollTo(0, parseInt(savedScrollY, 10));
+      // Delay scroll restoration to after render
+      requestAnimationFrame(() => {
+        window.scrollTo(0, parseInt(savedScrollY, 10));
+      });
       sessionStorage.removeItem('homeScrollPosition');
     }
   }, []);
@@ -56,52 +62,74 @@ export default function Home({ searchParams }: { searchParams: { tag?: string; p
   // Save scroll position before leaving
   const saveScrollPosition = useCallback(() => {
     sessionStorage.setItem('homeScrollPosition', window.scrollY.toString());
-  }, []);
+    // Also cache current posts before leaving
+    sessionStorage.setItem(cacheKey, JSON.stringify({ posts, hasNextPage, timestamp: Date.now() }));
+  }, [posts, hasNextPage, cacheKey]);
 
-  // Force new deployment to clear Vercel cache and fix build error
+  // Load cached data or fetch fresh
   useEffect(() => {
     const currentPage = Math.max(1, Number.parseInt(searchParams.page ?? '1', 10) || 1);
     setPage(currentPage);
 
-    const refreshCount = parseInt(sessionStorage.getItem('refreshCount') || '0', 10);
-    sessionStorage.setItem('refreshCount', (refreshCount + 1).toString());
+    // Check if we have cached data for this page
+    const cached = sessionStorage.getItem(cacheKey);
+    const navigationType = (performance as any).getEntriesByType?.('navigation')?.[0]?.type;
+    const isReload = navigationType === 'reload' || !cached;
 
-    async function fetchData() {
-      setLoading(true);
-      const pageSize = 50;
-      const overfetch = 200;
-      const from = (currentPage - 1) * pageSize;
+    if (cached && !isReload) {
+      // Use cached data immediately (navigating back)
+      const { posts: cachedPosts, hasNextPage: cachedHasNextPage } = JSON.parse(cached);
+      setPosts(cachedPosts);
+      setHasNextPage(cachedHasNextPage);
+      setLoading(false);
+    } else {
+      // Fetch fresh data on reload or initial load
+      const refreshCount = parseInt(sessionStorage.getItem('refreshCount') || '0', 10);
+      sessionStorage.setItem('refreshCount', (refreshCount + 1).toString());
 
-      let newsQuery = supabase
-        .from('posts')
-        .select('*')
-        .eq('is_deleted', false)
-        .order('published_at', { ascending: false })
-        .range(from, from + overfetch - 1);
+      async function fetchData() {
+        setLoading(true);
+        const pageSize = 50;
+        const overfetch = 200;
+        const from = (currentPage - 1) * pageSize;
 
-      if (activeTag) {
-        newsQuery = newsQuery.contains('tags', [activeTag]);
+        let newsQuery = supabase
+          .from('posts')
+          .select('*')
+          .eq('is_deleted', false)
+          .order('published_at', { ascending: false })
+          .range(from, from + overfetch - 1);
+
+        if (activeTag) {
+          newsQuery = newsQuery.contains('tags', [activeTag]);
+        }
+
+        const { data: newsData } = await newsQuery;
+        const eligibleNews = (newsData ?? []).filter((post) => hasMinimumWords(post.summary, 70));
+
+        const { data: adsData } = await supabase
+          .from('submissions')
+          .select('*')
+          .eq('type', 'ad')
+          .eq('status', 'approved')
+          .order('created_at', { ascending: false });
+
+        const mergedFeed = mergeNewsAndAds(eligibleNews, adsData || [], refreshCount);
+
+        const newPosts = mergedFeed.slice(0, pageSize);
+        const newHasNextPage = mergedFeed.length > pageSize || (newsData?.length ?? 0) === overfetch;
+
+        setPosts(newPosts);
+        setHasNextPage(newHasNextPage);
+        setLoading(false);
+
+        // Cache the data
+        sessionStorage.setItem(cacheKey, JSON.stringify({ posts: newPosts, hasNextPage: newHasNextPage, timestamp: Date.now() }));
       }
 
-      const { data: newsData } = await newsQuery;
-      const eligibleNews = (newsData ?? []).filter((post) => hasMinimumWords(post.summary, 70));
-
-      const { data: adsData } = await supabase
-        .from('submissions')
-        .select('*')
-        .eq('type', 'ad')
-        .eq('status', 'approved')
-        .order('created_at', { ascending: false });
-
-      const mergedFeed = mergeNewsAndAds(eligibleNews, adsData || [], refreshCount);
-
-      setPosts(mergedFeed.slice(0, pageSize));
-      setHasNextPage(mergedFeed.length > pageSize || (newsData?.length ?? 0) === overfetch);
-      setLoading(false);
+      fetchData();
     }
-
-    fetchData();
-  }, [searchParams, activeTag]);
+  }, [searchParams, activeTag, cacheKey]);
 
   // Show "No News Available" only when not loading and posts are actually empty
   if (!loading && posts.length === 0) {
@@ -127,8 +155,8 @@ export default function Home({ searchParams }: { searchParams: { tag?: string; p
     );
   }
 
-  // Show loading spinner while fetching data
-  if (loading) {
+  // Show loading spinner only on initial load (not when navigating back with cached data)
+  if (loading && posts.length === 0) {
     return (
       <div className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)]">
         <Header titleColorClass="text-white" />
