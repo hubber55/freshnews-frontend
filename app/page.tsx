@@ -73,61 +73,65 @@ export default function Home({ searchParams }: { searchParams: { tag?: string; p
 
     // Check if we have cached data for this page
     const cached = sessionStorage.getItem(cacheKey);
-    const navigationType = (performance as any).getEntriesByType?.('navigation')?.[0]?.type;
-    const isReload = navigationType === 'reload' || !cached;
 
-    if (cached && !isReload) {
-      // Use cached data immediately (navigating back)
+    // Always use cached data if available - this prevents loading flicker when navigating back
+    if (cached) {
       const { posts: cachedPosts, hasNextPage: cachedHasNextPage } = JSON.parse(cached);
       setPosts(cachedPosts);
       setHasNextPage(cachedHasNextPage);
       setLoading(false);
+
+      // Silently refresh in background after a short delay (only on actual refresh, not back nav)
+      const navigationType = (performance as any).getEntriesByType?.('navigation')?.[0]?.type;
+      if (navigationType === 'reload') {
+        setTimeout(() => refreshData(currentPage), 100);
+      }
     } else {
-      // Fetch fresh data on reload or initial load
+      // No cache - must fetch
+      refreshData(currentPage);
+    }
+
+    async function refreshData(currentPage: number) {
+      setLoading(true);
       const refreshCount = parseInt(sessionStorage.getItem('refreshCount') || '0', 10);
       sessionStorage.setItem('refreshCount', (refreshCount + 1).toString());
 
-      async function fetchData() {
-        setLoading(true);
-        const pageSize = 50;
-        const overfetch = 200;
-        const from = (currentPage - 1) * pageSize;
+      const pageSize = 50;
+      const overfetch = 200;
+      const from = (currentPage - 1) * pageSize;
 
-        let newsQuery = supabase
-          .from('posts')
-          .select('*')
-          .eq('is_deleted', false)
-          .order('published_at', { ascending: false })
-          .range(from, from + overfetch - 1);
+      let newsQuery = supabase
+        .from('posts')
+        .select('*')
+        .eq('is_deleted', false)
+        .order('published_at', { ascending: false })
+        .range(from, from + overfetch - 1);
 
-        if (activeTag) {
-          newsQuery = newsQuery.contains('tags', [activeTag]);
-        }
-
-        const { data: newsData } = await newsQuery;
-        const eligibleNews = (newsData ?? []).filter((post) => hasMinimumWords(post.summary, 70));
-
-        const { data: adsData } = await supabase
-          .from('submissions')
-          .select('*')
-          .eq('type', 'ad')
-          .eq('status', 'approved')
-          .order('created_at', { ascending: false });
-
-        const mergedFeed = mergeNewsAndAds(eligibleNews, adsData || [], refreshCount);
-
-        const newPosts = mergedFeed.slice(0, pageSize);
-        const newHasNextPage = mergedFeed.length > pageSize || (newsData?.length ?? 0) === overfetch;
-
-        setPosts(newPosts);
-        setHasNextPage(newHasNextPage);
-        setLoading(false);
-
-        // Cache the data
-        sessionStorage.setItem(cacheKey, JSON.stringify({ posts: newPosts, hasNextPage: newHasNextPage, timestamp: Date.now() }));
+      if (activeTag) {
+        newsQuery = newsQuery.contains('tags', [activeTag]);
       }
 
-      fetchData();
+      const { data: newsData } = await newsQuery;
+      const eligibleNews = (newsData ?? []).filter((post) => hasMinimumWords(post.summary, 70));
+
+      const { data: adsData } = await supabase
+        .from('submissions')
+        .select('*')
+        .eq('type', 'ad')
+        .eq('status', 'approved')
+        .order('created_at', { ascending: false });
+
+      const mergedFeed = mergeNewsAndAds(eligibleNews, adsData || [], refreshCount);
+
+      const newPosts = mergedFeed.slice(0, pageSize);
+      const newHasNextPage = mergedFeed.length > pageSize || (newsData?.length ?? 0) === overfetch;
+
+      setPosts(newPosts);
+      setHasNextPage(newHasNextPage);
+      setLoading(false);
+
+      // Cache the data
+      sessionStorage.setItem(cacheKey, JSON.stringify({ posts: newPosts, hasNextPage: newHasNextPage, timestamp: Date.now() }));
     }
   }, [searchParams, activeTag, cacheKey]);
 

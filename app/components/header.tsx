@@ -67,12 +67,12 @@ export default function Header({ titleColorClass = 'text-[#ffd42a]' }: HeaderPro
           >
             <Menu size={28} strokeWidth={2.5} />
           </button>
-          <Link href="/" className="flex items-center justify-center h-20">
+          <Link href="/" className="flex-1 flex items-center justify-center h-20 mx-4">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/logos/freshnews_header.png"
               alt="FreshNews.top Logo"
-              className="h-full w-auto object-contain"
+              className="h-full w-full object-contain"
             />
           </Link>
           <button
