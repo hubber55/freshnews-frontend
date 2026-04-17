@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 
@@ -8,7 +8,7 @@ import { createClient } from '@/lib/supabase/client';
 type Category = { id: number; name: string };
 type Subcategory = { id: number; name: string; category_id: number };
 
-export default function SubmitPage() {
+function SubmitContent() {
   const supabase = createClient();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -379,5 +379,13 @@ export default function SubmitPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function SubmitPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-[var(--bg-primary)] flex items-center justify-center"><div className="text-white">Loading...</div></div>}>
+      <SubmitContent />
+    </Suspense>
   );
 }
