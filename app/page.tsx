@@ -8,7 +8,7 @@ import Header from './components/header';
 import Footer from './components/footer';
 import TrackedLink from './components/TrackedLink';
 
-export const revalidate = 60;
+// export const revalidate = 60; // Disabled for testing
 
 type HomeProps = {
   searchParams: Promise<{ tag?: string; page?: string }>;
