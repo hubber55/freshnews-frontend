@@ -107,20 +107,40 @@ export function splitParagraphs(value: string | null | undefined) {
     return explicitParagraphs;
   }
 
-  // -- Step 3: fallback – word-based grouping for continuous blocks ---------
-  // This ensures that even if AI didn't provide paragraphs, we FORCE them
-  // for readability on the site (splitting every ~45 words for 4-5 lines).
+  // -- Step 3: fallback – sentence-based grouping for continuous blocks -----
+  // Split text at full stops after approximately 4-5 lines (~45-55 words)
+  // to create natural reading paragraphs.
   const flattened = stripped.replace(/\n+/g, ' ').replace(/\s+/g, ' ').trim();
   if (!flattened) {
     return [];
   }
 
-  const words = flattened.split(' ').filter(Boolean);
+  const sentences = flattened.match(/[^.!?]+[.!?]+|[^.!?]+$/g) || [flattened];
   const chunks: string[] = [];
-  const wordsPerParagraph = 45; // ~4-5 lines of text
+  let currentChunk: string[] = [];
+  let currentWordCount = 0;
+  const targetWordsPerParagraph = 50; // ~4-5 lines
 
-  for (let i = 0; i < words.length; i += wordsPerParagraph) {
-    chunks.push(words.slice(i, i + wordsPerParagraph).join(' ').trim());
+  for (const sentence of sentences) {
+    const trimmedSentence = sentence.trim();
+    if (!trimmedSentence) continue;
+    
+    const sentenceWordCount = trimmedSentence.split(/\s+/).length;
+    
+    // If adding this sentence would exceed target, start new paragraph
+    if (currentWordCount > 0 && currentWordCount + sentenceWordCount > targetWordsPerParagraph) {
+      chunks.push(currentChunk.join(' ').trim());
+      currentChunk = [trimmedSentence];
+      currentWordCount = sentenceWordCount;
+    } else {
+      currentChunk.push(trimmedSentence);
+      currentWordCount += sentenceWordCount;
+    }
+  }
+  
+  // Don't forget the last chunk
+  if (currentChunk.length > 0) {
+    chunks.push(currentChunk.join(' ').trim());
   }
 
   return chunks.filter(Boolean);

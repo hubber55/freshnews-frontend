@@ -195,11 +195,8 @@ export default async function PostPage({ params }: PageProps) {
               })}
             </div>
 
-            {/* COMMENTS SECTION */}
-            <CommentsSection postId={post.id} />
-
             {/* TAGS – colorful */}
-            <div className="mt-8 flex flex-wrap items-center gap-3 border-t border-[var(--border)] pt-6">
+            <div className="mt-10 flex flex-wrap items-center gap-3 border-t border-[var(--border)] pt-8">
               <span className="text-[12px] font-bold text-white bg-gray-700 px-3 py-1.5 rounded-md" style={{ fontFamily: 'var(--font-en)' }}>Tags</span>
               {post.tags?.slice(0, 5).map((tag: string, i: number) => (
                 <TagBadge key={tag} tag={tag} withHash={false} index={i} />
@@ -207,17 +204,17 @@ export default async function PostPage({ params }: PageProps) {
             </div>
 
             {/* SHARE BUTTONS */}
-            <div className="mt-8">
+            <div className="mt-10">
               <ShareButtons postId={post.id} title={post.title} url={articleUrl} />
             </div>
 
             {/* COMMENTS SECTION - positioned above Back to Home */}
-            <div className="mt-8">
+            <div className="mt-10">
               <CommentsSection postId={post.id} />
             </div>
 
             {/* BACK TO HOME BUTTON with 2 line breaks spacing after comments */}
-            <div className="mt-16 text-center">
+            <div className="mt-20 text-center">
               <div className="h-8" /> {/* Line break 1 */}
               <div className="h-8" /> {/* Line break 2 */}
               <Link
