@@ -87,7 +87,7 @@ export default function Home({ searchParams }: { searchParams: { tag?: string; p
     fetchData();
   }, [searchParams, activeTag]);
 
-  // Only show "No News Available" when not loading and posts are actually empty
+  // Show "No News Available" only when not loading and posts are actually empty
   if (!loading && posts.length === 0) {
     return (
       <div className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)]">
@@ -104,6 +104,22 @@ export default function Home({ searchParams }: { searchParams: { tag?: string; p
                 'The daemon is fetching articles. Check back soon.'
               )}
             </p>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
+  // Show loading spinner while fetching data
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)]">
+        <Header titleColorClass="text-white" />
+        <main className="flex items-center justify-center p-8 min-h-[50vh]">
+          <div className="flex flex-col items-center gap-4">
+            <div className="w-10 h-10 border-3 border-[var(--border)] border-t-[#ffd42a] rounded-full animate-spin" />
+            <p className="text-[var(--text-secondary)]">Loading news...</p>
           </div>
         </main>
         <Footer />
