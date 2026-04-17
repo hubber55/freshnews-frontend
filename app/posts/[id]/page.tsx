@@ -207,11 +207,19 @@ export default async function PostPage({ params }: PageProps) {
             </div>
 
             {/* SHARE BUTTONS */}
-            <ShareButtons postId={post.id} title={post.title} url={articleUrl} />
+            <div className="mt-8">
+              <ShareButtons postId={post.id} title={post.title} url={articleUrl} />
+            </div>
 
-            {/* BACK TO HOME BUTTON with Liberal Spacing */}
-            <div className="mt-56 text-center border-t border-[var(--border)] pt-20 mb-16">
-              <div className="h-8" />
+            {/* COMMENTS SECTION - positioned above Back to Home */}
+            <div className="mt-8">
+              <CommentsSection postId={post.id} />
+            </div>
+
+            {/* BACK TO HOME BUTTON with 2 line breaks spacing after comments */}
+            <div className="mt-16 text-center">
+              <div className="h-8" /> {/* Line break 1 */}
+              <div className="h-8" /> {/* Line break 2 */}
               <Link
                 href="/"
                 className="inline-flex items-center gap-2 rounded-lg bg-[#000080] px-7 py-3.5 text-[16px] font-bold text-white shadow-md transition-all hover:bg-[#000066] hover:shadow-lg hover:scale-[1.02] active:scale-95"

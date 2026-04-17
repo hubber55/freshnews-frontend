@@ -109,7 +109,7 @@ export function splitParagraphs(value: string | null | undefined) {
 
   // -- Step 3: fallback – word-based grouping for continuous blocks ---------
   // This ensures that even if AI didn't provide paragraphs, we FORCE them
-  // for readability on the site (splitting every ~70 words).
+  // for readability on the site (splitting every ~45 words for 4-5 lines).
   const flattened = stripped.replace(/\n+/g, ' ').replace(/\s+/g, ' ').trim();
   if (!flattened) {
     return [];
@@ -117,7 +117,7 @@ export function splitParagraphs(value: string | null | undefined) {
 
   const words = flattened.split(' ').filter(Boolean);
   const chunks: string[] = [];
-  const wordsPerParagraph = 70;
+  const wordsPerParagraph = 45; // ~4-5 lines of text
 
   for (let i = 0; i < words.length; i += wordsPerParagraph) {
     chunks.push(words.slice(i, i + wordsPerParagraph).join(' ').trim());

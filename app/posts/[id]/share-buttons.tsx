@@ -103,9 +103,9 @@ export default function ShareButtons({ postId, title, url }: ShareButtonsProps) 
   };
 
   return (
-    <div className="mt-8 border-t border-[#373737] pt-6">
+    <div className="border-t border-[#373737] pt-6">
       <div className="mb-4 text-[17px] font-bold text-white">Share:</div>
-      <div className="flex flex-wrap gap-3">
+      <div className="flex flex-wrap gap-4">
         {/* Telegram */}
         <a
           href={`https://t.me/share/url?url=${encodedUrl}&text=${encodedTitle}`}

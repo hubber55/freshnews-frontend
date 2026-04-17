@@ -89,6 +89,7 @@ export default function SignupPage() {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
     const [countryCode, setCountryCode] = useState('91');
+    const [customCountryCode, setCustomCountryCode] = useState('');
     const [whatsappNumber, setWhatsappNumber] = useState('');
     const [otpSentTo, setOtpSentTo] = useState<string | null>(null);
     const [otp, setOtp] = useState('');
@@ -127,13 +128,16 @@ export default function SignupPage() {
   };
 
   const requestOtp = async () => {
-    const validation = validatePhoneNumber(countryCode, whatsappNumber);
+    // Use custom country code if "Other" is selected
+    const effectiveCountryCode = countryCode === '' ? customCountryCode : countryCode;
+    
+    const validation = validatePhoneNumber(effectiveCountryCode, whatsappNumber);
     if (!validation.valid) {
       setError(validation.error || 'Please enter a valid WhatsApp number');
       return;
     }
     
-    const fullWhatsappNumber = buildFullWhatsappNumber(countryCode, whatsappNumber);
+    const fullWhatsappNumber = buildFullWhatsappNumber(effectiveCountryCode, whatsappNumber);
     if (!checkAndTrackOtpAttempt(fullWhatsappNumber)) {
       return;
     }
@@ -248,8 +252,8 @@ export default function SignupPage() {
                       <span className="text-white mr-2">+</span>
                       <input
                         type="text"
-                        value={countryCode}
-                        onChange={(e) => setCountryCode(onlyDigits(e.target.value).slice(0, 3))}
+                        value={customCountryCode}
+                        onChange={(e) => setCustomCountryCode(onlyDigits(e.target.value).slice(0, 3))}
                         maxLength={3}
                         inputMode="numeric"
                         placeholder="e.g. 92"
@@ -265,17 +269,20 @@ export default function SignupPage() {
                   <label className="block text-sm font-medium text-[var(--text-secondary)] mb-2">
                     WhatsApp Number
                     <span className="ml-2 text-xs text-[var(--text-muted)]">
-                      {countryCode === '91' ? '(exactly 10 digits)' : '(7-15 digits)'}
+                      {(countryCode === '' ? customCountryCode : countryCode) === '91' ? '(exactly 10 digits)' : '(7-15 digits)'}
                     </span>
                   </label>
                   <input
                     type="text"
                     value={whatsappNumber}
-                    onChange={(e) => setWhatsappNumber(onlyDigits(e.target.value).slice(0, countryCode === '91' ? 10 : 15))}
-                    maxLength={countryCode === '91' ? 10 : 15}
+                    onChange={(e) => {
+                      const effectiveCode = countryCode === '' ? customCountryCode : countryCode;
+                      setWhatsappNumber(onlyDigits(e.target.value).slice(0, effectiveCode === '91' ? 10 : 15));
+                    }}
+                    maxLength={15}
                     inputMode="numeric"
                     disabled={isBanned}
-                    placeholder={countryCode === '91' ? '9876543210' : 'Enter number'}
+                    placeholder={(countryCode === '' ? customCountryCode : countryCode) === '91' ? '9876543210' : 'Enter number'}
                     className="w-full rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-4 py-3 text-white focus:border-[#00cfff] focus:outline-none focus:ring-1 focus:ring-[#00cfff] disabled:opacity-50"
                   />
                 </div>
