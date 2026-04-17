@@ -43,7 +43,7 @@ function HomeContent() {
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [hasNextPage, setHasNextPage] = useState(false);
-  const [activeTag, setActiveTag] = useState('');
+  const [activeTag, setActiveTag] = useState(() => searchParams.get('tag')?.trim() || '');
   const pageParam = searchParams.get('page') || '1';
 
   // Generate cache key based on search params
@@ -73,7 +73,7 @@ function HomeContent() {
 
   useEffect(() => {
     setActiveTag(searchParams.get('tag')?.trim() || '');
-  }, [searchParamsString, searchParams]);
+  }, [searchParamsString]);
 
   // Load cached data or fetch fresh
   useEffect(() => {
@@ -117,12 +117,10 @@ function HomeContent() {
         .range(from, from + overfetch - 1);
 
       if (activeTag) {
-        console.log('Filtering by tag:', activeTag);
-        newsQuery = newsQuery.contains('tags', [activeTag]);
+        newsQuery = newsQuery.overlaps('tags', [activeTag]);
       }
 
       const { data: newsData } = await newsQuery;
-      console.log('News query result:', newsData?.length, 'posts found');
       const eligibleNews = (newsData ?? []).filter((post) => hasMinimumWords(post.summary, 70));
 
       const { data: adsData } = await supabase
