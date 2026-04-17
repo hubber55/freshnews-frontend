@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, Suspense } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Clock } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { hasMinimumWords, limitWords } from '../lib/posts';
@@ -35,17 +35,19 @@ function mergeNewsAndAds(news: any[], ads: any[], refreshCount: number) {
   return merged;
 }
 
-export default function Home({ searchParams }: { searchParams: { tag?: string; page?: string } }) {
+function HomeContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const supabase = createClient();
   const [posts, setPosts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [hasNextPage, setHasNextPage] = useState(false);
-  const activeTag = searchParams.tag?.trim() || '';
+  const activeTag = searchParams.get('tag')?.trim() || '';
+  const pageParam = searchParams.get('page') || '1';
 
   // Generate cache key based on search params
-  const cacheKey = `posts_${activeTag || 'all'}_${searchParams.page || '1'}`;
+  const cacheKey = `posts_${activeTag || 'all'}_${pageParam}`;
 
   // Restore scroll position on mount
   useEffect(() => {
@@ -68,7 +70,7 @@ export default function Home({ searchParams }: { searchParams: { tag?: string; p
 
   // Load cached data or fetch fresh
   useEffect(() => {
-    const currentPage = Math.max(1, Number.parseInt(searchParams.page ?? '1', 10) || 1);
+    const currentPage = Math.max(1, Number.parseInt(pageParam, 10) || 1);
     setPage(currentPage);
 
     // Check if we have cached data for this page
@@ -133,7 +135,7 @@ export default function Home({ searchParams }: { searchParams: { tag?: string; p
       // Cache the data
       sessionStorage.setItem(cacheKey, JSON.stringify({ posts: newPosts, hasNextPage: newHasNextPage, timestamp: Date.now() }));
     }
-  }, [searchParams, activeTag, cacheKey]);
+  }, [searchParams, activeTag, cacheKey, pageParam]);
 
   // Show "No News Available" only when not loading and posts are actually empty
   if (!loading && posts.length === 0) {
@@ -323,5 +325,13 @@ export default function Home({ searchParams }: { searchParams: { tag?: string; p
 
       <Footer />
     </div>
+  );
+}
+
+export default function Home() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-[var(--bg-primary)]" />}>
+      <HomeContent />
+    </Suspense>
   );
 }

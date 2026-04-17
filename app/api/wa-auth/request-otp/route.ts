@@ -62,15 +62,28 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: false, error: 'Name must be 15 characters or less' }, { status: 400 });
     }
 
-    const otp = String(Math.floor(100000 + Math.random() * 900000));
-    const otpHash = hashOtp(otp);
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
-
-    // Store in Supabase (table expected: wa_otps)
+    // Initialize Supabase client early for user lookup
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
     const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
     const { createClient } = await import('@supabase/supabase-js');
     const supabase = createClient(supabaseUrl, key);
+
+    // Check if user already exists (for signup flow - when name is provided)
+    if (name) {
+      const { data: existingUser } = await supabase
+        .from('wa_users')
+        .select('whatsapp_number')
+        .eq('whatsapp_number', digits)
+        .single();
+      
+      if (existingUser) {
+        return NextResponse.json({ ok: false, error: 'Already registered. Please login' }, { status: 400 });
+      }
+    }
+
+    const otp = String(Math.floor(100000 + Math.random() * 900000));
+    const otpHash = hashOtp(otp);
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
 
     await supabase.from('wa_otps').insert({
       name: (name || '').slice(0, 15) || null,
