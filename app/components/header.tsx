@@ -8,7 +8,6 @@ const GUEST_LINKS = [
   { href: '/', label: 'Home' },
   { href: '/login', label: 'Login' },
   { href: '/signup', label: 'Sign Up' },
-  { href: '/submit', label: 'Submit' },
   { href: '/classifieds', label: 'Classifieds' },
   { href: '/about', label: 'About Us' },
   { href: '/privacy', label: 'Privacy Policy' },
@@ -18,6 +17,10 @@ const GUEST_LINKS = [
 
 const USER_MENU_ITEMS = [
   { href: '/', label: 'Home' },
+  { href: '/submit', label: 'Submit Ads' },
+  { href: '/news', label: 'News' },
+  { href: '/events', label: 'Events' },
+  { href: '/classifieds', label: 'Classifieds' },
   { href: '/about', label: 'About Us' },
   { href: '/privacy', label: 'Privacy Policy' },
   { href: '/tos', label: 'Terms of Service' },
@@ -111,7 +114,7 @@ export default function Header({ titleColorClass = 'text-[#ffd42a]' }: HeaderPro
             </div>
             <div className="flex-1 overflow-y-auto py-2">
               {isLoggedIn && (
-                <div className="px-6 py-3.5 text-[15px] font-bold text-[#ffd42a] border-b border-[var(--border)]/30">
+                <div className="px-6 py-4 text-[17px] font-bold text-[#ffd42a] border-b border-[var(--border)]/30">
                   Welcome {userName}
                 </div>
               )}
@@ -120,7 +123,7 @@ export default function Header({ titleColorClass = 'text-[#ffd42a]' }: HeaderPro
                   key={link.href}
                   href={link.href}
                   onClick={() => setMenuOpen(false)}
-                  className="block px-6 py-3.5 text-[15px] font-semibold text-[var(--text-primary)] hover:bg-[var(--border)] hover:text-[#ffd42a] transition-colors border-b border-[var(--border)]/30"
+                  className="block px-6 py-4 text-[17px] font-semibold text-[var(--text-primary)] hover:bg-[var(--border)] hover:text-[#ffd42a] transition-colors border-b border-[var(--border)]/30"
                 >
                   {link.label}
                 </Link>
@@ -131,9 +134,9 @@ export default function Header({ titleColorClass = 'text-[#ffd42a]' }: HeaderPro
                     handleLogout();
                     setMenuOpen(false);
                   }}
-                  className="w-full text-left px-6 py-3.5 text-[15px] font-semibold text-[var(--text-primary)] hover:bg-[var(--border)] hover:text-red-400 transition-colors border-b border-[var(--border)]/30 flex items-center gap-2"
+                  className="w-full text-left px-6 py-4 text-[17px] font-semibold text-[var(--text-primary)] hover:bg-[var(--border)] hover:text-red-400 transition-colors border-b border-[var(--border)]/30 flex items-center gap-2"
                 >
-                  <LogOut size={16} />
+                  <LogOut size={18} />
                   Logout
                 </button>
               )}

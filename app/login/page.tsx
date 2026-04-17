@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Header from '../components/header';
 
 const COUNTRY_OPTIONS = [
   { code: '91', label: 'India' },
@@ -135,75 +136,80 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)] px-4 py-10">
-      <div className="mx-auto w-full max-w-[600px]">
-        <div className="rounded-3xl border border-[var(--border)] bg-[var(--bg-card)] p-8 shadow-2xl">
-          <h1 className="text-center text-4xl font-extrabold text-[#ffd42a] uppercase tracking-wide" style={{ fontFamily: 'var(--font-en)' }}>
-            FRESHNEWS.TOP
-          </h1>
-          <h2 className="text-center text-2xl font-extrabold text-white mt-2" style={{ fontFamily: 'var(--font-en)' }}>
-            Login
-          </h2>
-          <p className="mt-2 text-center text-sm text-[var(--text-muted)]">
-            Use WhatsApp OTP to continue.
-          </p>
+    <>
+      <Header />
+      <div className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)] px-4 py-10">
+        <div className="mx-auto w-full max-w-[600px]">
+          <div className="rounded-3xl border border-[var(--border)] bg-[var(--bg-card)] p-8 shadow-2xl">
+            <h1 className="text-center text-4xl font-extrabold text-[#ffd42a] uppercase tracking-wide" style={{ fontFamily: 'var(--font-en)' }}>
+              FRESHNEWS.TOP
+            </h1>
+            <h2 className="text-center text-2xl font-extrabold text-white mt-2" style={{ fontFamily: 'var(--font-en)' }}>
+              Login
+            </h2>
+            <p className="mt-2 text-center text-sm text-[var(--text-muted)]">
+              Use WhatsApp OTP to continue.
+            </p>
 
-          {error && (
-            <div className="mt-5 rounded-xl border border-red-500/20 bg-red-500/10 p-3 text-sm font-semibold text-red-400">
-              {error}
-            </div>
-          )}
-
-          <div className="mt-6 space-y-4">
-            <div>
-              <label className="mb-2 block text-sm font-bold text-[var(--text-secondary)]">WhatsApp Number</label>
-              <div className="flex gap-3">
-                <select
-                  value={countryCode}
-                  onChange={(e) => setCountryCode(e.target.value)}
-                  disabled={isBanned}
-                  className="w-20 rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-3 py-3 text-white"
-                >
-                  {COUNTRY_OPTIONS.map((country) => (
-                    <option key={country.code} value={country.code}>
-                      +{country.code}
-                    </option>
-                  ))}
-                </select>
-                <div className="w-28 flex items-center rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-3 py-3">
-                  <span className="text-white mr-1">+</span>
-                  <input
-                    value={countryCode}
-                    onChange={(e) => setCountryCode(onlyDigits(e.target.value))}
-                    disabled={isBanned}
-                    inputMode="numeric"
-                    placeholder="Code"
-                    className="w-full bg-transparent text-white focus:outline-none"
-                  />
-                </div>
-                <input
-                  value={whatsappNumber}
-                  onChange={(e) => {
-                    if (!isBanned) {
-                      setWhatsappNumber(onlyDigits(e.target.value));
-                    }
-                  }}
-                  disabled={isBanned}
-                  placeholder="xxxxxxxxxx"
-                  className="flex-1 rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-4 py-3 text-white focus:border-[#00cfff] focus:outline-none focus:ring-1 focus:ring-[#00cfff] disabled:opacity-50"
-                />
+            {error && (
+              <div className="mt-5 rounded-xl border border-red-500/20 bg-red-500/10 p-3 text-sm font-semibold text-red-400">
+                {error}
               </div>
-            </div>
+            )}
 
-            {!otpSentTo ? (
-              <button
-                type="button"
-                disabled={busy}
-                onClick={requestOtp}
-                className="w-full rounded-xl bg-[#00cfff] px-4 py-3 font-extrabold text-[#0d1117] shadow-md hover:brightness-110 disabled:opacity-60"
-              >
-                {busy ? 'Sending OTP…' : 'Send OTP'}
-              </button>
+            <div className="mt-6 space-y-4">
+              <div>
+              {/* COUNTRY CODE */}
+              <label className="block text-sm mb-1">Country Code</label>
+              <input
+                type="text"
+                maxLength={4}
+                value={countryCode}
+                onChange={(e) => setCountryCode(e.target.value)}
+                className="w-full p-2 rounded bg-gray-800 border border-gray-600"
+                placeholder="+91"
+              />
+
+              {!countryCode && error === 'country' && (
+                <p className="text-red-500 text-sm mt-1">
+                  Enter your country code
+                </p>
+              )}
+              </div>
+
+              {!otpSentTo ? (
+              <>
+                <div>
+                  {/* WHATSAPP NUMBER */}
+                  <label className="block text-sm mt-3 mb-1">WhatsApp Number</label>
+
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={whatsappNumber}
+                      onChange={(e) => setWhatsappNumber(e.target.value)}
+                      className="flex-1 p-2 rounded bg-gray-800 border border-gray-600" 
+                      placeholder="Enter number"
+                    />
+
+                    {/* PLUS BUTTON */}
+                    <button
+                      type="button"
+                      className="bg-blue-600 px-4 rounded text-white text-lg"
+                    >
+                      +
+                    </button>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={requestOtp}
+                  className="w-full rounded-xl bg-[#00cfff] px-4 py-3 font-extrabold text-[#0d1117] shadow-md hover:brightness-110 disabled:opacity-60"
+                >
+                  {busy ? 'Sending OTP…' : 'Send OTP'}
+                </button>
+              </>
             ) : (
               <>
                 <div className="rounded-xl border border-white/10 bg-white/5 p-3 text-sm text-[var(--text-secondary)]">
@@ -245,16 +251,17 @@ export default function LoginPage() {
                 </button>
               </>
             )}
-          </div>
+            </div>
 
-          <div className="mt-6 text-center text-sm text-[var(--text-muted)]">
-            New here?{' '}
-            <Link href="/signup" className="font-bold text-[#90ee90] hover:underline">
-              Create an account
-            </Link>
+            <div className="mt-6 text-center text-sm text-[var(--text-muted)]">
+              New here?{' '}
+              <Link href="/signup" className="font-bold text-[#90ee90] hover:underline">
+                Create an account
+              </Link>
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }

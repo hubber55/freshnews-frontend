@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
+import Header from '../components/header';
 
 const COUNTRY_OPTIONS = [
   { code: '91', label: 'India' },
@@ -137,26 +138,28 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)] px-4 py-10">
-      <div className="mx-auto w-full max-w-[600px]">
-        <div className="rounded-3xl border border-[var(--border)] bg-[var(--bg-card)] p-8 shadow-2xl">
-          <h1 className="text-center text-4xl font-extrabold text-[#ffd42a] uppercase tracking-wide" style={{ fontFamily: 'var(--font-en)' }}>
-            FRESHNEWS.TOP
-          </h1>
-          <h2 className="text-center text-2xl font-extrabold text-white mt-2" style={{ fontFamily: 'var(--font-en)' }}>
-            Sign Up
-          </h2>
-          <p className="mt-2 text-center text-sm text-[var(--text-muted)]">
-            Create your account with WhatsApp OTP.
-          </p>
+    <>
+      <Header />
+      <div className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)] px-4 py-10">
+        <div className="mx-auto w-full max-w-[600px]">
+          <div className="rounded-3xl border border-[var(--border)] bg-[var(--bg-card)] p-8 shadow-2xl">
+            <h1 className="text-center text-4xl font-extrabold text-[#ffd42a] uppercase tracking-wide" style={{ fontFamily: 'var(--font-en)' }}>
+              FRESHNEWS.TOP
+            </h1>
+            <h2 className="text-center text-2xl font-extrabold text-white mt-2" style={{ fontFamily: 'var(--font-en)' }}>
+              Sign Up
+            </h2>
+            <p className="mt-2 text-center text-sm text-[var(--text-muted)]">
+              Create your account with WhatsApp OTP.
+            </p>
 
-          {error && (
-            <div className="mt-5 rounded-xl border border-red-500/20 bg-red-500/10 p-3 text-sm font-semibold text-red-400">
-              {error}
-            </div>
-          )}
+            {error && (
+              <div className="mt-5 rounded-xl border border-red-500/20 bg-red-500/10 p-3 text-sm font-semibold text-red-400">
+                {error}
+              </div>
+            )}
 
-          <div className="mt-6 space-y-4">
+            <div className="mt-6 space-y-4">
             <div>
               <label className="mb-2 block text-sm font-bold text-[var(--text-secondary)]">Name</label>
               <input
@@ -269,16 +272,17 @@ export default function SignupPage() {
                 </button>
               </>
             )}
-          </div>
+            </div>
 
-          <div className="mt-6 text-center text-sm text-[var(--text-muted)]">
-            Already have an account?{' '}
-            <Link href="/login" className="font-bold text-[#90ee90] hover:underline">
-              Login
-            </Link>
+            <div className="mt-6 text-center text-sm text-[var(--text-muted)]">
+              Already have an account?{' '}
+              <Link href="/login" className="font-bold text-[#90ee90] hover:underline">
+                Login
+              </Link>
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
