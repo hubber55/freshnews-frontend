@@ -20,8 +20,8 @@ const USER_MENU_ITEMS = [
   { href: '/submit?type=ad', label: 'Submit Ads', color: '#00cfff' },      // Cyan Blue
   { href: '/submit?type=news', label: 'Submit News', color: '#ffd42a' },    // Yellow
   { href: '/submit?type=event', label: 'Submit Events', color: '#90ee90' },   // Light Green
-  { href: '/classifieds', label: 'Classifieds View/Submit', color: '#ff69b4' }, // Pink
   { href: '/submit?type=classified', label: 'Submit Classifieds', color: '#ff69b4' }, // Pink
+  { href: '/classifieds', label: 'View Classifieds' }, // White (default)
   { href: '/about', label: 'About Us' },
   { href: '/privacy', label: 'Privacy Policy' },
   { href: '/tos', label: 'Terms of Service' },
