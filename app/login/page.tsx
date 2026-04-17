@@ -5,14 +5,21 @@ import Link from 'next/link';
 import Header from '../components/header';
 
 const COUNTRY_OPTIONS = [
-  { code: '91', label: 'India' },
-  { code: '1', label: 'USA/Canada' },
-  { code: '44', label: 'UK' },
-  { code: '971', label: 'UAE' },
-  { code: '966', label: 'Saudi Arabia' },
-  { code: '974', label: 'Qatar' },
-  { code: '65', label: 'Singapore' },
-  { code: '61', label: 'Australia' },
+  { code: '91', label: 'India (+91)' },
+  { code: '971', label: 'UAE (+971)' },
+  { code: '966', label: 'Saudi Arabia (+966)' },
+  { code: '974', label: 'Qatar (+974)' },
+  { code: '965', label: 'Kuwait (+965)' },
+  { code: '968', label: 'Oman (+968)' },
+  { code: '973', label: 'Bahrain (+973)' },
+  { code: '44', label: 'UK (+44)' },
+  { code: '1', label: 'USA/Canada (+1)' },
+  { code: '61', label: 'Australia (+61)' },
+  { code: '60', label: 'Malaysia (+60)' },
+  { code: '65', label: 'Singapore (+65)' },
+  { code: '49', label: 'Germany (+49)' },
+  { code: '353', label: 'Ireland (+353)' },
+  { code: '', label: 'Other (+)' },
 ];
 
 const MAX_UNIQUE_NUMBERS = 3;
@@ -30,6 +37,36 @@ function maskHint(masked: string) {
 
 function onlyDigits(value: string) {
   return value.replace(/[^\d]/g, '');
+}
+
+function validatePhoneNumber(countryCode: string, phoneNumber: string): { valid: boolean; error?: string } {
+  const digits = onlyDigits(phoneNumber);
+  const code = onlyDigits(countryCode);
+  
+  if (!code) {
+    return { valid: false, error: 'Please select or enter a country code' };
+  }
+  
+  if (!digits) {
+    return { valid: false, error: 'Please enter your WhatsApp number' };
+  }
+  
+  // India (+91) must be exactly 10 digits
+  if (code === '91') {
+    if (digits.length !== 10) {
+      return { valid: false, error: 'Indian numbers must be exactly 10 digits' };
+    }
+  } else {
+    // Other countries: max 15 digits
+    if (digits.length > 15) {
+      return { valid: false, error: 'Phone number cannot exceed 15 digits' };
+    }
+    if (digits.length < 7) {
+      return { valid: false, error: 'Phone number must be at least 7 digits' };
+    }
+  }
+  
+  return { valid: true };
 }
 
 function getSessionData(): WaSession {
@@ -88,11 +125,13 @@ export default function LoginPage() {
   };
 
   const requestOtp = async () => {
-    const fullWhatsappNumber = buildFullWhatsappNumber(countryCode, whatsappNumber);
-    if (!fullWhatsappNumber || fullWhatsappNumber.length < 10) {
-      setError('Please enter a valid WhatsApp number');
+    const validation = validatePhoneNumber(countryCode, whatsappNumber);
+    if (!validation.valid) {
+      setError(validation.error || 'Please enter a valid WhatsApp number');
       return;
     }
+    
+    const fullWhatsappNumber = buildFullWhatsappNumber(countryCode, whatsappNumber);
     if (!checkAndTrackOtpAttempt(fullWhatsappNumber)) {
       return;
     }
@@ -154,55 +193,71 @@ export default function LoginPage() {
               </div>
             )}
 
-            <div className="mt-6 space-y-4">
-              <div>
-              {/* COUNTRY CODE */}
-              <label className="block text-sm mb-1">Country Code</label>
-              <input
-                type="text"
-                maxLength={4}
-                value={countryCode}
-                onChange={(e) => setCountryCode(e.target.value)}
-                className="w-full p-2 rounded bg-gray-800 border border-gray-600"
-                placeholder="+91"
-              />
-
-              {!countryCode && error === 'country' && (
-                <p className="text-red-500 text-sm mt-1">
-                  Enter your country code
-                </p>
-              )}
-              </div>
-
+            <div className="mt-8 space-y-5">
               {!otpSentTo ? (
               <>
+                {/* COUNTRY CODE SELECT */}
                 <div>
-                  {/* WHATSAPP NUMBER */}
-                  <label className="block text-sm mt-3 mb-1">WhatsApp Number</label>
-
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      value={whatsappNumber}
-                      onChange={(e) => setWhatsappNumber(e.target.value)}
-                      className="flex-1 p-2 rounded bg-gray-800 border border-gray-600" 
-                      placeholder="Enter number"
-                    />
-
-                    {/* PLUS BUTTON */}
-                    <button
-                      type="button"
-                      className="bg-blue-600 px-4 rounded text-white text-lg"
-                    >
-                      +
-                    </button>
-                  </div>
+                  <label className="block text-sm font-medium text-[var(--text-secondary)] mb-2">Country Code</label>
+                  <select
+                    value={countryCode}
+                    onChange={(e) => setCountryCode(e.target.value)}
+                    disabled={isBanned}
+                    className="w-full rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-4 py-3 text-white focus:border-[#00cfff] focus:outline-none focus:ring-1 focus:ring-[#00cfff] disabled:opacity-50"
+                  >
+                    {COUNTRY_OPTIONS.map((country) => (
+                      <option key={country.code} value={country.code}>
+                        {country.label}
+                      </option>
+                    ))}
+                  </select>
                 </div>
+
+                {/* CUSTOM COUNTRY CODE INPUT (for "Other" option) */}
+                {countryCode === '' && (
+                  <div>
+                    <label className="block text-sm font-medium text-[var(--text-secondary)] mb-2">Enter Country Code</label>
+                    <div className="flex items-center rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-4 py-3">
+                      <span className="text-white mr-2">+</span>
+                      <input
+                        type="text"
+                        value={countryCode}
+                        onChange={(e) => setCountryCode(onlyDigits(e.target.value).slice(0, 3))}
+                        maxLength={3}
+                        inputMode="numeric"
+                        placeholder="e.g. 92"
+                        className="flex-1 bg-transparent text-white focus:outline-none"
+                      />
+                    </div>
+                    <p className="mt-1 text-xs text-[var(--text-muted)]">Enter country code without + (max 3 digits)</p>
+                  </div>
+                )}
+
+                {/* WHATSAPP NUMBER */}
+                <div>
+                  <label className="block text-sm font-medium text-[var(--text-secondary)] mb-2">
+                    WhatsApp Number
+                    <span className="ml-2 text-xs text-[var(--text-muted)]">
+                      {countryCode === '91' ? '(exactly 10 digits)' : '(7-15 digits)'}
+                    </span>
+                  </label>
+                  <input
+                    type="text"
+                    value={whatsappNumber}
+                    onChange={(e) => setWhatsappNumber(onlyDigits(e.target.value).slice(0, countryCode === '91' ? 10 : 15))}
+                    maxLength={countryCode === '91' ? 10 : 15}
+                    inputMode="numeric"
+                    disabled={isBanned}
+                    placeholder={countryCode === '91' ? '9876543210' : 'Enter number'}
+                    className="w-full rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-4 py-3 text-white focus:border-[#00cfff] focus:outline-none focus:ring-1 focus:ring-[#00cfff] disabled:opacity-50"
+                  />
+                </div>
+
                 <button
                   type="button"
-                  disabled={busy}
+                  disabled={busy || isBanned}
                   onClick={requestOtp}
-                  className="w-full rounded-xl bg-[#00cfff] px-4 py-3 font-extrabold text-[#0d1117] shadow-md hover:brightness-110 disabled:opacity-60"
+                  className="w-full rounded-xl bg-[#00cfff] px-4 py-3 font-extrabold text-[#0d1117] shadow-md hover:brightness-110 disabled:opacity-60 transition-all"
                 >
                   {busy ? 'Sending OTP…' : 'Send OTP'}
                 </button>

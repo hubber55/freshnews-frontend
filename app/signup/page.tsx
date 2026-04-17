@@ -5,14 +5,21 @@ import Link from 'next/link';
 import Header from '../components/header';
 
 const COUNTRY_OPTIONS = [
-  { code: '91', label: 'India' },
-  { code: '1', label: 'USA/Canada' },
-  { code: '44', label: 'UK' },
-  { code: '971', label: 'UAE' },
-  { code: '966', label: 'Saudi Arabia' },
-  { code: '974', label: 'Qatar' },
-  { code: '65', label: 'Singapore' },
-  { code: '61', label: 'Australia' },
+  { code: '91', label: 'India (+91)' },
+  { code: '971', label: 'UAE (+971)' },
+  { code: '966', label: 'Saudi Arabia (+966)' },
+  { code: '974', label: 'Qatar (+974)' },
+  { code: '965', label: 'Kuwait (+965)' },
+  { code: '968', label: 'Oman (+968)' },
+  { code: '973', label: 'Bahrain (+973)' },
+  { code: '44', label: 'UK (+44)' },
+  { code: '1', label: 'USA/Canada (+1)' },
+  { code: '61', label: 'Australia (+61)' },
+  { code: '60', label: 'Malaysia (+60)' },
+  { code: '65', label: 'Singapore (+65)' },
+  { code: '49', label: 'Germany (+49)' },
+  { code: '353', label: 'Ireland (+353)' },
+  { code: '', label: 'Other (+)' },
 ];
 
 const MAX_UNIQUE_NUMBERS = 3;
@@ -30,6 +37,36 @@ function maskHint(masked: string) {
 
 function onlyDigits(value: string) {
   return value.replace(/[^\d]/g, '');
+}
+
+function validatePhoneNumber(countryCode: string, phoneNumber: string): { valid: boolean; error?: string } {
+  const digits = onlyDigits(phoneNumber);
+  const code = onlyDigits(countryCode);
+  
+  if (!code) {
+    return { valid: false, error: 'Please select or enter a country code' };
+  }
+  
+  if (!digits) {
+    return { valid: false, error: 'Please enter your WhatsApp number' };
+  }
+  
+  // India (+91) must be exactly 10 digits
+  if (code === '91') {
+    if (digits.length !== 10) {
+      return { valid: false, error: 'Indian numbers must be exactly 10 digits' };
+    }
+  } else {
+    // Other countries: max 15 digits
+    if (digits.length > 15) {
+      return { valid: false, error: 'Phone number cannot exceed 15 digits' };
+    }
+    if (digits.length < 7) {
+      return { valid: false, error: 'Phone number must be at least 7 digits' };
+    }
+  }
+  
+  return { valid: true };
 }
 
 function getSessionData(): WaSession {
@@ -90,11 +127,13 @@ export default function SignupPage() {
   };
 
   const requestOtp = async () => {
-    const fullWhatsappNumber = buildFullWhatsappNumber(countryCode, whatsappNumber);
-    if (!fullWhatsappNumber || fullWhatsappNumber.length < 10) {
-      setError('Please enter a valid WhatsApp number');
+    const validation = validatePhoneNumber(countryCode, whatsappNumber);
+    if (!validation.valid) {
+      setError(validation.error || 'Please enter a valid WhatsApp number');
       return;
     }
+    
+    const fullWhatsappNumber = buildFullWhatsappNumber(countryCode, whatsappNumber);
     if (!checkAndTrackOtpAttempt(fullWhatsappNumber)) {
       return;
     }
@@ -156,78 +195,100 @@ export default function SignupPage() {
               </div>
             )}
 
-            <div className="mt-6 space-y-4">
-            <div>
-              <label className="mb-2 block text-sm font-bold text-[var(--text-secondary)]">Name</label>
-              <input
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                placeholder="Your name (max 15 characters)"
-                maxLength={15}
-                className="w-full rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-4 py-3 text-white focus:border-[#90ee90] focus:outline-none focus:ring-1 focus:ring-[#90ee90]"
-              />
-            </div>
-
-            <div>
-              <label className="mb-2 block text-sm font-bold text-[var(--text-secondary)]">Email</label>
-              <input
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="your@email.com (max 40 characters)"
-                maxLength={40}
-                className="w-full rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-4 py-3 text-white focus:border-[#90ee90] focus:outline-none focus:ring-1 focus:ring-[#90ee90]"
-              />
-            </div>
-
-            <div>
-              <label className="mb-2 block text-sm font-bold text-[var(--text-secondary)]">WhatsApp Number</label>
-              <div className="flex gap-3">
-                <select
-                  value={countryCode}
-                  onChange={(e) => setCountryCode(e.target.value)}
-                  disabled={isBanned}
-                  className="w-20 rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-3 py-3 text-white"
-                >
-                  {COUNTRY_OPTIONS.map((country) => (
-                    <option key={country.code} value={country.code}>
-                      +{country.code}
-                    </option>
-                  ))}
-                </select>
-                <div className="w-28 flex items-center rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-3 py-3">
-                  <span className="text-white mr-1">+</span>
-                  <input
-                    value={countryCode}
-                    onChange={(e) => setCountryCode(onlyDigits(e.target.value))}
-                    disabled={isBanned}
-                    inputMode="numeric"
-                    placeholder="Code"
-                    className="w-full bg-transparent text-white focus:outline-none"
-                  />
-                </div>
+            <div className="mt-8 space-y-5">
+              {/* NAME */}
+              <div>
+                <label className="block text-sm font-medium text-[var(--text-secondary)] mb-2">Name</label>
                 <input
-                  value={whatsappNumber}
-                  onChange={(e) => {
-                    if (!isBanned) {
-                      setWhatsappNumber(onlyDigits(e.target.value));
-                    }
-                  }}
-                  disabled={isBanned}
-                  placeholder="xxxxxxxxxx"
-                  className="flex-1 rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-4 py-3 text-white focus:border-[#00cfff] focus:outline-none focus:ring-1 focus:ring-[#00cfff] disabled:opacity-50"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Your name"
+                  maxLength={15}
+                  className="w-full rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-4 py-3 text-white focus:border-[#90ee90] focus:outline-none focus:ring-1 focus:ring-[#90ee90]"
                 />
               </div>
-            </div>
 
-            {!otpSentTo ? (
-              <button
-                type="button"
-                disabled={busy}
-                onClick={requestOtp}
-                className="w-full rounded-xl bg-[#00cfff] px-4 py-3 font-extrabold text-[#0d1117] shadow-md hover:brightness-110 disabled:opacity-60"
-              >
-                {busy ? 'Sending OTP…' : 'Send OTP'}
-              </button>
+              {/* EMAIL */}
+              <div>
+                <label className="block text-sm font-medium text-[var(--text-secondary)] mb-2">Email</label>
+                <input
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="your@email.com"
+                  maxLength={40}
+                  className="w-full rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-4 py-3 text-white focus:border-[#90ee90] focus:outline-none focus:ring-1 focus:ring-[#90ee90]"
+                />
+              </div>
+
+              {!otpSentTo ? (
+              <>
+                {/* COUNTRY CODE SELECT */}
+                <div>
+                  <label className="block text-sm font-medium text-[var(--text-secondary)] mb-2">Country Code</label>
+                  <select
+                    value={countryCode}
+                    onChange={(e) => setCountryCode(e.target.value)}
+                    disabled={isBanned}
+                    className="w-full rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-4 py-3 text-white focus:border-[#00cfff] focus:outline-none focus:ring-1 focus:ring-[#00cfff] disabled:opacity-50"
+                  >
+                    {COUNTRY_OPTIONS.map((country) => (
+                      <option key={country.code} value={country.code}>
+                        {country.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {/* CUSTOM COUNTRY CODE INPUT (for "Other" option) */}
+                {countryCode === '' && (
+                  <div>
+                    <label className="block text-sm font-medium text-[var(--text-secondary)] mb-2">Enter Country Code</label>
+                    <div className="flex items-center rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-4 py-3">
+                      <span className="text-white mr-2">+</span>
+                      <input
+                        type="text"
+                        value={countryCode}
+                        onChange={(e) => setCountryCode(onlyDigits(e.target.value).slice(0, 3))}
+                        maxLength={3}
+                        inputMode="numeric"
+                        placeholder="e.g. 92"
+                        className="flex-1 bg-transparent text-white focus:outline-none"
+                      />
+                    </div>
+                    <p className="mt-1 text-xs text-[var(--text-muted)]">Enter country code without + (max 3 digits)</p>
+                  </div>
+                )}
+
+                {/* WHATSAPP NUMBER */}
+                <div>
+                  <label className="block text-sm font-medium text-[var(--text-secondary)] mb-2">
+                    WhatsApp Number
+                    <span className="ml-2 text-xs text-[var(--text-muted)]">
+                      {countryCode === '91' ? '(exactly 10 digits)' : '(7-15 digits)'}
+                    </span>
+                  </label>
+                  <input
+                    type="text"
+                    value={whatsappNumber}
+                    onChange={(e) => setWhatsappNumber(onlyDigits(e.target.value).slice(0, countryCode === '91' ? 10 : 15))}
+                    maxLength={countryCode === '91' ? 10 : 15}
+                    inputMode="numeric"
+                    disabled={isBanned}
+                    placeholder={countryCode === '91' ? '9876543210' : 'Enter number'}
+                    className="w-full rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-4 py-3 text-white focus:border-[#00cfff] focus:outline-none focus:ring-1 focus:ring-[#00cfff] disabled:opacity-50"
+                  />
+                </div>
+
+                <button
+                  type="button"
+                  disabled={busy || isBanned}
+                  onClick={requestOtp}
+                  className="w-full rounded-xl bg-[#00cfff] px-4 py-3 font-extrabold text-[#0d1117] shadow-md hover:brightness-110 disabled:opacity-60 transition-all"
+                >
+                  {busy ? 'Sending OTP…' : 'Send OTP'}
+                </button>
+              </>
             ) : (
               <>
                 <div className="rounded-xl border border-white/10 bg-white/5 p-3 text-sm text-[var(--text-secondary)]">
