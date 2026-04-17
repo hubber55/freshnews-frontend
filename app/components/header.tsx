@@ -95,16 +95,16 @@ export default function Header({ titleColorClass = 'text-[#ffd42a]' }: HeaderPro
   return (
     <>
       <header className="sticky top-0 z-30 bg-[var(--bg-card)] border-b border-[var(--border)]">
-        <div className="mx-auto flex h-14 w-full max-w-[800px] items-center justify-between px-4">
+        <div className="mx-auto flex h-20 w-full max-w-[800px] items-center justify-between px-4">
           <button
             type="button"
             aria-label="Open menu"
             onClick={() => setMenuOpen(true)}
-            className="flex h-10 w-10 items-center justify-center text-[var(--text-secondary)] hover:text-white transition-colors"
+            className="flex h-12 w-12 items-center justify-center text-[var(--text-secondary)] hover:text-white transition-colors"
           >
-            <Menu size={22} strokeWidth={2.5} />
+            <Menu size={24} strokeWidth={2.5} />
           </button>
-          <Link href="/" className="relative block h-10 w-36">
+          <Link href="/" className="relative block h-16 w-48">
             <Image
               src="/logos/banner.png"
               alt="FreshNews.top Logo"
@@ -195,9 +195,9 @@ export default function Header({ titleColorClass = 'text-[#ffd42a]' }: HeaderPro
             <button
               type="button"
               aria-label="Search"
-              className="flex h-10 w-10 items-center justify-center text-[var(--text-secondary)] hover:text-white transition-colors"
+              className="flex h-12 w-12 items-center justify-center text-[var(--text-secondary)] hover:text-white transition-colors"
             >
-              <Search size={22} strokeWidth={2.5} />
+              <Search size={24} strokeWidth={2.5} />
             </button>
           </div>
         </div>
