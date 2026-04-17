@@ -1,8 +1,8 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Menu, X, Search, LogOut, User, ChevronDown, Shield } from 'lucide-react';
+import { Menu, X, Search, LogOut, User, Shield } from 'lucide-react';
 
 const GUEST_LINKS = [
   { href: '/', label: 'Home' },
@@ -41,11 +41,8 @@ export default function Header({ titleColorClass = 'text-[#ffd42a]' }: HeaderPro
   const [menuOpen, setMenuOpen] = useState(false);
   const [userName, setUserName] = useState<string | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
-  const [userMenuOpen, setUserMenuOpen] = useState(false);
-  const [adminMenuOpen, setAdminMenuOpen] = useState(false);
-  
-  const userMenuRef = useRef<HTMLDivElement>(null);
-  const adminMenuRef = useRef<HTMLDivElement>(null);
+  const isLoggedIn = !!userName;
+  const navLinks = isLoggedIn ? USER_MENU_ITEMS : GUEST_LINKS;
 
   useEffect(() => {
     // Fetch user name and admin status
@@ -61,32 +58,9 @@ export default function Header({ titleColorClass = 'text-[#ffd42a]' }: HeaderPro
       });
   }, []);
 
-  // Close dropdowns when clicking outside
-  useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (userMenuRef.current && !userMenuRef.current.contains(event.target as Node)) {
-        setUserMenuOpen(false);
-      }
-      if (adminMenuRef.current && !adminMenuRef.current.contains(event.target as Node)) {
-        setAdminMenuOpen(false);
-      }
-    }
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  const isLoggedIn = !!userName;
-  const navLinks = isLoggedIn ? USER_MENU_ITEMS : GUEST_LINKS;
-
   const handleLogout = async () => {
     await fetch('/api/auth/logout', { method: 'POST' });
     setUserName(null);
-    setIsAdmin(false);
-    window.location.href = '/';
-  };
-
-  const handleAdminLogout = async () => {
-    await fetch('/api/admin/logout', { method: 'POST' });
     setIsAdmin(false);
     window.location.href = '/';
   };
@@ -111,93 +85,13 @@ export default function Header({ titleColorClass = 'text-[#ffd42a]' }: HeaderPro
               className="h-full w-auto object-contain"
             />
           </Link>
-          <div className="flex items-center gap-2">
-            {/* User Menu Dropdown */}
-            {isLoggedIn && (
-              <div className="relative" ref={userMenuRef}>
-                <button
-                  type="button"
-                  onClick={() => setUserMenuOpen(!userMenuOpen)}
-                  className="flex items-center gap-2 h-10 px-3 rounded-lg text-[var(--text-secondary)] hover:text-white hover:bg-[var(--border)] transition-colors"
-                >
-                  <User size={18} />
-                  <span className="text-sm font-semibold">Welcome {userName}</span>
-                  <ChevronDown size={16} className={`transition-transform ${userMenuOpen ? 'rotate-180' : ''}`} />
-                </button>
-                {userMenuOpen && (
-                  <div className="absolute right-0 mt-2 w-48 bg-[var(--bg-card)] border border-[var(--border)] rounded-lg shadow-xl py-2 z-50">
-                    {USER_MENU_ITEMS.map((item) => (
-                      <Link
-                        key={item.href}
-                        href={item.href}
-                        onClick={() => setUserMenuOpen(false)}
-                        className="block px-4 py-2 text-sm text-[var(--text-primary)] hover:bg-[var(--border)] hover:text-[#ffd42a] transition-colors"
-                      >
-                        {item.label}
-                      </Link>
-                    ))}
-                    <button
-                      onClick={() => {
-                        handleLogout();
-                        setUserMenuOpen(false);
-                      }}
-                      className="w-full text-left px-4 py-2 text-sm text-[var(--text-primary)] hover:bg-[var(--border)] hover:text-red-400 transition-colors flex items-center gap-2"
-                    >
-                      <LogOut size={14} />
-                      Logout
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
-            
-            {/* Admin Menu Dropdown */}
-            {isAdmin && (
-              <div className="relative" ref={adminMenuRef}>
-                <button
-                  type="button"
-                  onClick={() => setAdminMenuOpen(!adminMenuOpen)}
-                  className="flex items-center gap-2 h-10 px-3 rounded-lg text-[var(--text-secondary)] hover:text-white hover:bg-[var(--border)] transition-colors"
-                >
-                  <Shield size={18} />
-                  <span className="text-sm font-semibold">Admin Panel</span>
-                  <ChevronDown size={16} className={`transition-transform ${adminMenuOpen ? 'rotate-180' : ''}`} />
-                </button>
-                {adminMenuOpen && (
-                  <div className="absolute right-0 mt-2 w-48 bg-[var(--bg-card)] border border-[var(--border)] rounded-lg shadow-xl py-2 z-50">
-                    {ADMIN_MENU_ITEMS.map((item) => (
-                      <Link
-                        key={item.href}
-                        href={item.href}
-                        onClick={() => setAdminMenuOpen(false)}
-                        className="block px-4 py-2 text-sm text-[var(--text-primary)] hover:bg-[var(--border)] hover:text-[#ffd42a] transition-colors"
-                      >
-                        {item.label}
-                      </Link>
-                    ))}
-                    <button
-                      onClick={() => {
-                        handleAdminLogout();
-                        setAdminMenuOpen(false);
-                      }}
-                      className="w-full text-left px-4 py-2 text-sm text-[var(--text-primary)] hover:bg-[var(--border)] hover:text-red-400 transition-colors flex items-center gap-2"
-                    >
-                      <LogOut size={14} />
-                      Logout
-                    </button>
-                  </div>
-                )}
-              </div>
-            )}
-            
-            <button
-              type="button"
-              aria-label="Search"
-              className="flex h-12 w-12 items-center justify-center text-[var(--text-secondary)] hover:text-white transition-colors"
-            >
-              <Search size={24} strokeWidth={2.5} />
-            </button>
-          </div>
+          <button
+            type="button"
+            aria-label="Search"
+            className="flex h-12 w-12 items-center justify-center text-[var(--text-secondary)] hover:text-white transition-colors"
+          >
+            <Search size={24} strokeWidth={2.5} />
+          </button>
         </div>
       </header>
 
@@ -263,16 +157,22 @@ export default function Header({ titleColorClass = 'text-[#ffd42a]' }: HeaderPro
                 </>
               )}
               {isLoggedIn && (
-                <button
-                  onClick={() => {
-                    handleLogout();
-                    setMenuOpen(false);
-                  }}
-                  className="w-full text-left px-6 py-3.5 text-[15px] font-semibold text-[var(--text-primary)] hover:bg-[var(--border)] hover:text-red-400 transition-colors border-b border-[var(--border)]/30 flex items-center gap-2"
-                >
-                  <LogOut size={16} />
-                  Logout
-                </button>
+                <>
+                  <div className="px-6 py-3.5 text-[15px] font-bold text-[#ffd42a] border-b border-[var(--border)]/30 flex items-center gap-2">
+                    <User size={16} />
+                    Welcome {userName}
+                  </div>
+                  <button
+                    onClick={() => {
+                      handleLogout();
+                      setMenuOpen(false);
+                    }}
+                    className="w-full text-left px-6 py-3.5 text-[15px] font-semibold text-[var(--text-primary)] hover:bg-[var(--border)] hover:text-red-400 transition-colors border-b border-[var(--border)]/30 flex items-center gap-2"
+                  >
+                    <LogOut size={16} />
+                    Logout
+                  </button>
+                </>
               )}
             </div>
             <div className="px-6 py-4 border-t border-[var(--border)] text-[11px] text-[var(--text-muted)]" style={{ fontFamily: 'var(--font-en)' }}>
