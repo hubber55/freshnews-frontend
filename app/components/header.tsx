@@ -3,7 +3,6 @@
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { Menu, X, Search, LogOut, User, ChevronDown, Shield } from 'lucide-react';
-import Image from 'next/image';
 
 const GUEST_LINKS = [
   { href: '/', label: 'Home' },
@@ -104,13 +103,12 @@ export default function Header({ titleColorClass = 'text-[#ffd42a]' }: HeaderPro
           >
             <Menu size={24} strokeWidth={2.5} />
           </button>
-          <Link href="/" className="relative block h-16 w-48">
-            <Image
+          <Link href="/" className="flex items-center justify-center h-16">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
               src="/logos/banner.png"
               alt="FreshNews.top Logo"
-              fill
-              priority
-              style={{ objectFit: 'contain' }}
+              className="h-full w-auto object-contain"
             />
           </Link>
           <div className="flex items-center gap-2">
@@ -214,13 +212,12 @@ export default function Header({ titleColorClass = 'text-[#ffd42a]' }: HeaderPro
           {/* Drawer */}
           <nav className="relative z-10 w-[280px] h-full bg-[var(--bg-card)] border-r border-[var(--border)] shadow-2xl flex flex-col animate-slide-in">
             <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--border)]">
-              <div className="relative h-8 w-24">
-                <Image
+              <div className="h-8 flex items-center">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
                   src="/logos/banner.png"
                   alt="FreshNews.top Logo"
-                  fill
-                  priority
-                  style={{ objectFit: 'contain' }}
+                  className="h-full w-auto object-contain"
                 />
               </div>
               <button
