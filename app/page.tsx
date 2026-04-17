@@ -87,7 +87,8 @@ export default function Home({ searchParams }: { searchParams: { tag?: string; p
     fetchData();
   }, [searchParams, activeTag]);
 
-  if (posts.length === 0) {
+  // Only show "No News Available" when not loading and posts are actually empty
+  if (!loading && posts.length === 0) {
     return (
       <div className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)]">
         <Header titleColorClass="text-white" />

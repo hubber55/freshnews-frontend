@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Menu, X, Search, LogOut, User, Shield } from 'lucide-react';
+import { Menu, X, Search, LogOut, User } from 'lucide-react';
 
 const GUEST_LINKS = [
   { href: '/', label: 'Home' },
@@ -24,15 +24,6 @@ const USER_MENU_ITEMS = [
   { href: '/contact', label: 'Contact Us' },
 ];
 
-const ADMIN_MENU_ITEMS = [
-  { href: '/admin', label: 'Dashboard' },
-  { href: '/admin/categories', label: 'Categories' },
-  { href: '/admin/categories', label: 'Subcategories' },
-  { href: '/admin/posts', label: 'News Management' },
-  { href: '/admin/users', label: 'Users' },
-  { href: '/admin/settings', label: 'Settings' },
-];
-
 type HeaderProps = {
   titleColorClass?: string;
 };
@@ -40,28 +31,24 @@ type HeaderProps = {
 export default function Header({ titleColorClass = 'text-[#ffd42a]' }: HeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [userName, setUserName] = useState<string | null>(null);
-  const [isAdmin, setIsAdmin] = useState(false);
   const isLoggedIn = !!userName;
   const navLinks = isLoggedIn ? USER_MENU_ITEMS : GUEST_LINKS;
 
   useEffect(() => {
-    // Fetch user name and admin status
+    // Fetch user name
     fetch('/api/auth/me')
       .then(res => res.json())
       .then(data => {
         setUserName(data.name || null);
-        setIsAdmin(data.isAdmin || false);
       })
       .catch(() => {
         setUserName(null);
-        setIsAdmin(false);
       });
   }, []);
 
   const handleLogout = async () => {
     await fetch('/api/auth/logout', { method: 'POST' });
     setUserName(null);
-    setIsAdmin(false);
     window.location.href = '/';
   };
 
@@ -80,7 +67,7 @@ export default function Header({ titleColorClass = 'text-[#ffd42a]' }: HeaderPro
           <Link href="/" className="flex items-center justify-center h-16">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src="/logos/banner.png"
+              src="/logos/freshnews_header.png"
               alt="FreshNews.top Logo"
               className="h-full w-auto object-contain"
             />
@@ -109,7 +96,7 @@ export default function Header({ titleColorClass = 'text-[#ffd42a]' }: HeaderPro
               <div className="h-8 flex items-center">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src="/logos/banner.png"
+                  src="/logos/freshnews_header.png"
                   alt="FreshNews.top Logo"
                   className="h-full w-auto object-contain"
                 />
@@ -138,24 +125,6 @@ export default function Header({ titleColorClass = 'text-[#ffd42a]' }: HeaderPro
                   {link.label}
                 </Link>
               ))}
-              {isAdmin && (
-                <>
-                  <div className="px-6 py-3.5 text-[15px] font-bold text-[#ffd42a] border-b border-[var(--border)]/30 flex items-center gap-2">
-                    <Shield size={16} />
-                    Admin Panel
-                  </div>
-                  {ADMIN_MENU_ITEMS.map((item) => (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      onClick={() => setMenuOpen(false)}
-                      className="block px-6 py-3.5 text-[15px] font-semibold text-[var(--text-primary)] hover:bg-[var(--border)] hover:text-[#ffd42a] transition-colors border-b border-[var(--border)]/30 pl-10"
-                    >
-                      {item.label}
-                    </Link>
-                  ))}
-                </>
-              )}
               {isLoggedIn && (
                 <button
                   onClick={() => {
