@@ -43,7 +43,7 @@ function HomeContent() {
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [hasNextPage, setHasNextPage] = useState(false);
-  const activeTag = searchParams.get('tag')?.trim() || '';
+  const [activeTag, setActiveTag] = useState('');
   const pageParam = searchParams.get('page') || '1';
 
   // Generate cache key based on search params
@@ -70,6 +70,10 @@ function HomeContent() {
 
   // Get search params string for dependency tracking
   const searchParamsString = searchParams.toString();
+
+  useEffect(() => {
+    setActiveTag(searchParams.get('tag')?.trim() || '');
+  }, [searchParamsString, searchParams]);
 
   // Load cached data or fetch fresh
   useEffect(() => {
