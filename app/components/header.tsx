@@ -17,7 +17,10 @@ const GUEST_LINKS = [
 
 const USER_MENU_ITEMS = [
   { href: '/', label: 'Home' },
-  { href: '/submit', label: 'Submit Ads' },
+  { href: '/submit?type=ad', label: 'Submit Ads', color: '#00cfff' },      // Cyan Blue
+  { href: '/submit?type=news', label: 'Submit News', color: '#ffd42a' },    // Yellow
+  { href: '/submit?type=event', label: 'Submit Events', color: '#90ee90' },   // Light Green
+  { href: '/submit?type=classified', label: 'Submit Classifieds', color: '#ff69b4' }, // Pink
   { href: '/news', label: 'News' },
   { href: '/events', label: 'Events' },
   { href: '/classifieds', label: 'Classifieds' },
@@ -26,6 +29,13 @@ const USER_MENU_ITEMS = [
   { href: '/tos', label: 'Terms of Service' },
   { href: '/contact', label: 'Contact Us' },
 ];
+
+// Type for menu items with optional color
+type MenuItem = {
+  href: string;
+  label: string;
+  color?: string;
+};
 
 type HeaderProps = {
   titleColorClass?: string;
@@ -118,12 +128,23 @@ export default function Header({ titleColorClass = 'text-[#ffd42a]' }: HeaderPro
                   Welcome {userName}
                 </div>
               )}
-              {navLinks.map((link) => (
+              {navLinks.map((link: MenuItem) => (
                 <Link
                   key={link.href}
                   href={link.href}
                   onClick={() => setMenuOpen(false)}
-                  className="block px-6 py-4 text-[17px] font-semibold text-[var(--text-primary)] hover:bg-[var(--border)] hover:text-[#ffd42a] transition-colors border-b border-[var(--border)]/30"
+                  className="block px-6 py-4 text-[17px] font-semibold transition-colors border-b border-[var(--border)]/30"
+                  style={{ 
+                    color: link.color || 'var(--text-primary)',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = 'var(--border)';
+                    e.currentTarget.style.color = link.color ? '#ffffff' : '#ffd42a';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = 'transparent';
+                    e.currentTarget.style.color = link.color || 'var(--text-primary)';
+                  }}
                 >
                   {link.label}
                 </Link>

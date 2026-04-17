@@ -213,10 +213,11 @@ export default async function PostPage({ params }: PageProps) {
               <CommentsSection postId={post.id} />
             </div>
 
-            {/* BACK TO HOME BUTTON with 2 line breaks spacing after comments */}
+            {/* BACK TO HOME BUTTON with 3 line breaks spacing after comments */}
             <div className="mt-20 text-center">
               <div className="h-8" /> {/* Line break 1 */}
               <div className="h-8" /> {/* Line break 2 */}
+              <div className="h-8" /> {/* Line break 3 */}
               <Link
                 href="/"
                 className="inline-flex items-center gap-2 rounded-lg bg-[#000080] px-7 py-3.5 text-[16px] font-bold text-white shadow-md transition-all hover:bg-[#000066] hover:shadow-lg hover:scale-[1.02] active:scale-95"

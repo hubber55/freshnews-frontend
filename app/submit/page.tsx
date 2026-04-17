@@ -1,8 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-import { useUser } from '@/lib/useUser';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 
 // Define types for better state management
@@ -12,8 +11,13 @@ type Subcategory = { id: number; name: string; category_id: number };
 export default function SubmitPage() {
   const supabase = createClient();
   const router = useRouter();
-  const { user, loading } = useUser();
-  const [type, setType] = useState('news'); // news, classified, ad
+  const searchParams = useSearchParams();
+  const [user, setUser] = useState<any | null>(null);
+  const [loading, setLoading] = useState(true);
+  
+  // Get type from query param or default to 'news'
+  const typeParam = searchParams.get('type');
+  const [type, setType] = useState(typeParam || 'news'); // news, classified, ad, event
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [tags, setTags] = useState('');
@@ -38,14 +42,38 @@ export default function SubmitPage() {
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // Check auth status using same API as header
   useEffect(() => {
-    if (!loading && !user) {
-      router.push('/login');
+    async function checkAuth() {
+      try {
+        const res = await fetch('/api/auth/me');
+        const data = await res.json();
+        if (!data.name) {
+          router.push('/login');
+        } else {
+          setUser({ name: data.name });
+        }
+      } catch {
+        router.push('/login');
+      } finally {
+        setLoading(false);
+      }
     }
+    checkAuth();
+  }, [router]);
+
+  // Update type when query param changes
+  useEffect(() => {
+    if (typeParam) {
+      setType(typeParam);
+    }
+  }, [typeParam]);
+
+  useEffect(() => {
     if (user) {
       fetchCategoriesAndSubcategories();
     }
-  }, [user, loading, router]);
+  }, [user]);
 
   async function fetchCategoriesAndSubcategories() {
     const { data: cats, error: catError } = await supabase.from('ad_categories').select('*').order('name');
