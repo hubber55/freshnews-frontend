@@ -68,12 +68,15 @@ function HomeContent() {
     sessionStorage.setItem(cacheKey, JSON.stringify({ posts, hasNextPage, timestamp: Date.now() }));
   }, [posts, hasNextPage, cacheKey]);
 
+  // Get search params string for dependency tracking
+  const searchParamsString = searchParams.toString();
+
   // Load cached data or fetch fresh
   useEffect(() => {
     const currentPage = Math.max(1, Number.parseInt(pageParam, 10) || 1);
     setPage(currentPage);
 
-    // Check if we have cached data for this page
+    // Check if we have cached data for this page/tag combination
     const cached = sessionStorage.getItem(cacheKey);
 
     // Always use cached data if available - this prevents loading flicker when navigating back
@@ -110,10 +113,12 @@ function HomeContent() {
         .range(from, from + overfetch - 1);
 
       if (activeTag) {
+        console.log('Filtering by tag:', activeTag);
         newsQuery = newsQuery.contains('tags', [activeTag]);
       }
 
       const { data: newsData } = await newsQuery;
+      console.log('News query result:', newsData?.length, 'posts found');
       const eligibleNews = (newsData ?? []).filter((post) => hasMinimumWords(post.summary, 70));
 
       const { data: adsData } = await supabase
@@ -135,7 +140,7 @@ function HomeContent() {
       // Cache the data
       sessionStorage.setItem(cacheKey, JSON.stringify({ posts: newPosts, hasNextPage: newHasNextPage, timestamp: Date.now() }));
     }
-  }, [searchParams, activeTag, cacheKey, pageParam]);
+  }, [searchParamsString, activeTag, cacheKey, pageParam]);
 
   // Show "No News Available" only when not loading and posts are actually empty
   if (!loading && posts.length === 0) {
