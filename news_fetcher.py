@@ -76,6 +76,10 @@ def clean_html(text):
 
 def extract_full_article_text(url):
     """Scrape the original news site to extract the full article text from paragraph tags."""
+    # Check if it's a JavaScript-heavy site that needs Playwright
+    if "drivespark" in url.lower():
+        return extract_with_playwright(url)
+    
     try:
         headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
@@ -102,6 +106,11 @@ def extract_full_article_text(url):
             ".content-body",
             "#article-body",
             "#content",
+            # DriveSpark specific selectors
+            ".ds-text-content",
+            ".ds-article-content",
+            ".ds-news-content",
+            "[class*='content']",
         ]
 
         candidate_nodes = []
@@ -142,6 +151,74 @@ def extract_full_article_text(url):
         return None
     except Exception as e:
         logger.debug(f"Failed to extract full text from {url}: {e}")
+        return None
+
+
+def extract_with_playwright(url):
+    """Use Playwright to render JavaScript-heavy pages and extract article text."""
+    try:
+        from playwright.sync_api import sync_playwright
+        
+        logger.info(f"    🎭 Using Playwright for JS-heavy site: {url[:50]}...")
+        
+        with sync_playwright() as p:
+            browser = p.chromium.launch(headless=True)
+            page = browser.new_page()
+            page.goto(url, wait_until="networkidle", timeout=30000)
+            
+            # Wait for content to load
+            page.wait_for_timeout(2000)
+            
+            # Try to find article content
+            content_selectors = [
+                "article",
+                "[itemprop='articleBody']",
+                ".article-content",
+                ".entry-content",
+                ".post-content",
+                "main",
+                ".content",
+                "#content",
+            ]
+            
+            content_html = None
+            for selector in content_selectors:
+                try:
+                    element = page.locator(selector).first
+                    if element.is_visible():
+                        content_html = element.inner_html()
+                        break
+                except:
+                    continue
+            
+            # Fallback to body if no article container found
+            if not content_html:
+                content_html = page.locator("body").inner_html()
+            
+            browser.close()
+            
+            # Parse with BeautifulSoup
+            soup = BeautifulSoup(content_html, "html.parser")
+            
+            # Remove unwanted elements
+            for tag in soup(["script", "style", "noscript", "svg", "iframe", "footer", "nav", "aside", "form", "header"]):
+                tag.decompose()
+            
+            # Extract text from paragraphs and headings
+            blocks = []
+            for el in soup.find_all(["p", "li", "h2", "h3", "h4"]):
+                text = el.get_text(" ", strip=True)
+                if len(text) >= 25:
+                    blocks.append(text)
+            
+            full_text = " ".join(blocks).strip()
+            if len(full_text) > 200:
+                logger.info(f"    ✅ Playwright extracted {len(full_text)} chars")
+                return full_text
+            return None
+            
+    except Exception as e:
+        logger.debug(f"Playwright extraction failed for {url}: {e}")
         return None
 
 
