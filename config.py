@@ -51,6 +51,7 @@ def google_news_query_feed(name: str, query_text: str, category: str = "general"
 
 MALAYALAM_RSS_FEEDS = [
     # Newly added requested sources (prioritized first)
+    google_news_query_feed("DriveSpark Malayalam", "DriveSpark Malayalam"),
     google_news_query_feed("Malayalam Reporter", "Malayalam Reporter"),
     google_news_query_feed("Asianet News Malayalam", "Asianet News Malayalam"),
     google_news_site_feed("Deepika", "deepika.com"),
