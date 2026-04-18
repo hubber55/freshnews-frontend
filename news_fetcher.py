@@ -78,41 +78,25 @@ def extract_full_article_text(url):
     """Scrape the original news site to extract the full article text from paragraph tags."""
     logger.info(f"    🔍 extract_full_article_text called for: {url[:60]}...")
     
-    # Follow Google News redirects to get actual URL
+    # Follow Google News redirects to get actual URL (they use JS redirects)
     actual_url = url
     if "news.google.com" in url:
         try:
-            headers = {
-                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
-            }
-            response = http_request("GET", url, headers=headers, timeout=10, allow_redirects=True)
-            actual_url = response.url
+            from playwright.sync_api import sync_playwright
+            logger.info(f"    🌐 Using Playwright to resolve Google News redirect...")
             
-            # If still Google News URL, try to extract from page content
-            if "news.google.com" in actual_url:
-                soup = BeautifulSoup(response.text, "html.parser")
-                # Try meta refresh
-                meta_refresh = soup.find("meta", attrs={"http-equiv": "refresh"})
-                if meta_refresh:
-                    content = meta_refresh.get("content", "")
-                    if "url=" in content:
-                        actual_url = content.split("url=")[1].strip()
-                # Try canonical link
-                if "news.google.com" in actual_url:
-                    canonical = soup.find("link", rel="canonical")
-                    if canonical and canonical.get("href"):
-                        actual_url = canonical["href"]
-                # Try article link in content
-                if "news.google.com" in actual_url:
-                    article_link = soup.find("a", href=True)
-                    if article_link:
-                        href = article_link["href"]
-                        if href.startswith("http"):
-                            actual_url = href
+            with sync_playwright() as p:
+                browser = p.chromium.launch(headless=True)
+                page = browser.new_page()
+                # Navigate and wait for redirect
+                page.goto(url, wait_until="networkidle", timeout=15000)
+                # Get final URL after all redirects
+                actual_url = page.url
+                browser.close()
             
             logger.info(f"    🔄 Google News resolved to: {actual_url[:60]}...")
         except Exception as e:
-            logger.debug(f"    Could not resolve Google News redirect: {e}")
+            logger.warning(f"    Could not resolve Google News redirect with Playwright: {e}")
     
     # Check if it's a JavaScript-heavy site that needs Playwright
     url_lower = actual_url.lower()
