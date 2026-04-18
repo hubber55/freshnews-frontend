@@ -82,6 +82,7 @@ def extract_full_article_text(url):
     actual_url = url
     if "news.google.com" in url:
         try:
+            from playwright.sync_api import sync_playwright
             # Navigate and wait for redirect
             logger.info(f"    🌐 Using Playwright to resolve Google News redirect...")
             
