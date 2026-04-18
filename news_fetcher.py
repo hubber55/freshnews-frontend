@@ -108,9 +108,9 @@ def extract_full_article_text(url):
             logger.info(f"    🔄 Google News resolved to: {actual_url[:80]}...")
             if "keralakaumudi.com" in actual_url:
                 logger.info(f"    🔍 Full Kerala Kaumudi URL: {actual_url}")
-                # Skip photo gallery URLs which often return 404s
-                if "/photogallery/" in actual_url:
-                    logger.warning(f"    ⚠️ Skipping Kerala Kaumudi photo gallery URL")
+                # Skip photo gallery and cartoon URLs which often don't have proper article content
+                if "/photogallery/" in actual_url or "/cartoon/" in actual_url:
+                    logger.warning(f"    ⚠️ Skipping Kerala Kaumudi {('photo gallery' if '/photogallery/' in actual_url else 'cartoon')} URL")
                     return None
         except Exception as e:
             logger.warning(f"    Could not resolve Google News redirect with Playwright: {e}")
@@ -201,6 +201,12 @@ def extract_full_article_text(url):
 def extract_with_playwright(url):
     """Use Playwright to render JavaScript-heavy pages and extract article text."""
     logger.info(f"    🎭 PLAYWRIGHT: Starting extraction for {url[:60]}...")
+    
+    # Skip non-article URLs (photo galleries, cartoons, etc.)
+    if "keralakaumudi.com" in url.lower():
+        if "/photogallery/" in url or "/cartoon/" in url:
+            logger.warning(f"    ⚠️ PLAYWRIGHT: Skipping non-article URL: {url[:60]}...")
+            return None
     
     try:
         # Check if playwright is available
@@ -444,6 +450,12 @@ def extract_og_image(url):
 
 def extract_image_with_playwright(url):
     """Use Playwright to extract image from JavaScript-heavy sites like DriveSpark."""
+    # Skip non-article URLs
+    if "keralakaumudi.com" in url.lower():
+        if "/photogallery/" in url or "/cartoon/" in url:
+            logger.warning(f"    🖼️  Skipping image extraction for non-article URL: {url[:60]}...")
+            return None
+    
     try:
         from playwright.sync_api import sync_playwright
         logger.info(f"    🖼️  Using Playwright to extract image from {url[:50]}...")
