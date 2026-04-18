@@ -447,8 +447,13 @@ def extract_image_with_playwright(url):
             )
             
             page = context.new_page()
-            page.goto(url, wait_until="networkidle", timeout=20000)
-            page.wait_for_timeout(2000)
+            # Use domcontentloaded for faster page load (don't wait for all network requests)
+            try:
+                page.goto(url, wait_until="domcontentloaded", timeout=15000)
+            except:
+                # If timeout, try with even shorter wait
+                logger.info(f"    ⏱️  Timeout waiting for page, trying immediate extraction...")
+            page.wait_for_timeout(3000)  # Give JS time to set meta tags
             
             # Try to get image URL from page
             image_url = None
