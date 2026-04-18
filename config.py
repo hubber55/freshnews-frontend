@@ -50,22 +50,7 @@ def google_news_query_feed(name: str, query_text: str, category: str = "general"
 
 
 MALAYALAM_RSS_FEEDS = [
-    # Newly added requested sources (prioritized first)
-    google_news_query_feed("DriveSpark", "DriveSpark Malayalam"),
-    google_news_query_feed("Malayalam Reporter", "Malayalam Reporter"),
-    google_news_query_feed("Asianet News Malayalam", "Asianet News Malayalam"),
-    google_news_site_feed("Deepika", "deepika.com"),
-    google_news_query_feed("News10 Malayalam", "News10 Malayalam"),
-    {
-        "name": "Sathyam Online",
-        "url": "https://www.sathyamonline.com/rss",
-        "category": "general",
-    },
-    {
-        "name": "Newsthen",
-        "url": "https://newsthen.com/feed",
-        "category": "general",
-    },
+    # Kerala Kaumudi feeds (prioritized first)
     {
         "name": "Kerala Kaumudi",
         "url": "https://keralakaumudi.com/rss/news.xml",
@@ -79,6 +64,20 @@ MALAYALAM_RSS_FEEDS = [
     {
         "name": "Kerala Kaumudi Latest",
         "url": "https://keralakaumudi.com/news/latest.php?format=rss",
+        "category": "general",
+    },
+    google_news_query_feed("Malayalam Reporter", "Malayalam Reporter"),
+    google_news_query_feed("Asianet News Malayalam", "Asianet News Malayalam"),
+    google_news_site_feed("Deepika", "deepika.com"),
+    google_news_query_feed("News10 Malayalam", "News10 Malayalam"),
+    {
+        "name": "Sathyam Online",
+        "url": "https://www.sathyamonline.com/rss",
+        "category": "general",
+    },
+    {
+        "name": "Newsthen",
+        "url": "https://newsthen.com/feed",
         "category": "general",
     },
     {
@@ -158,7 +157,10 @@ MALAYALAM_RSS_FEEDS = [
         "name": "Suprabhaatham",
         "url": "https://www.suprabhaatham.com/feed/",
         "category": "general"
-    }
+    },
+    
+    # DriveSpark (moved to last since it's working)
+    google_news_query_feed("DriveSpark", "DriveSpark Malayalam"),
 ]
 
 # ─── Processing Settings ───
