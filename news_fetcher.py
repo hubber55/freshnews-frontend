@@ -108,6 +108,10 @@ def extract_full_article_text(url):
             logger.info(f"    🔄 Google News resolved to: {actual_url[:80]}...")
             if "keralakaumudi.com" in actual_url:
                 logger.info(f"    🔍 Full Kerala Kaumudi URL: {actual_url}")
+                # Skip photo gallery URLs which often return 404s
+                if "/photogallery/" in actual_url:
+                    logger.warning(f"    ⚠️ Skipping Kerala Kaumudi photo gallery URL")
+                    return None
         except Exception as e:
             logger.warning(f"    Could not resolve Google News redirect with Playwright: {e}")
     
