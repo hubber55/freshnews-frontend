@@ -78,13 +78,26 @@ def extract_full_article_text(url):
     """Scrape the original news site to extract the full article text from paragraph tags."""
     logger.info(f"    🔍 extract_full_article_text called for: {url[:60]}...")
     
+    # Follow Google News redirects to get actual URL
+    actual_url = url
+    if "news.google.com" in url:
+        try:
+            headers = {
+                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+            }
+            response = http_request("GET", url, headers=headers, timeout=10, allow_redirects=True)
+            actual_url = response.url
+            logger.info(f"    🔄 Google News redirect resolved to: {actual_url[:60]}...")
+        except Exception as e:
+            logger.debug(f"    Could not resolve Google News redirect: {e}")
+    
     # Check if it's a JavaScript-heavy site that needs Playwright
-    url_lower = url.lower()
+    url_lower = actual_url.lower()
     if "drivespark" in url_lower or "drivespark.com" in url_lower:
         logger.info(f"    🎯 DriveSpark detected! Using Playwright...")
-        return extract_with_playwright(url)
+        return extract_with_playwright(actual_url)
     else:
-        logger.info(f"    📝 Not DriveSpark (domain: {url_lower.split('/')[2] if '://' in url else 'unknown'}), using standard scraper")
+        logger.info(f"    📝 Not DriveSpark (domain: {url_lower.split('/')[2] if '://' in url_lower else 'unknown'}), using standard scraper")
     
     try:
         headers = {
