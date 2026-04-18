@@ -167,33 +167,55 @@ def extract_with_playwright(url):
             page.goto(url, wait_until="networkidle", timeout=30000)
             
             # Wait for content to load
-            page.wait_for_timeout(2000)
+            page.wait_for_timeout(3000)
             
-            # Try to find article content
+            # Try to find article content with more specific selectors
             content_selectors = [
                 "article",
                 "[itemprop='articleBody']",
                 ".article-content",
+                ".article-body",
                 ".entry-content",
                 ".post-content",
+                ".story-content",
+                ".content-body",
+                ".ds-text-content",
+                ".ds-article-content",
+                ".ds-news-content",
+                "[class*='article']",
+                "[class*='content']",
                 "main",
                 ".content",
                 "#content",
+                "#article-body",
             ]
             
             content_html = None
+            used_selector = None
             for selector in content_selectors:
                 try:
                     element = page.locator(selector).first
                     if element.is_visible():
                         content_html = element.inner_html()
+                        used_selector = selector
+                        logger.info(f"    📍 Found content with selector: {selector}")
                         break
-                except:
+                except Exception as e:
+                    logger.debug(f"    Selector {selector} failed: {e}")
                     continue
             
             # Fallback to body if no article container found
             if not content_html:
+                logger.info(f"    ⚠️ No article container found, using body")
                 content_html = page.locator("body").inner_html()
+                used_selector = "body"
+            
+            # Get page title for context
+            try:
+                title = page.title()
+                logger.info(f"    📝 Page title: {title[:60]}")
+            except:
+                title = ""
             
             browser.close()
             
@@ -201,24 +223,46 @@ def extract_with_playwright(url):
             soup = BeautifulSoup(content_html, "html.parser")
             
             # Remove unwanted elements
-            for tag in soup(["script", "style", "noscript", "svg", "iframe", "footer", "nav", "aside", "form", "header"]):
+            for tag in soup(["script", "style", "noscript", "svg", "iframe", "footer", "nav", "aside", "form", "header", "button", "a"]):
                 tag.decompose()
             
-            # Extract text from paragraphs and headings
+            # Try multiple extraction strategies
+            # Strategy 1: All paragraphs and divs with text
             blocks = []
-            for el in soup.find_all(["p", "li", "h2", "h3", "h4"]):
+            for el in soup.find_all(["p", "div", "section", "span"]):
                 text = el.get_text(" ", strip=True)
-                if len(text) >= 25:
+                # Filter out short fragments and navigation-like text
+                if len(text) >= 20 and not any(skip in text.lower() for skip in ["home", "menu", "login", "sign up", "subscribe", "copyright"]):
                     blocks.append(text)
             
+            # Strategy 2: All visible text if strategy 1 is weak
+            if len(" ".join(blocks)) < 200:
+                logger.info(f"    🔄 Trying aggressive text extraction")
+                # Get all text nodes
+                all_text = soup.get_text(" ", strip=True)
+                # Split into sentences/paragraphs
+                lines = [line.strip() for line in all_text.split("\n") if len(line.strip()) >= 15]
+                blocks = lines
+            
             full_text = " ".join(blocks).strip()
+            
+            # Debug logging
+            logger.info(f"    📊 Extracted {len(blocks)} text blocks, total {len(full_text)} chars using {used_selector}")
+            if len(full_text) > 0:
+                preview = full_text[:150].replace("\n", " ")
+                logger.info(f"    👁️ Preview: {preview}...")
+            
             if len(full_text) > 200:
                 logger.info(f"    ✅ Playwright extracted {len(full_text)} chars")
                 return full_text
-            return None
+            else:
+                logger.warning(f"    ❌ Playwright only got {len(full_text)} chars (need >200)")
+                return None
             
     except Exception as e:
-        logger.debug(f"Playwright extraction failed for {url}: {e}")
+        logger.error(f"    💥 Playwright extraction failed for {url}: {e}")
+        import traceback
+        logger.debug(traceback.format_exc())
         return None
 
 
