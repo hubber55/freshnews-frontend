@@ -75,7 +75,8 @@ def clean_html(text):
 
 
 def extract_full_article_text(url):
-    """Scrape the original news site to extract the full article text from paragraph tags."""
+    """Scrape the original news site to extract the full article text from paragraph tags.
+    Returns tuple of (text, resolved_url)."""
     logger.info(f"    🔍 extract_full_article_text called for: {url[:60]}...")
     
     # Follow Google News redirects to get actual URL (they use JS redirects)
@@ -391,6 +392,7 @@ def extract_og_image(url):
             from playwright.sync_api import sync_playwright
             logger.info(f"    🌐 Resolving Google News redirect for image...")
             
+            resolved_url = url
             with sync_playwright() as p:
                 browser = p.chromium.launch(headless=True, args=['--no-sandbox'])
                 context = browser.new_context(user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36')
@@ -398,12 +400,17 @@ def extract_og_image(url):
                 try:
                     page.goto(url, wait_until="domcontentloaded", timeout=10000)
                     page.wait_for_timeout(2000)
+                    resolved_url = page.url
                 except:
                     pass
-                actual_url = page.url
                 browser.close()
             
-            logger.info(f"    🔄 Resolved to: {actual_url[:60]}...")
+            # If we got a real URL (not still Google News), use it
+            if "news.google.com" not in resolved_url:
+                actual_url = resolved_url
+                logger.info(f"    🔄 Resolved to: {actual_url[:60]}...")
+            else:
+                logger.info(f"    ⚠️  Could not resolve Google News URL, using cached URL if available")
         except Exception as e:
             logger.warning(f"    Could not resolve redirect: {e}")
     
@@ -641,11 +648,36 @@ def fetch_feed_articles(feed_config, max_articles=5):
         return []
 
 def scrape_full_text_if_needed(article):
-    """Scrapes full text if the article is missing detailed content."""
+    """Scrapes full text if the article is missing detailed content.
+    Also resolves the actual URL from Google News redirects."""
     desc = article.get("description", "")
+    original_link = article["link"]
+    
+    # Resolve actual URL first (for Google News feeds)
+    actual_url = original_link
+    if "news.google.com" in original_link:
+        try:
+            from playwright.sync_api import sync_playwright
+            with sync_playwright() as p:
+                browser = p.chromium.launch(headless=True, args=['--no-sandbox'])
+                context = browser.new_context(user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36')
+                page = context.new_page()
+                try:
+                    page.goto(original_link, wait_until="domcontentloaded", timeout=10000)
+                    page.wait_for_timeout(2000)
+                except:
+                    pass
+                actual_url = page.url
+                browser.close()
+            if "news.google.com" not in actual_url:
+                article["link"] = actual_url  # Update with resolved URL
+                logger.info(f"    🔗 Updated article URL to: {actual_url[:60]}...")
+        except Exception as e:
+            logger.debug(f"Could not resolve URL: {e}")
+    
     if len(desc) < 400 or desc.strip().endswith("..."):
         logger.info(f"    -> Text truncated for '{article['title'][:30]}...'. Scraping web for full article...")
-        scraped = extract_full_article_text(article["link"])
+        scraped = extract_full_article_text(actual_url)
         if scraped:
             article["description"] = scraped
     return article
