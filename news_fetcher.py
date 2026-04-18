@@ -363,17 +363,40 @@ def extract_og_image(url):
     """Extract Open Graph image from article URL."""
     logger.info(f"    🖼️  extract_og_image called for: {url[:60]}...")
     
+    # Resolve Google News redirects first
+    actual_url = url
+    if "news.google.com" in url:
+        try:
+            from playwright.sync_api import sync_playwright
+            logger.info(f"    🌐 Resolving Google News redirect for image...")
+            
+            with sync_playwright() as p:
+                browser = p.chromium.launch(headless=True, args=['--no-sandbox'])
+                context = browser.new_context(user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36')
+                page = context.new_page()
+                try:
+                    page.goto(url, wait_until="domcontentloaded", timeout=10000)
+                    page.wait_for_timeout(2000)
+                except:
+                    pass
+                actual_url = page.url
+                browser.close()
+            
+            logger.info(f"    🔄 Resolved to: {actual_url[:60]}...")
+        except Exception as e:
+            logger.warning(f"    Could not resolve redirect: {e}")
+    
     # For DriveSpark, use Playwright to bypass Cloudflare
-    if "drivespark" in url.lower():
+    if "drivespark" in actual_url.lower():
         logger.info(f"    🎯 DriveSpark image - using Playwright")
-        return extract_image_with_playwright(url)
+        return extract_image_with_playwright(actual_url)
     
     try:
         headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
                           "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
         }
-        response = http_request("GET", url, headers=headers, timeout=FETCH_TIMEOUT_SECONDS)
+        response = http_request("GET", actual_url, headers=headers, timeout=FETCH_TIMEOUT_SECONDS)
         response.raise_for_status()
         
         soup = BeautifulSoup(response.text, "html.parser")
@@ -398,7 +421,7 @@ def extract_og_image(url):
         
         return None
     except Exception as e:
-        logger.debug(f"Failed to extract image from {url}: {e}")
+        logger.debug(f"Failed to extract image from {actual_url}: {e}")
         return None
 
 
