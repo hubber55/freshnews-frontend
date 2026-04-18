@@ -111,8 +111,9 @@ def extract_full_article_text(url):
     
     # Check if it's a JavaScript-heavy site that needs Playwright
     url_lower = actual_url.lower()
-    if "drivespark" in url_lower or "drivespark.com" in url_lower:
-        logger.info(f"    🎯 DriveSpark detected! Using Playwright...")
+    if any(site in url_lower for site in ["drivespark.com", "keralakaumudi.com"]):
+        site_name = "DriveSpark" if "drivespark" in url_lower else "Kerala Kaumudi"
+        logger.info(f"    🎯 {site_name} detected! Using Playwright...")
         return extract_with_playwright(actual_url)
     else:
         logger.info(f"    📝 Not DriveSpark (domain: {url_lower.split('/')[2] if '://' in url_lower else 'unknown'}), using standard scraper")
@@ -386,9 +387,11 @@ def extract_og_image(url):
         except Exception as e:
             logger.warning(f"    Could not resolve redirect: {e}")
     
-    # For DriveSpark, use Playwright to bypass Cloudflare
-    if "drivespark" in actual_url.lower():
-        logger.info(f"    🎯 DriveSpark image - using Playwright")
+    # For JavaScript-heavy sites, use Playwright to bypass Cloudflare
+    url_lower = actual_url.lower()
+    if any(site in url_lower for site in ["drivespark.com", "keralakaumudi.com"]):
+        site_name = "DriveSpark" if "drivespark" in url_lower else "Kerala Kaumudi"
+        logger.info(f"    🎯 {site_name} image - using Playwright")
         return extract_image_with_playwright(actual_url)
     
     try:
