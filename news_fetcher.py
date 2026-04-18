@@ -196,12 +196,60 @@ def extract_with_playwright(url):
         logger.info(f"    🎭 PLAYWRIGHT: Launching browser for {url[:50]}...")
         
         with sync_playwright() as p:
-            browser = p.chromium.launch(headless=True)
-            page = browser.new_page()
-            page.goto(url, wait_until="networkidle", timeout=30000)
+            # Launch with stealth arguments to bypass detection
+            browser = p.chromium.launch(
+                headless=True,
+                args=[
+                    '--disable-blink-features=AutomationControlled',
+                    '--disable-web-security',
+                    '--disable-features=IsolateOrigins,site-per-process',
+                    '--disable-site-isolation-trials',
+                    '--disable-setuid-sandbox',
+                    '--no-sandbox',
+                    '--disable-dev-shm-usage',
+                    '--disable-accelerated-2d-canvas',
+                    '--disable-gpu',
+                    '--window-size=1920,1080',
+                ]
+            )
             
-            # Wait for content to load
-            page.wait_for_timeout(3000)
+            # Create context with realistic user agent
+            context = browser.new_context(
+                user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                viewport={'width': 1920, 'height': 1080},
+                locale='en-US',
+                timezone_id='America/New_York',
+            )
+            
+            page = context.new_page()
+            
+            # Set extra headers to appear more like a real browser
+            page.set_extra_http_headers({
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+                'Accept-Language': 'en-US,en;q=0.5',
+                'Accept-Encoding': 'gzip, deflate, br',
+                'DNT': '1',
+                'Connection': 'keep-alive',
+                'Upgrade-Insecure-Requests': '1',
+                'Sec-Fetch-Dest': 'document',
+                'Sec-Fetch-Mode': 'navigate',
+                'Sec-Fetch-Site': 'none',
+                'Sec-Fetch-User': '?1',
+                'Cache-Control': 'max-age=0',
+            })
+            
+            # Navigate and wait for redirect
+            logger.info(f"    🎭 PLAYWRIGHT: Navigating to {url[:50]}...")
+            page.goto(url, wait_until="domcontentloaded", timeout=30000)
+            
+            # Wait for either content or cloudflare challenge
+            try:
+                # Wait for article content to appear
+                page.wait_for_selector('article, .article-content, .entry-content, .post-content, main', timeout=5000)
+                logger.info(f"    ✅ Content selector found")
+            except:
+                logger.info(f"    ⏳ No content selector found, waiting longer...")
+                page.wait_for_timeout(5000)
             
             # Try to find article content with more specific selectors
             content_selectors = [
