@@ -50,22 +50,10 @@ def google_news_query_feed(name: str, query_text: str, category: str = "general"
 
 
 MALAYALAM_RSS_FEEDS = [
-    # Kerala Kaumudi feeds (prioritized first)
-    {
-        "name": "Kerala Kaumudi",
-        "url": "https://keralakaumudi.com/rss/news.xml",
-        "category": "general",
-    },
-    {
-        "name": "Kerala Kaumudi Cinema",
-        "url": "https://keralakaumudi.com/news/section.php?cid=4&format=rss",
-        "category": "entertainment",
-    },
-    {
-        "name": "Kerala Kaumudi Latest",
-        "url": "https://keralakaumudi.com/news/latest.php?format=rss",
-        "category": "general",
-    },
+    # Kerala Kaumudi feeds via Google News (prioritized first)
+    google_news_site_feed("Kerala Kaumudi", "keralakaumudi.com"),
+    google_news_query_feed("Kerala Kaumudi Cinema", "keralakaumudi cinema entertainment", "entertainment"),
+    google_news_query_feed("Kerala Kaumudi Latest", "keralakaumudi"),
     google_news_query_feed("Malayalam Reporter", "Malayalam Reporter"),
     google_news_query_feed("Asianet News Malayalam", "Asianet News Malayalam"),
     google_news_site_feed("Deepika", "deepika.com"),
