@@ -87,7 +87,30 @@ def extract_full_article_text(url):
             }
             response = http_request("GET", url, headers=headers, timeout=10, allow_redirects=True)
             actual_url = response.url
-            logger.info(f"    🔄 Google News redirect resolved to: {actual_url[:60]}...")
+            
+            # If still Google News URL, try to extract from page content
+            if "news.google.com" in actual_url:
+                soup = BeautifulSoup(response.text, "html.parser")
+                # Try meta refresh
+                meta_refresh = soup.find("meta", attrs={"http-equiv": "refresh"})
+                if meta_refresh:
+                    content = meta_refresh.get("content", "")
+                    if "url=" in content:
+                        actual_url = content.split("url=")[1].strip()
+                # Try canonical link
+                if "news.google.com" in actual_url:
+                    canonical = soup.find("link", rel="canonical")
+                    if canonical and canonical.get("href"):
+                        actual_url = canonical["href"]
+                # Try article link in content
+                if "news.google.com" in actual_url:
+                    article_link = soup.find("a", href=True)
+                    if article_link:
+                        href = article_link["href"]
+                        if href.startswith("http"):
+                            actual_url = href
+            
+            logger.info(f"    🔄 Google News resolved to: {actual_url[:60]}...")
         except Exception as e:
             logger.debug(f"    Could not resolve Google News redirect: {e}")
     
