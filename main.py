@@ -87,7 +87,7 @@ def run_rotation():
 
     # Iterate continuously through each source
     for feed_config in MALAYALAM_RSS_FEEDS:
-        articles = fetch_feed_articles(feed_config, max_articles=5)
+        articles = fetch_feed_articles(feed_config, max_articles=20)
         if not articles:
             continue
 
