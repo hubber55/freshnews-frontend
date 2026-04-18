@@ -76,9 +76,15 @@ def clean_html(text):
 
 def extract_full_article_text(url):
     """Scrape the original news site to extract the full article text from paragraph tags."""
+    logger.info(f"    🔍 extract_full_article_text called for: {url[:60]}...")
+    
     # Check if it's a JavaScript-heavy site that needs Playwright
-    if "drivespark" in url.lower():
+    url_lower = url.lower()
+    if "drivespark" in url_lower or "drivespark.com" in url_lower:
+        logger.info(f"    🎯 DriveSpark detected! Using Playwright...")
         return extract_with_playwright(url)
+    else:
+        logger.info(f"    📝 Not DriveSpark (domain: {url_lower.split('/')[2] if '://' in url else 'unknown'}), using standard scraper")
     
     try:
         headers = {
@@ -156,10 +162,18 @@ def extract_full_article_text(url):
 
 def extract_with_playwright(url):
     """Use Playwright to render JavaScript-heavy pages and extract article text."""
+    logger.info(f"    🎭 PLAYWRIGHT: Starting extraction for {url[:60]}...")
+    
     try:
-        from playwright.sync_api import sync_playwright
+        # Check if playwright is available
+        try:
+            from playwright.sync_api import sync_playwright
+            logger.info("    🎭 PLAYWRIGHT: Import successful")
+        except ImportError as ie:
+            logger.error(f"    💥 PLAYWRIGHT: Import failed - {ie}")
+            return None
         
-        logger.info(f"    🎭 Using Playwright for JS-heavy site: {url[:50]}...")
+        logger.info(f"    🎭 PLAYWRIGHT: Launching browser for {url[:50]}...")
         
         with sync_playwright() as p:
             browser = p.chromium.launch(headless=True)
