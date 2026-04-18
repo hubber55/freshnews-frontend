@@ -82,14 +82,24 @@ def extract_full_article_text(url):
     actual_url = url
     if "news.google.com" in url:
         try:
-            from playwright.sync_api import sync_playwright
+            # Navigate and wait for redirect
             logger.info(f"    🌐 Using Playwright to resolve Google News redirect...")
             
             with sync_playwright() as p:
-                browser = p.chromium.launch(headless=True)
-                page = browser.new_page()
-                # Navigate and wait for redirect
-                page.goto(url, wait_until="networkidle", timeout=15000)
+                browser = p.chromium.launch(
+                    headless=True,
+                    args=['--no-sandbox', '--disable-dev-shm-usage']
+                )
+                context = browser.new_context(
+                    user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+                )
+                page = context.new_page()
+                # Navigate with shorter wait - just need the redirect
+                try:
+                    page.goto(url, wait_until="domcontentloaded", timeout=10000)
+                    page.wait_for_timeout(2000)  # Give time for JS redirect
+                except:
+                    pass  # Timeout is OK, we just need the URL
                 # Get final URL after all redirects
                 actual_url = page.url
                 browser.close()
@@ -350,8 +360,11 @@ def extract_with_playwright(url):
 
 def extract_og_image(url):
     """Extract Open Graph image from article URL."""
+    logger.info(f"    🖼️  extract_og_image called for: {url[:60]}...")
+    
     # For DriveSpark, use Playwright to bypass Cloudflare
     if "drivespark" in url.lower():
+        logger.info(f"    🎯 DriveSpark image - using Playwright")
         return extract_image_with_playwright(url)
     
     try:
