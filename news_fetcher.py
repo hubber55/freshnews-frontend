@@ -350,6 +350,10 @@ def extract_with_playwright(url):
 
 def extract_og_image(url):
     """Extract Open Graph image from article URL."""
+    # For DriveSpark, use Playwright to bypass Cloudflare
+    if "drivespark" in url.lower():
+        return extract_image_with_playwright(url)
+    
     try:
         headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 "
@@ -381,6 +385,92 @@ def extract_og_image(url):
         return None
     except Exception as e:
         logger.debug(f"Failed to extract image from {url}: {e}")
+        return None
+
+
+def extract_image_with_playwright(url):
+    """Use Playwright to extract image from JavaScript-heavy sites like DriveSpark."""
+    try:
+        from playwright.sync_api import sync_playwright
+        logger.info(f"    🖼️  Using Playwright to extract image from {url[:50]}...")
+        
+        with sync_playwright() as p:
+            browser = p.chromium.launch(
+                headless=True,
+                args=[
+                    '--disable-blink-features=AutomationControlled',
+                    '--no-sandbox',
+                    '--disable-dev-shm-usage',
+                ]
+            )
+            
+            context = browser.new_context(
+                user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                viewport={'width': 1920, 'height': 1080},
+            )
+            
+            page = context.new_page()
+            page.goto(url, wait_until="networkidle", timeout=20000)
+            page.wait_for_timeout(2000)
+            
+            # Try to get image URL from page
+            image_url = None
+            
+            # Method 1: Get og:image meta tag
+            try:
+                og_image = page.locator("meta[property='og:image']").first
+                if og_image:
+                    image_url = og_image.get_attribute("content")
+                    logger.info(f"    ✅ Found og:image: {image_url[:60]}..." if image_url else "    ⚠️ og:image empty")
+            except:
+                pass
+            
+            # Method 2: Get first large image in article
+            if not image_url:
+                try:
+                    # Try article images first
+                    images = page.locator("article img, .article-content img, .entry-content img").all()
+                    for img in images:
+                        src = img.get_attribute("src")
+                        if src and not any(skip in src.lower() for skip in ["logo", "icon", "avatar", "ad"]):
+                            image_url = src
+                            logger.info(f"    ✅ Found article image: {image_url[:60]}...")
+                            break
+                except:
+                    pass
+            
+            # Method 3: Get any large image on page
+            if not image_url:
+                try:
+                    all_images = page.locator("img").all()
+                    for img in all_images:
+                        src = img.get_attribute("src")
+                        if src and (src.startswith("http") or src.startswith("//")):
+                            if not any(skip in src.lower() for skip in ["logo", "icon", "avatar", "ad", "banner", "pixel", "tracking"]):
+                                image_url = src
+                                logger.info(f"    ✅ Found page image: {image_url[:60]}...")
+                                break
+                except:
+                    pass
+            
+            browser.close()
+            
+            if image_url:
+                # Handle relative URLs
+                if image_url.startswith("//"):
+                    image_url = "https:" + image_url
+                elif image_url.startswith("/"):
+                    from urllib.parse import urljoin
+                    image_url = urljoin(url, image_url)
+                
+                logger.info(f"    🖼️  Returning image URL: {image_url[:60]}...")
+                return image_url
+            else:
+                logger.warning(f"    ❌ No image found with Playwright")
+                return None
+                
+    except Exception as e:
+        logger.error(f"    💥 Playwright image extraction failed: {e}")
         return None
 
 
