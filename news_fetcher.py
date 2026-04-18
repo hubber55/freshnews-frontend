@@ -105,7 +105,9 @@ def extract_full_article_text(url):
                 actual_url = page.url
                 browser.close()
             
-            logger.info(f"    🔄 Google News resolved to: {actual_url[:60]}...")
+            logger.info(f"    🔄 Google News resolved to: {actual_url[:80]}...")
+            if "keralakaumudi.com" in actual_url:
+                logger.info(f"    🔍 Full Kerala Kaumudi URL: {actual_url}")
         except Exception as e:
             logger.warning(f"    Could not resolve Google News redirect with Playwright: {e}")
     
@@ -263,7 +265,19 @@ def extract_with_playwright(url):
                 logger.info(f"    ⏳ No content selector found, waiting longer...")
                 page.wait_for_timeout(5000)
             
+            # Check if page loaded successfully
+            try:
+                title = page.title()
+                logger.info(f"    📝 Page title: {title[:60]}")
+                if title == "404 Not Found" or "not found" in title.lower():
+                    logger.warning(f"    ⚠️ Page returned 404, skipping")
+                    browser.close()
+                    return None
+            except:
+                pass
+            
             # Try to find article content with more specific selectors
+            # Include Kerala Kaumudi specific selectors
             content_selectors = [
                 "article",
                 "[itemprop='articleBody']",
@@ -276,6 +290,9 @@ def extract_with_playwright(url):
                 ".ds-text-content",
                 ".ds-article-content",
                 ".ds-news-content",
+                "#news-content",  # Kerala Kaumudi
+                ".news-detail-content",  # Kerala Kaumudi
+                ".story-details",  # Kerala Kaumudi
                 "[class*='article']",
                 "[class*='content']",
                 "main",
@@ -303,13 +320,6 @@ def extract_with_playwright(url):
                 logger.info(f"    ⚠️ No article container found, using body")
                 content_html = page.locator("body").inner_html()
                 used_selector = "body"
-            
-            # Get page title for context
-            try:
-                title = page.title()
-                logger.info(f"    📝 Page title: {title[:60]}")
-            except:
-                title = ""
             
             browser.close()
             
