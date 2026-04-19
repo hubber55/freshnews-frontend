@@ -250,7 +250,7 @@ function SubmitContent() {
             </div>
 
             <div>
-              <label className="mb-2 block text-sm font-bold text-[var(--text-secondary)]">Content (Maximum 800 words allowed)</label>
+              <label className="mb-2 block text-sm font-bold text-[var(--text-secondary)]">Content (Max 800 words)</label>
               <textarea
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
