@@ -69,6 +69,21 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              // Capture PWA install prompt immediately on page load
+              window.deferredInstallPrompt = null;
+              window.addEventListener('beforeinstallprompt', function(e) {
+                e.preventDefault();
+                window.deferredInstallPrompt = e;
+                console.log('[PWA] Install prompt captured');
+              });
+            `,
+          }}
+        />
+      </head>
       <body>
         <AuthHashHandler />
         {children}

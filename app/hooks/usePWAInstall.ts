@@ -2,6 +2,13 @@
 
 import { useState, useEffect, useCallback } from 'react';
 
+// Extend Window interface to include our global
+declare global {
+  interface Window {
+    deferredInstallPrompt: BeforeInstallPromptEvent | null;
+  }
+}
+
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
@@ -14,55 +21,86 @@ export function usePWAInstall() {
 
   useEffect(() => {
     // Check if already installed
-    if (window.matchMedia('(display-mode: standalone)').matches) {
+    if (typeof window !== 'undefined' && window.matchMedia('(display-mode: standalone)').matches) {
       setIsInstalled(true);
       return;
     }
 
-    // Listen for beforeinstallprompt event
+    // Check if we already have the prompt captured globally
+    const checkForPrompt = () => {
+      if (typeof window !== 'undefined' && window.deferredInstallPrompt) {
+        setDeferredPrompt(window.deferredInstallPrompt);
+        setIsInstallable(true);
+        return true;
+      }
+      return false;
+    };
+
+    // Check immediately
+    if (!checkForPrompt()) {
+      // Poll for it since it might come after component mounts
+      const interval = setInterval(() => {
+        if (checkForPrompt()) {
+          clearInterval(interval);
+        }
+      }, 500);
+
+      // Stop polling after 10 seconds
+      setTimeout(() => clearInterval(interval), 10000);
+
+      return () => clearInterval(interval);
+    }
+  }, []);
+
+  // Also listen for the event in case it fires after mount
+  useEffect(() => {
     const handleBeforeInstallPrompt = (e: Event) => {
-      // Prevent the mini-infobar from appearing on mobile
       e.preventDefault();
-      // Store the event for later use
-      setDeferredPrompt(e as BeforeInstallPromptEvent);
+      const promptEvent = e as BeforeInstallPromptEvent;
+      window.deferredInstallPrompt = promptEvent;
+      setDeferredPrompt(promptEvent);
       setIsInstallable(true);
     };
 
-    // Listen for appinstalled event
-    const handleAppInstalled = () => {
-      setDeferredPrompt(null);
-      setIsInstalled(true);
-      setIsInstallable(false);
-    };
-
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-    window.addEventListener('appinstalled', handleAppInstalled);
 
     return () => {
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-      window.removeEventListener('appinstalled', handleAppInstalled);
     };
   }, []);
 
   const triggerInstall = useCallback(async () => {
-    if (!deferredPrompt) {
+    // Use the global prompt if available, otherwise use state
+    const prompt = window.deferredInstallPrompt || deferredPrompt;
+    
+    if (!prompt) {
+      console.log('[PWA] No install prompt available');
       return false;
     }
 
-    deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
-    
-    if (outcome === 'accepted') {
-      setDeferredPrompt(null);
-      setIsInstallable(false);
+    try {
+      await prompt.prompt();
+      const { outcome } = await prompt.userChoice;
+      
+      if (outcome === 'accepted') {
+        window.deferredInstallPrompt = null;
+        setDeferredPrompt(null);
+        setIsInstallable(false);
+        console.log('[PWA] User accepted install');
+      } else {
+        console.log('[PWA] User dismissed install');
+      }
+      
+      return outcome === 'accepted';
+    } catch (err) {
+      console.error('[PWA] Error triggering install:', err);
+      return false;
     }
-    
-    return outcome === 'accepted';
   }, [deferredPrompt]);
 
   return {
     isInstalled,
-    isInstallable,
+    isInstallable: isInstallable || !!window.deferredInstallPrompt,
     triggerInstall,
     deferredPrompt,
   };
