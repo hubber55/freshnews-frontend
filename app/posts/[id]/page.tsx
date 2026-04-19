@@ -137,8 +137,8 @@ export default async function PostPage({ params }: PageProps) {
       <Header />
 
       <main className="pb-8">
-        <article className="mx-auto mt-6 w-full max-w-[850px] px-4 sm:px-8">
-          <div className="rounded-3xl bg-[var(--bg-card)] border border-[var(--border)] px-6 py-8 sm:px-14 sm:py-12 break-words">
+        <article className="mx-auto mt-6 w-full max-w-[850px] px-3 sm:px-4">
+          <div className="rounded-3xl bg-[var(--bg-card)] border border-[var(--border)] px-4 py-6 sm:px-8 sm:py-8 break-words">
             {/* BREADCRUMB */}
             <div className="mb-5 flex flex-wrap items-center gap-2 text-[12.5px] text-[var(--text-muted)]" style={{ fontFamily: 'var(--font-en)' }}>
               <Link href="/" className="text-[var(--text-secondary)] hover:text-[#ffd42a]">
