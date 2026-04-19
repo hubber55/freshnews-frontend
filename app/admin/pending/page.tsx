@@ -10,7 +10,6 @@ interface Submission {
   content: string;
   type: 'news' | 'event' | 'classified';
   image_url: string | null;
-  tags: string[];
   user_id: string;
   created_at: string;
   user_whatsapp: string | null;
@@ -107,16 +106,6 @@ export default function PendingPostsPage() {
               <p className="text-gray-300 line-clamp-3 mb-3">
                 {submission.content}
               </p>
-              
-              {submission.tags && submission.tags.length > 0 && (
-                <div className="flex flex-wrap gap-2 mb-3">
-                  {submission.tags.map((tag, idx) => (
-                    <span key={idx} className="px-2 py-1 bg-gray-700 rounded text-xs">
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-              )}
               
               {submission.image_url && (
                 <img 

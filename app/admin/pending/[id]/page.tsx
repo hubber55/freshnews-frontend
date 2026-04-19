@@ -11,7 +11,6 @@ interface Submission {
   content: string;
   type: 'news' | 'event' | 'classified';
   image_url: string | null;
-  tags: string[];
   user_id: string;
   user_whatsapp: string | null;
   created_at: string;
@@ -28,7 +27,6 @@ export default function ReviewSubmissionPage({ params }: { params: Promise<{ id:
   // Form state
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
-  const [tags, setTags] = useState('');
 
   const fetchSubmission = useCallback(async () => {
     try {
@@ -38,7 +36,6 @@ export default function ReviewSubmissionPage({ params }: { params: Promise<{ id:
       setSubmission(data);
       setTitle(data.title);
       setContent(data.content);
-      setTags(data.tags?.join(', ') || '');
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -58,10 +55,9 @@ export default function ReviewSubmissionPage({ params }: { params: Promise<{ id:
       const formData = new FormData();
       formData.set('title', title);
       formData.set('content', content);
-      formData.set('tags', tags);
       
       await approveSubmission(submissionId, formData);
-      alert('Post published successfully! WhatsApp notification sent to user.');
+      alert('Post published successfully!');
       router.push('/admin/pending');
     } catch (err: any) {
       alert('Error: ' + err.message);
@@ -76,7 +72,7 @@ export default function ReviewSubmissionPage({ params }: { params: Promise<{ id:
     setSaving(true);
     try {
       await rejectSubmission(submissionId);
-      alert('Submission rejected. WhatsApp notification sent to user.');
+      alert('Submission rejected.');
       router.push('/admin/pending');
     } catch (err: any) {
       alert('Error: ' + err.message);
@@ -91,7 +87,6 @@ export default function ReviewSubmissionPage({ params }: { params: Promise<{ id:
       const formData = new FormData();
       formData.set('title', title);
       formData.set('content', content);
-      formData.set('tags', tags);
       
       await updateSubmission(submissionId, formData);
       alert('Changes saved successfully.');
@@ -183,17 +178,6 @@ export default function ReviewSubmissionPage({ params }: { params: Promise<{ id:
           <p className="text-sm text-gray-400 mt-1">
             {content.trim().split(/\s+/).length} words
           </p>
-        </div>
-
-        <div>
-          <label className="block text-sm font-bold mb-2">Tags (comma separated)</label>
-          <input
-            type="text"
-            value={tags}
-            onChange={(e) => setTags(e.target.value)}
-            className="w-full px-4 py-2 rounded-lg bg-[var(--bg-secondary)] border border-[var(--border)] text-white focus:border-[#00cfff] focus:outline-none"
-            placeholder="news, kerala, music"
-          />
         </div>
 
         {submission.image_url && (
