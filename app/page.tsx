@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { connection } from 'next/server';
 
 import { supabase } from '@/lib/supabase';
-import { Clock, Home } from 'lucide-react';
+import { Clock, Home as HomeIcon } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { hasMinimumWords, limitWords } from '../lib/posts';
 import Header from './components/header';
@@ -179,7 +179,7 @@ export default async function Home({ searchParams }: HomeProps) {
                 href="/"
                 className="inline-flex items-center gap-2 rounded-lg bg-[#000080] px-7 py-3.5 text-[16px] font-bold text-white shadow-md transition-all hover:bg-[#000066] hover:shadow-lg hover:scale-[1.02] active:scale-95"
               >
-                <Home size={18} strokeWidth={2.5} />
+                <HomeIcon size={18} strokeWidth={2.5} />
                 Back to Home Page
               </Link>
             </div>
