@@ -250,11 +250,11 @@ function SubmitContent() {
             </div>
 
             <div>
-              <label className="mb-2 block text-sm font-bold text-[var(--text-secondary)]">Content (max 500 chars)</label>
+              <label className="mb-2 block text-sm font-bold text-[var(--text-secondary)]">Content (max 800 words)</label>
               <textarea
                 value={content}
-                onChange={(e) => setContent(e.target.value.slice(0, 500))}
-                rows={4}
+                onChange={(e) => setContent(e.target.value)}
+                rows={6}
                 className="w-full rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-4 py-3 text-white focus:border-[#00cfff] focus:outline-none focus:ring-1 focus:ring-[#00cfff]"
               />
             </div>
@@ -365,11 +365,11 @@ function SubmitContent() {
                       />
                     </div>
                     <div>
-                      <label className="mb-2 block text-sm font-bold text-[var(--text-secondary)]">News Content (max 500 chars)</label>
+                      <label className="mb-2 block text-sm font-bold text-[var(--text-secondary)]">News Content (max 800 words)</label>
                       <textarea
                         value={newsContent}
-                        onChange={(e) => setNewsContent(e.target.value.slice(0, 500))}
-                        rows={4}
+                        onChange={(e) => setNewsContent(e.target.value)}
+                        rows={6}
                         className="w-full rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-4 py-3 text-white focus:border-[#00cfff] focus:outline-none focus:ring-1 focus:ring-[#00cfff]"
                       />
                     </div>
