@@ -165,7 +165,7 @@ export default function ReviewSubmissionPage() {
           </span>
         </div>
 
-        <div>
+        <div className="mx-2">
           <label className="block text-sm font-bold mb-2">Title</label>
           <input
             type="text"
@@ -176,7 +176,7 @@ export default function ReviewSubmissionPage() {
           />
         </div>
 
-        <div>
+        <div className="mx-2">
           <label className="block text-sm font-bold mb-2">Content (Max 800 words)</label>
           <textarea
             value={content}
