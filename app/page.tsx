@@ -7,6 +7,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { hasMinimumWords, limitWords } from '../lib/posts';
 import Header from './components/header';
 import Footer from './components/footer';
+import HomeRefreshRedirect from './components/HomeRefreshRedirect';
 import TrackedLink from './components/TrackedLink';
 
 // export const revalidate = 60; // Disabled for testing
@@ -71,6 +72,7 @@ export default async function Home({ searchParams }: HomeProps) {
 
   return (
     <div className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)]">
+      <HomeRefreshRedirect page={page} activeTag={activeTag} />
       <Header titleColorClass="text-white" />
 
       <main className="pb-4">
