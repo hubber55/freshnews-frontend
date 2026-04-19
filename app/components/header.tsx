@@ -11,7 +11,7 @@ const GUEST_LINKS = [
   { href: '/submit?type=news', label: 'Submit News', color: '#ffd42a', requiresAuth: true },
   { href: '/submit?type=event', label: 'Submit Events', color: '#90ee90', requiresAuth: true },
   { href: '/submit?type=classified', label: 'Submit Classifieds', color: '#ff69b4', requiresAuth: true },
-  { href: '/install-app', label: 'Install As App', color: '#00cfff', requiresAuth: false },
+  { href: '/install-app', label: 'Install As App', color: '#00cfff', requiresAuth: false, isInstallLink: true },
   { href: '/classifieds', label: 'Classifieds' },
   { href: '/contact', label: 'Contact Us' },
 ];
@@ -24,7 +24,7 @@ const USER_MENU_ITEMS = [
   { href: '/submit?type=event', label: 'Submit Events', color: '#90ee90' },
   { href: '/submit?type=classified', label: 'Submit Classifieds', color: '#ff69b4' },
   { href: '/classifieds', label: 'View Classifieds' },
-  { href: '/install-app', label: 'Install As App', color: '#00cfff' },
+  { href: '/install-app', label: 'Install As App', color: '#00cfff', isInstallLink: true },
   { href: '/contact', label: 'Contact Us' },
 ];
 
@@ -34,6 +34,7 @@ type MenuItem = {
   label: string;
   color?: string;
   requiresAuth?: boolean;
+  isInstallLink?: boolean;
 };
 
 type HeaderProps = {
@@ -44,8 +45,13 @@ export default function Header({ titleColorClass = 'text-[#ffd42a]' }: HeaderPro
   const [menuOpen, setMenuOpen] = useState(false);
   const [userName, setUserName] = useState<string | null>(null);
   const isLoggedIn = !!userName;
-  const navLinks = isLoggedIn ? USER_MENU_ITEMS : GUEST_LINKS;
   const { isInstallable, triggerInstall, isInstalled } = usePWAInstall();
+  
+  // Filter out Install As App if already installed
+  const allLinks = isLoggedIn ? USER_MENU_ITEMS : GUEST_LINKS;
+  const navLinks = isInstalled 
+    ? allLinks.filter(link => link.href !== '/install-app')
+    : allLinks;
 
   useEffect(() => {
     // Fetch user name

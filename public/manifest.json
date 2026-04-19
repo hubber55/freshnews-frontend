@@ -1,5 +1,5 @@
 {
-  "name": "FreshNews",
+  "name": "FreshNews.top - Malayalam News",
   "short_name": "FreshNews",
   "description": "Latest Malayalam News - Submit your News, Classifieds and Events for free",
   "start_url": "/",
@@ -13,26 +13,17 @@
     {
       "src": "/logos/favicon_128.png",
       "sizes": "128x128",
-      "type": "image/png",
-      "purpose": "any"
+      "type": "image/png"
     },
     {
       "src": "/logos/favicon_256.png",
       "sizes": "256x256",
-      "type": "image/png",
-      "purpose": "any"
+      "type": "image/png"
     },
     {
       "src": "/logos/favicon_512.png",
       "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "/logos/favicon_1024.png",
-      "sizes": "1024x1024",
-      "type": "image/png",
-      "purpose": "any"
+      "type": "image/png"
     }
   ]
 }
