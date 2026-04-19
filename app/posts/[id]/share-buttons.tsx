@@ -49,8 +49,9 @@ function trackShare(payload: TrackPayload) {
 }
 
 export default function ShareButtons({ postId, title, url }: ShareButtonsProps) {
+  const whatsappTagline = 'Latest News - Also Submit your News / Classifieds for free';
   const encodedUrl = encodeURIComponent(url);
-  const encodedWhatsappText = encodeURIComponent(url);
+  const encodedWhatsappText = encodeURIComponent(`${whatsappTagline}\n${url}`);
   const [copied, setCopied] = useState(false);
 
   const handleNativeShare = async () => {
@@ -60,6 +61,7 @@ export default function ShareButtons({ postId, title, url }: ShareButtonsProps) 
         trackShare({ postId, sessionId, eventType: 'share', network: 'native' });
         await navigator.share({
           title,
+          text: whatsappTagline,
           url,
         });
         return;
@@ -77,6 +79,7 @@ export default function ShareButtons({ postId, title, url }: ShareButtonsProps) 
       try {
         await navigator.share({
           title,
+          text: whatsappTagline,
           url,
         });
         return;
