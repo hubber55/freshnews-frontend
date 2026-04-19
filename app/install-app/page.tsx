@@ -8,7 +8,7 @@ import { usePWAInstall } from '../hooks/usePWAInstall';
 
 export default function InstallAppPage() {
   const [isIOS, setIsIOS] = useState(false);
-  const { isInstallable, isInstalled, triggerInstall } = usePWAInstall();
+  const { isInstallable, isInstalled, installRequested, triggerInstall } = usePWAInstall();
 
   useEffect(() => {
     // Check if iOS
@@ -44,7 +44,7 @@ export default function InstallAppPage() {
             {isInstalled ? (
               <div className="flex items-center justify-center gap-2 text-[#90ee90] font-semibold">
                 <CheckCircle size={20} />
-                <span>App is already installed!</span>
+                <span>App is open in installed mode.</span>
               </div>
             ) : isIOS ? (
               <div className="bg-[var(--bg-primary)] rounded-xl p-6 text-left">
@@ -78,6 +78,12 @@ export default function InstallAppPage() {
                 <p className="mt-2">Look for the install icon (➕) in your browser&apos;s address bar, or go to Menu → Install FreshNews</p>
               </div>
             )}
+
+            {installRequested && !isInstalled ? (
+              <div className="mt-4 rounded-xl border border-[#ffd42a]/30 bg-[#ffd42a]/10 p-3 text-sm text-[#ffd42a]">
+                Install request was sent. If the app is not visible yet, check your browser&apos;s Apps list or launcher.
+              </div>
+            ) : null}
 
             <div className="mt-8 pt-6 border-t border-[var(--border)]">
               <h4 className="text-sm font-bold text-[var(--text-muted)] mb-2">Why install?</h4>

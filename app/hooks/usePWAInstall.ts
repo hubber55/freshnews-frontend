@@ -18,14 +18,19 @@ export function usePWAInstall() {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isInstalled, setIsInstalled] = useState(false);
   const [isInstallable, setIsInstallable] = useState(false);
+  const [installRequested, setInstallRequested] = useState(false);
+
+  const detectStandalone = useCallback(() => {
+    if (typeof window === 'undefined') return false;
+    return (
+      window.matchMedia('(display-mode: standalone)').matches ||
+      ((window.navigator as Navigator & { standalone?: boolean }).standalone ?? false)
+    );
+  }, []);
 
   useEffect(() => {
-    // Check if already installed
-    if (
-      typeof window !== 'undefined' &&
-      (window.matchMedia('(display-mode: standalone)').matches ||
-        ((window.navigator as Navigator & { standalone?: boolean }).standalone ?? false))
-    ) {
+    // Only mark "installed" when app is actually running in standalone mode.
+    if (detectStandalone()) {
       setIsInstalled(true);
       return;
     }
@@ -54,14 +59,15 @@ export function usePWAInstall() {
 
       return () => clearInterval(interval);
     }
-  }, []);
+  }, [detectStandalone]);
 
   useEffect(() => {
     const handleAppInstalled = () => {
       window.deferredInstallPrompt = null;
       setDeferredPrompt(null);
       setIsInstallable(false);
-      setIsInstalled(true);
+      setInstallRequested(true);
+      setIsInstalled(detectStandalone());
     };
 
     window.addEventListener('appinstalled', handleAppInstalled);
@@ -69,7 +75,7 @@ export function usePWAInstall() {
     return () => {
       window.removeEventListener('appinstalled', handleAppInstalled);
     };
-  }, []);
+  }, [detectStandalone]);
 
   // Also listen for the event in case it fires after mount
   useEffect(() => {
@@ -105,6 +111,7 @@ export function usePWAInstall() {
         window.deferredInstallPrompt = null;
         setDeferredPrompt(null);
         setIsInstallable(false);
+        setInstallRequested(true);
         console.log('[PWA] User accepted install');
       } else {
         console.log('[PWA] User dismissed install');
@@ -120,6 +127,7 @@ export function usePWAInstall() {
   return {
     isInstalled,
     isInstallable: isInstallable || (typeof window !== 'undefined' && !!window.deferredInstallPrompt),
+    installRequested,
     triggerInstall,
     deferredPrompt,
   };
