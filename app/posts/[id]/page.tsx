@@ -75,13 +75,13 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       type: 'article',
       url: articleUrl,
       title: post.title,
-      description: '',
+      description: seoDescription,
       images: post.image_url ? [{ url: post.image_url, alt: post.title }] : undefined,
     },
     twitter: {
       card: post.image_url ? 'summary_large_image' : 'summary',
       title: post.title,
-      description: '',
+      description: seoDescription,
       images: post.image_url ? [post.image_url] : undefined,
     },
   };
