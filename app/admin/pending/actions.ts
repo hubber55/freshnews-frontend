@@ -50,7 +50,7 @@ export async function approveSubmission(submissionId: string, formData: FormData
       summary: content,
       tags,
       image_url: submission.image_url || null,
-      source_name: 'User Submission',
+      source_name: 'FRESHNEWS',
       published_at: new Date().toISOString(),
       is_deleted: false
     })
