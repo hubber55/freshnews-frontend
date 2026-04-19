@@ -100,7 +100,7 @@ export function usePWAInstall() {
 
   return {
     isInstalled,
-    isInstallable: isInstallable || !!window.deferredInstallPrompt,
+    isInstallable: isInstallable || (typeof window !== 'undefined' && !!window.deferredInstallPrompt),
     triggerInstall,
     deferredPrompt,
   };
