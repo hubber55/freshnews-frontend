@@ -54,8 +54,8 @@ MALAYALAM_RSS_FEEDS = [
     google_news_site_feed("Kerala Kaumudi", "keralakaumudi.com"),
     google_news_query_feed("Kerala Kaumudi Cinema", "keralakaumudi cinema entertainment", "entertainment"),
     google_news_query_feed("Kerala Kaumudi Latest", "keralakaumudi"),
-    google_news_query_feed("Malayalam Reporter", "Malayalam Reporter"),
-    google_news_query_feed("Asianet News Malayalam", "Asianet News Malayalam"),
+    google_news_query_feed("Reporter", "Malayalam Reporter"),
+    google_news_query_feed("Asianet News", "Asianet News Malayalam"),
     google_news_site_feed("Deepika", "deepika.com"),
     google_news_query_feed("News10 Malayalam", "News10 Malayalam"),
     {

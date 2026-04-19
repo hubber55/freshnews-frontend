@@ -8,7 +8,12 @@ const GUEST_LINKS = [
   { href: '/', label: 'Home' },
   { href: '/login', label: 'Login' },
   { href: '/signup', label: 'Sign Up' },
+  { href: '/submit?type=news', label: 'Submit News', color: '#ffd42a', requiresAuth: true },
+  { href: '/submit?type=event', label: 'Submit Events', color: '#90ee90', requiresAuth: true },
+  { href: '/submit?type=classified', label: 'Submit Classifieds', color: '#ff69b4', requiresAuth: true },
+  { href: '/install-app', label: 'Install As App', color: '#00cfff', requiresAuth: false },
   { href: '/classifieds', label: 'Classifieds' },
+  { href: '/faq', label: 'FAQ' },
   { href: '/about', label: 'About Us' },
   { href: '/privacy', label: 'Privacy Policy' },
   { href: '/tos', label: 'Terms of Service' },
@@ -17,11 +22,14 @@ const GUEST_LINKS = [
 
 const USER_MENU_ITEMS = [
   { href: '/', label: 'Home' },
-  { href: '/submit?type=ad', label: 'Submit Ads', color: '#00cfff' },      // Cyan Blue
-  { href: '/submit?type=news', label: 'Submit News', color: '#ffd42a' },    // Yellow
-  { href: '/submit?type=event', label: 'Submit Events', color: '#90ee90' },   // Light Green
-  { href: '/submit?type=classified', label: 'Submit Classifieds', color: '#ff69b4' }, // Pink
-  { href: '/classifieds', label: 'View Classifieds' }, // White (default)
+  { href: '/profile', label: 'Profile', color: '#ffd42a' },
+  { href: '/submit?type=ad', label: 'Submit Ads', color: '#00cfff' },
+  { href: '/submit?type=news', label: 'Submit News', color: '#ffd42a' },
+  { href: '/submit?type=event', label: 'Submit Events', color: '#90ee90' },
+  { href: '/submit?type=classified', label: 'Submit Classifieds', color: '#ff69b4' },
+  { href: '/classifieds', label: 'View Classifieds' },
+  { href: '/install-app', label: 'Install As App', color: '#00cfff' },
+  { href: '/faq', label: 'FAQ' },
   { href: '/about', label: 'About Us' },
   { href: '/privacy', label: 'Privacy Policy' },
   { href: '/tos', label: 'Terms of Service' },
@@ -33,6 +41,7 @@ type MenuItem = {
   href: string;
   label: string;
   color?: string;
+  requiresAuth?: boolean;
 };
 
 type HeaderProps = {
@@ -126,27 +135,36 @@ export default function Header({ titleColorClass = 'text-[#ffd42a]' }: HeaderPro
                   Welcome {userName}
                 </div>
               )}
-              {navLinks.map((link: MenuItem) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  onClick={() => setMenuOpen(false)}
-                  className="block px-6 py-4 text-[17px] font-semibold transition-colors border-b border-[var(--border)]/30"
-                  style={{ 
-                    color: link.color || 'var(--text-primary)',
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = 'var(--border)';
-                    e.currentTarget.style.color = link.color ? '#ffffff' : '#ffd42a';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = 'transparent';
-                    e.currentTarget.style.color = link.color || 'var(--text-primary)';
-                  }}
-                >
-                  {link.label}
-                </Link>
-              ))}
+              {navLinks.map((link: MenuItem) => {
+                // For guest users, dim out items that require auth
+                const isDimmed = !isLoggedIn && link.requiresAuth;
+                const targetHref = isDimmed ? '/signup' : link.href;
+                
+                return (
+                  <Link
+                    key={link.href}
+                    href={targetHref}
+                    onClick={() => setMenuOpen(false)}
+                    className="block px-6 py-4 text-[17px] font-semibold transition-colors border-b border-[var(--border)]/30"
+                    style={{ 
+                      color: isDimmed ? 'var(--text-muted)' : (link.color || 'var(--text-primary)'),
+                      opacity: isDimmed ? 0.6 : 1,
+                    }}
+                    onMouseEnter={(e) => {
+                      if (isDimmed) return;
+                      e.currentTarget.style.backgroundColor = 'var(--border)';
+                      e.currentTarget.style.color = link.color ? '#ffffff' : '#ffd42a';
+                    }}
+                    onMouseLeave={(e) => {
+                      if (isDimmed) return;
+                      e.currentTarget.style.backgroundColor = 'transparent';
+                      e.currentTarget.style.color = link.color || 'var(--text-primary)';
+                    }}
+                  >
+                    {link.label}
+                  </Link>
+                );
+              })}
               {isLoggedIn && (
                 <button
                   onClick={() => {

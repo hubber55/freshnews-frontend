@@ -6,6 +6,7 @@ export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://freshnews.top'),
   title: 'FreshNews.top',
   description: 'Latest News- Also Submit your News/ Classifieds for free',
+  manifest: '/manifest.json',
   icons: {
     icon: '/logos/favicon_32.png',
     shortcut: '/logos/favicon_16.png',

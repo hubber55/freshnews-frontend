@@ -1,9 +1,11 @@
+'use client';
+
 import Link from 'next/link';
 import Script from 'next/script';
 import Image from 'next/image';
+import { useState, useEffect } from 'react';
 
-const FOOTER_LINKS = [
-  { href: '/', label: 'Home' },
+const GUEST_FOOTER_LINKS = [
   { href: '/login', label: 'Login' },
   { href: '/signup', label: 'Sign Up' },
   { href: '/about', label: 'About Us' },
@@ -12,7 +14,30 @@ const FOOTER_LINKS = [
   { href: '/contact', label: 'Contact Us' },
 ];
 
+const AUTHED_FOOTER_LINKS = [
+  { href: '/about', label: 'About Us' },
+  { href: '/privacy', label: 'Privacy Policy' },
+  { href: '/tos', label: 'Terms of Service' },
+  { href: '/contact', label: 'Contact Us' },
+];
+
 export default function Footer() {
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    // Check if user is logged in
+    fetch('/api/auth/me')
+      .then(res => res.json())
+      .then(data => {
+        setIsLoggedIn(!!data.name);
+      })
+      .catch(() => {
+        setIsLoggedIn(false);
+      });
+  }, []);
+
+  const footerLinks = isLoggedIn ? AUTHED_FOOTER_LINKS : GUEST_FOOTER_LINKS;
+
   return (
     <footer className="mt-10 border-t border-[var(--border)] bg-[var(--bg-card)]">
       <div className="mx-auto max-w-[800px] px-5 py-10">
@@ -20,10 +45,10 @@ export default function Footer() {
         <div className="text-center mb-5">
           <Link href="/">
             <Image
-              src="/logos/favicon_32.png" // Assuming this path and extension
+              src="/logos/favicon_32.png"
               alt="FreshNews.top Favicon"
-              width={32} // Adjust width as needed
-              height={32} // Adjust height as needed
+              width={32}
+              height={32}
             />
           </Link>
           <p className="mt-2 text-[13px] text-[var(--text-muted)]">
@@ -33,7 +58,7 @@ export default function Footer() {
 
         {/* Nav Links */}
         <nav className="flex flex-wrap justify-center gap-x-6 gap-y-2 mb-6">
-          {FOOTER_LINKS.map((link) => (
+          {footerLinks.map((link) => (
             <Link
               key={link.href}
               href={link.href}

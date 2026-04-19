@@ -87,6 +87,7 @@ function buildFullWhatsappNumber(countryCode: string, localNumber: string) {
 
 export default function SignupPage() {
   const [name, setName] = useState('');
+  const [nickname, setNickname] = useState('');
   const [email, setEmail] = useState('');
     const [countryCode, setCountryCode] = useState('91');
     const [customCountryCode, setCustomCountryCode] = useState('');
@@ -127,9 +128,21 @@ export default function SignupPage() {
     return true;
   };
 
+  // Email validation function
+  const validateEmail = (email: string): boolean => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+  };
+
   const requestOtp = async () => {
     // Use custom country code if "Other" is selected
     const effectiveCountryCode = countryCode === '' ? customCountryCode : countryCode;
+    
+    // Validate email format
+    if (!validateEmail(email)) {
+      setError('Please enter a valid email address');
+      return;
+    }
     
     const validation = validatePhoneNumber(effectiveCountryCode, whatsappNumber);
     if (!validation.valid) {
@@ -138,20 +151,24 @@ export default function SignupPage() {
     }
     
     const fullWhatsappNumber = buildFullWhatsappNumber(effectiveCountryCode, whatsappNumber);
-    if (!checkAndTrackOtpAttempt(fullWhatsappNumber)) {
-      return;
-    }
 
     setBusy(true);
     setError(null);
     try {
+      // First check if user exists via API (before rate limiting)
       const res = await fetch('/api/wa-auth/request-otp', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ name, whatsappNumber: fullWhatsappNumber }),
+        body: JSON.stringify({ name, nickname, email, whatsappNumber: fullWhatsappNumber }),
       });
       const json = await res.json();
       if (!json.ok) throw new Error(json.error || 'Failed to send OTP');
+      
+      // Only apply rate limiting after successful API response (new user)
+      if (!checkAndTrackOtpAttempt(fullWhatsappNumber)) {
+        return;
+      }
+      
       setOtpSentTo(json.masked || 'xxxxx');
     } catch (e: any) {
       setError(e?.message || 'Failed');
@@ -208,6 +225,21 @@ export default function SignupPage() {
                   onChange={(e) => setName(e.target.value)}
                   placeholder="Your name"
                   maxLength={15}
+                  className="w-full rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-4 py-3 text-white focus:border-[#90ee90] focus:outline-none focus:ring-1 focus:ring-[#90ee90]"
+                />
+              </div>
+
+              {/* NICKNAME */}
+              <div>
+                <label className="block text-sm font-medium text-[var(--text-secondary)] mb-2">
+                  Nickname
+                  <span className="ml-2 text-xs text-[var(--text-muted)]">(Shown publicly in Comments, Ads)</span>
+                </label>
+                <input
+                  value={nickname}
+                  onChange={(e) => setNickname(e.target.value)}
+                  placeholder="Public display name"
+                  maxLength={20}
                   className="w-full rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-4 py-3 text-white focus:border-[#90ee90] focus:outline-none focus:ring-1 focus:ring-[#90ee90]"
                 />
               </div>
