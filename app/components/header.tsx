@@ -155,16 +155,17 @@ export default function Header({ titleColorClass = 'text-[#ffd42a]' }: HeaderPro
                 const isDimmed = !isLoggedIn && link.requiresAuth;
                 const targetHref = isDimmed ? '/signup' : link.href;
                 const isInstallLink = link.href === '/install-app';
-                const hasPrompt = typeof window !== 'undefined' && window.deferredInstallPrompt;
                 
                 // Use button for install link when prompt is available to prevent navigation
-                if (isInstallLink && hasPrompt && !isInstalled) {
+                if (isInstallLink && isInstallable && !isInstalled) {
                   return (
                     <button
                       key={link.href}
-                      onClick={() => {
-                        triggerInstall();
-                        setMenuOpen(false);
+                      onClick={async () => {
+                        const result = await triggerInstall();
+                        if (result) {
+                          setMenuOpen(false);
+                        }
                       }}
                       className="w-full text-left block px-6 py-4 text-[17px] font-semibold transition-colors border-b border-[var(--border)]/30"
                       style={{ color: link.color || 'var(--text-primary)' }}
