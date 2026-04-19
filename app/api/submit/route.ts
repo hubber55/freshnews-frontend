@@ -32,8 +32,10 @@ export async function POST(req: Request) {
     if (title.length > 70) {
       return NextResponse.json({ error: 'Title exceeds 70 characters' }, { status: 400 });
     }
-    if (content.length > 500) {
-      return NextResponse.json({ error: 'Content exceeds 500 characters' }, { status: 400 });
+    // 800 words max for content
+    const contentWordCount = content.trim().split(/\s+/).length;
+    if (contentWordCount > 800) {
+      return NextResponse.json({ error: 'Content exceeds 800 words' }, { status: 400 });
     }
 
     let finalImageUrl: string | undefined = imageUrl;

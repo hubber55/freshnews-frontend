@@ -107,8 +107,10 @@ function SubmitContent() {
       setIsSubmitting(false);
       return;
     }
-    if (content.length > 500) {
-      setError('Content must be 500 characters or less');
+    // 800 words max for content
+    const contentWordCount = content.trim().split(/\s+/).length;
+    if (contentWordCount > 800) {
+      setError('Content must be 800 words or less');
       setIsSubmitting(false);
       return;
     }
@@ -118,8 +120,9 @@ function SubmitContent() {
         setIsSubmitting(false);
         return;
       }
-      if (newsContent.length > 500) {
-        setError('News content must be 500 characters or less');
+      const newsWordCount = newsContent.trim().split(/\s+/).length;
+      if (newsWordCount > 800) {
+        setError('News content must be 800 words or less');
         setIsSubmitting(false);
         return;
       }

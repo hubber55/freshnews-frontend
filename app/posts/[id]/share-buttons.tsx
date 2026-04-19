@@ -51,8 +51,9 @@ function trackShare(payload: TrackPayload) {
 export default function ShareButtons({ postId, title, url }: ShareButtonsProps) {
   const whatsappTagline = '_Latest News- Also Submit your News/ Classifieds for free_';
   const encodedUrl = encodeURIComponent(url);
-  const encodedTitle = encodeURIComponent(title);
-  const encodedWhatsappUrlAndTagline = encodeURIComponent(`${url}\n\n${whatsappTagline}`);
+  // Include full title in WhatsApp share (up to 200 chars to keep it readable)
+  const whatsappTitle = title.length > 200 ? title.substring(0, 200) + '...' : title;
+  const encodedWhatsappText = encodeURIComponent(`${whatsappTitle}\n\n${url}\n\n${whatsappTagline}`);
   const [copied, setCopied] = useState(false);
 
   const handleNativeShare = async () => {
@@ -90,7 +91,7 @@ export default function ShareButtons({ postId, title, url }: ShareButtonsProps) 
     }
 
     if (typeof window !== 'undefined') {
-      window.open(`https://wa.me/?text=${encodedWhatsappUrlAndTagline}`, '_blank', 'noopener,noreferrer');
+      window.open(`https://wa.me/?text=${encodedWhatsappText}`, '_blank', 'noopener,noreferrer');
     }
   };
 
@@ -108,7 +109,7 @@ export default function ShareButtons({ postId, title, url }: ShareButtonsProps) 
       <div className="flex flex-wrap gap-4">
         {/* Telegram */}
         <a
-          href={`https://t.me/share/url?url=${encodedUrl}&text=${encodedTitle}`}
+          href={`https://t.me/share/url?url=${encodedUrl}&text=${encodeURIComponent(title)}`}
           target="_blank"
           rel="noopener noreferrer"
           className="inline-flex items-center gap-2 rounded-lg bg-[#0088cc] px-5 py-3 text-sm font-semibold text-white shadow-md transition-all hover:brightness-110 hover:shadow-lg active:scale-95"
@@ -144,7 +145,7 @@ export default function ShareButtons({ postId, title, url }: ShareButtonsProps) 
 
         {/* X (Twitter) */}
         <a
-          href={`https://x.com/intent/post?url=${encodedUrl}&text=${encodedTitle}`}
+          href={`https://x.com/intent/post?url=${encodedUrl}&text=${encodeURIComponent(title.length > 100 ? title.substring(0, 100) + '...' : title)}`}
           target="_blank"
           rel="noopener noreferrer"
           className="inline-flex items-center gap-2 rounded-lg bg-[#000000] px-5 py-3 text-sm font-semibold text-white shadow-md ring-1 ring-[#333] transition-all hover:bg-[#1a1a1a] hover:shadow-lg active:scale-95"
