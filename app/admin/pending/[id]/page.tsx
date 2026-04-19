@@ -3,7 +3,12 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
+import { Suspense } from 'react';
 import { getSubmission, approveSubmission, rejectSubmission, updateSubmission, deleteSubmission } from '../actions';
+
+// Disable static prerendering - this page uses client-side only hooks
+export const dynamic = 'force-dynamic';
+export const dynamicParams = true;
 
 interface Submission {
   id: string;
