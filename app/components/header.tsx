@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Menu, X, Search, LogOut, User } from 'lucide-react';
+import { usePWAInstall } from '../hooks/usePWAInstall';
 
 const GUEST_LINKS = [
   { href: '/', label: 'Home' },
@@ -44,6 +45,7 @@ export default function Header({ titleColorClass = 'text-[#ffd42a]' }: HeaderPro
   const [userName, setUserName] = useState<string | null>(null);
   const isLoggedIn = !!userName;
   const navLinks = isLoggedIn ? USER_MENU_ITEMS : GUEST_LINKS;
+  const { isInstallable, triggerInstall, isInstalled } = usePWAInstall();
 
   useEffect(() => {
     // Fetch user name
@@ -61,6 +63,18 @@ export default function Header({ titleColorClass = 'text-[#ffd42a]' }: HeaderPro
     await fetch('/api/auth/logout', { method: 'POST' });
     setUserName(null);
     window.location.href = '/';
+  };
+
+  const handleInstallClick = async (e: React.MouseEvent) => {
+    // If install prompt is available, trigger it directly
+    if (isInstallable && !isInstalled) {
+      e.preventDefault();
+      const installed = await triggerInstall();
+      if (installed) {
+        setMenuOpen(false);
+      }
+    }
+    // Otherwise, let it navigate to the install-app page for instructions
   };
 
   return (
@@ -130,12 +144,18 @@ export default function Header({ titleColorClass = 'text-[#ffd42a]' }: HeaderPro
                 // For guest users, dim out items that require auth
                 const isDimmed = !isLoggedIn && link.requiresAuth;
                 const targetHref = isDimmed ? '/signup' : link.href;
+                const isInstallLink = link.href === '/install-app';
                 
                 return (
                   <Link
                     key={link.href}
                     href={targetHref}
-                    onClick={() => setMenuOpen(false)}
+                    onClick={(e) => {
+                      if (isInstallLink) {
+                        handleInstallClick(e);
+                      }
+                      setMenuOpen(false);
+                    }}
                     className="block px-6 py-4 text-[17px] font-semibold transition-colors border-b border-[var(--border)]/30"
                     style={{ 
                       color: isDimmed ? 'var(--text-muted)' : (link.color || 'var(--text-primary)'),
