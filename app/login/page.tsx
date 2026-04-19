@@ -268,6 +268,8 @@ export default function LoginPage() {
                 >
                   {busy ? 'Sending OTP…' : 'Send OTP'}
                 </button>
+                <div className="my-4"></div>
+                <div className="my-4"></div>
               </>
             ) : (
               <>
@@ -312,9 +314,9 @@ export default function LoginPage() {
             )}
             </div>
 
-            <div className="mt-6 text-center text-sm text-[var(--text-muted)]">
-              New here?{' '}
-              <Link href="/signup" className="font-bold text-[#90ee90] hover:underline">
+            <div className="mt-6 text-center text-sm">
+              <span className="text-[#ffd42a] font-bold">New here?{' '}</span>
+              <Link href="/signup" className="font-bold text-[#ffd42a] hover:underline">
                 Create an account
               </Link>
             </div>

@@ -6,8 +6,8 @@ import Image from 'next/image';
 import { useState, useEffect } from 'react';
 
 const GUEST_FOOTER_LINKS = [
-  { href: '/login', label: 'Login' },
-  { href: '/signup', label: 'Sign Up' },
+  { href: '/login', label: 'Login / Sign Up' },
+  { href: '/faq', label: 'FAQ' },
   { href: '/about', label: 'About Us' },
   { href: '/privacy', label: 'Privacy Policy' },
   { href: '/tos', label: 'Terms of Service' },
@@ -15,6 +15,7 @@ const GUEST_FOOTER_LINKS = [
 ];
 
 const AUTHED_FOOTER_LINKS = [
+  { href: '/faq', label: 'FAQ' },
   { href: '/about', label: 'About Us' },
   { href: '/privacy', label: 'Privacy Policy' },
   { href: '/tos', label: 'Terms of Service' },

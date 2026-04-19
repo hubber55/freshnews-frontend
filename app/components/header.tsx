@@ -6,17 +6,12 @@ import { Menu, X, Search, LogOut, User } from 'lucide-react';
 
 const GUEST_LINKS = [
   { href: '/', label: 'Home' },
-  { href: '/login', label: 'Login' },
-  { href: '/signup', label: 'Sign Up' },
+  { href: '/login', label: 'Login / Sign Up' },
   { href: '/submit?type=news', label: 'Submit News', color: '#ffd42a', requiresAuth: true },
   { href: '/submit?type=event', label: 'Submit Events', color: '#90ee90', requiresAuth: true },
   { href: '/submit?type=classified', label: 'Submit Classifieds', color: '#ff69b4', requiresAuth: true },
   { href: '/install-app', label: 'Install As App', color: '#00cfff', requiresAuth: false },
   { href: '/classifieds', label: 'Classifieds' },
-  { href: '/faq', label: 'FAQ' },
-  { href: '/about', label: 'About Us' },
-  { href: '/privacy', label: 'Privacy Policy' },
-  { href: '/tos', label: 'Terms of Service' },
   { href: '/contact', label: 'Contact Us' },
 ];
 
@@ -29,10 +24,6 @@ const USER_MENU_ITEMS = [
   { href: '/submit?type=classified', label: 'Submit Classifieds', color: '#ff69b4' },
   { href: '/classifieds', label: 'View Classifieds' },
   { href: '/install-app', label: 'Install As App', color: '#00cfff' },
-  { href: '/faq', label: 'FAQ' },
-  { href: '/about', label: 'About Us' },
-  { href: '/privacy', label: 'Privacy Policy' },
-  { href: '/tos', label: 'Terms of Service' },
   { href: '/contact', label: 'Contact Us' },
 ];
 
