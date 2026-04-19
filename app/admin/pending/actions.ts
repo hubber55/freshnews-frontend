@@ -34,6 +34,14 @@ export async function approveSubmission(submissionId: string, formData: FormData
   const tagsString = (formData.get('tags') as string || '').trim();
   const tags = tagsString.split(',').map(t => t.trim()).filter(Boolean);
 
+  if (!title) {
+    throw new Error('Title is required');
+  }
+
+  if (!content) {
+    throw new Error('Content is required');
+  }
+
   // Generate slug from title
   const slug = title
     .toLowerCase()
@@ -46,7 +54,12 @@ export async function approveSubmission(submissionId: string, formData: FormData
     .from('posts')
     .insert({
       title,
-      content,
+      summary: content,
+      tags,
+      image_url: submission.image_url || null,
+      source_name: 'User Submission',
+      published_at: new Date().toISOString(),
+      is_deleted: false,
       slug: `${slug}-${Date.now()}`
     })
     .select()
