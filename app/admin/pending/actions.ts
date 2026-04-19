@@ -151,3 +151,17 @@ export async function updateSubmission(submissionId: string, formData: FormData)
   revalidatePath('/admin/pending');
   return { success: true };
 }
+
+export async function deleteSubmission(submissionId: string) {
+  const supabase = await createClient();
+  
+  const { error } = await supabase
+    .from('submissions')
+    .delete()
+    .eq('id', submissionId);
+
+  if (error) throw new Error('Failed to delete submission');
+  
+  revalidatePath('/admin/pending');
+  return { success: true };
+}

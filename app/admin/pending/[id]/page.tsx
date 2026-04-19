@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { getSubmission, approveSubmission, rejectSubmission, updateSubmission } from '../actions';
+import { getSubmission, approveSubmission, rejectSubmission, updateSubmission, deleteSubmission } from '../actions';
 
 interface Submission {
   id: string;
@@ -17,12 +17,13 @@ interface Submission {
   created_at: string;
 }
 
-export default function ReviewSubmissionPage({ params }: { params: { id: string } }) {
+export default function ReviewSubmissionPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
   const [submission, setSubmission] = useState<Submission | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [submissionId, setSubmissionId] = useState<string>('');
   
   // Form state
   const [title, setTitle] = useState('');
@@ -31,7 +32,9 @@ export default function ReviewSubmissionPage({ params }: { params: { id: string 
 
   const fetchSubmission = useCallback(async () => {
     try {
-      const data = await getSubmission(params.id);
+      const { id } = await params;
+      setSubmissionId(id);
+      const data = await getSubmission(id);
       setSubmission(data);
       setTitle(data.title);
       setContent(data.content);
@@ -41,7 +44,7 @@ export default function ReviewSubmissionPage({ params }: { params: { id: string 
     } finally {
       setLoading(false);
     }
-  }, [params.id]);
+  }, [params]);
 
   useEffect(() => {
     fetchSubmission();
@@ -57,7 +60,7 @@ export default function ReviewSubmissionPage({ params }: { params: { id: string 
       formData.set('content', content);
       formData.set('tags', tags);
       
-      await approveSubmission(params.id, formData);
+      await approveSubmission(submissionId, formData);
       alert('Post published successfully! WhatsApp notification sent to user.');
       router.push('/admin/pending');
     } catch (err: any) {
@@ -72,7 +75,7 @@ export default function ReviewSubmissionPage({ params }: { params: { id: string 
     
     setSaving(true);
     try {
-      await rejectSubmission(params.id);
+      await rejectSubmission(submissionId);
       alert('Submission rejected. WhatsApp notification sent to user.');
       router.push('/admin/pending');
     } catch (err: any) {
@@ -90,8 +93,23 @@ export default function ReviewSubmissionPage({ params }: { params: { id: string 
       formData.set('content', content);
       formData.set('tags', tags);
       
-      await updateSubmission(params.id, formData);
+      await updateSubmission(submissionId, formData);
       alert('Changes saved successfully.');
+    } catch (err: any) {
+      alert('Error: ' + err.message);
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  async function handleDelete() {
+    if (!confirm('⚠️ WARNING: This will permanently delete the submission.\n\nAre you sure?')) return;
+    
+    setSaving(true);
+    try {
+      await deleteSubmission(submissionId);
+      alert('Submission deleted successfully.');
+      router.push('/admin/pending');
     } catch (err: any) {
       alert('Error: ' + err.message);
     } finally {
@@ -190,11 +208,25 @@ export default function ReviewSubmissionPage({ params }: { params: { id: string 
         )}
 
         <div className="bg-[var(--bg-secondary)] p-4 rounded-lg border border-[var(--border)]">
-          <p className="text-sm text-gray-400">
-            <strong>Submitted by:</strong> {submission.user_id}<br />
-            <strong>WhatsApp:</strong> {submission.user_whatsapp || 'N/A'}<br />
-            <strong>Submitted on:</strong> {new Date(submission.created_at).toLocaleString()}
-          </p>
+          <h3 className="font-semibold text-white mb-3">User Information</h3>
+          <div className="grid grid-cols-2 gap-4 text-sm">
+            <div>
+              <p className="text-gray-400 mb-1">User ID:</p>
+              <p className="text-white break-all">{submission.user_id}</p>
+            </div>
+            <div>
+              <p className="text-gray-400 mb-1">WhatsApp:</p>
+              <p className="text-white">{submission.user_whatsapp || 'N/A'}</p>
+            </div>
+          </div>
+          <div className="mt-3 text-sm">
+            <p className="text-gray-400">Uploaded at:</p>
+            <p className="text-white">{new Date(submission.created_at).toLocaleString('en-IN', { 
+              dateStyle: 'medium', 
+              timeStyle: 'short',
+              timeZone: 'Asia/Kolkata'
+            })} IST</p>
+          </div>
         </div>
 
         <div className="flex flex-wrap gap-4 pt-4">
@@ -219,9 +251,18 @@ export default function ReviewSubmissionPage({ params }: { params: { id: string 
             type="button"
             onClick={handleReject}
             disabled={saving}
-            className="px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition font-semibold disabled:opacity-50"
+            className="px-6 py-3 bg-orange-600 text-white rounded-lg hover:bg-orange-700 transition font-semibold disabled:opacity-50"
           >
             {saving ? 'Processing...' : 'Reject'}
+          </button>
+          
+          <button
+            type="button"
+            onClick={handleDelete}
+            disabled={saving}
+            className="px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition font-semibold disabled:opacity-50 ml-auto"
+          >
+            {saving ? 'Processing...' : 'Delete'}
           </button>
         </div>
       </form>
