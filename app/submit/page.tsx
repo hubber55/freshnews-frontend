@@ -19,7 +19,7 @@ function SubmitContent() {
   
   // Get type from query param or default to 'news'
   const typeParam = searchParams.get('type');
-  const [type, setType] = useState(typeParam || 'news'); // news, classified, ad, event
+  const [type, setType] = useState(typeParam === 'classified' ? 'news' : (typeParam || 'news')); // news, ad, event
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [tags, setTags] = useState<string[]>([]);
@@ -68,7 +68,7 @@ function SubmitContent() {
   // Update type when query param changes
   useEffect(() => {
     if (typeParam) {
-      setType(typeParam);
+      setType(typeParam === 'classified' ? 'news' : typeParam);
     }
   }, [typeParam]);
 
@@ -203,43 +203,9 @@ function SubmitContent() {
                 className="w-full rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-4 py-3 text-white focus:border-[#00cfff] focus:outline-none focus:ring-1 focus:ring-[#00cfff]"
               >
                 <option value="news">News</option>
-                <option value="classified">Classified</option>
                 <option value="ad">Main Ad</option>
               </select>
             </div>
-
-            {type === 'classified' && (
-              <>
-                <div>
-                  <label className="mb-2 block text-sm font-bold text-[var(--text-secondary)]">Category</label>
-                  <select
-                    value={selectedCategory}
-                    onChange={(e) => setSelectedCategory(e.target.value)}
-                    className="w-full rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-4 py-3 text-white focus:border-[#00cfff] focus:outline-none focus:ring-1 focus:ring-[#00cfff]"
-                  >
-                    <option value="">Select Category</option>
-                    {categories.map((cat) => (
-                      <option key={cat.id} value={cat.id}>{cat.name}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="mb-2 block text-sm font-bold text-[var(--text-secondary)]">Subcategory</label>
-                  <select
-                    value={selectedSubcategory}
-                    onChange={(e) => setSelectedSubcategory(e.target.value)}
-                    disabled={!selectedCategory}
-                    className="w-full rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-4 py-3 text-white focus:border-[#00cfff] focus:outline-none focus:ring-1 focus:ring-[#00cfff]"
-                  >
-                    <option value="">Select Subcategory</option>
-                    {filteredSubcategories.map((sub) => (
-                      <option key={sub.id} value={sub.id}>{sub.name}</option>
-                    ))}
-                  </select>
-                </div>
-              </>
-            )}
 
             <div>
               <label className="mb-2 block text-sm font-bold text-[var(--text-secondary)]">Title (max 70 chars)</label>

@@ -21,7 +21,11 @@ export function usePWAInstall() {
 
   useEffect(() => {
     // Check if already installed
-    if (typeof window !== 'undefined' && window.matchMedia('(display-mode: standalone)').matches) {
+    if (
+      typeof window !== 'undefined' &&
+      (window.matchMedia('(display-mode: standalone)').matches ||
+        ((window.navigator as Navigator & { standalone?: boolean }).standalone ?? false))
+    ) {
       setIsInstalled(true);
       return;
     }
@@ -50,6 +54,21 @@ export function usePWAInstall() {
 
       return () => clearInterval(interval);
     }
+  }, []);
+
+  useEffect(() => {
+    const handleAppInstalled = () => {
+      window.deferredInstallPrompt = null;
+      setDeferredPrompt(null);
+      setIsInstallable(false);
+      setIsInstalled(true);
+    };
+
+    window.addEventListener('appinstalled', handleAppInstalled);
+
+    return () => {
+      window.removeEventListener('appinstalled', handleAppInstalled);
+    };
   }, []);
 
   // Also listen for the event in case it fires after mount

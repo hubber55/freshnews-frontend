@@ -4,49 +4,20 @@ import { useState, useEffect } from 'react';
 import Header from '../components/header';
 import Footer from '../components/footer';
 import { Download, Smartphone, CheckCircle } from 'lucide-react';
-
-interface BeforeInstallPromptEvent extends Event {
-  prompt: () => Promise<void>;
-  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
-}
+import { usePWAInstall } from '../hooks/usePWAInstall';
 
 export default function InstallAppPage() {
-  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
-  const [isInstalled, setIsInstalled] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
+  const { isInstallable, isInstalled, triggerInstall } = usePWAInstall();
 
   useEffect(() => {
-    // Check if already installed
-    if (window.matchMedia('(display-mode: standalone)').matches) {
-      setIsInstalled(true);
-    }
-
     // Check if iOS
     const isIOSDevice = /iPad|iPhone|iPod/.test(navigator.userAgent) && !(window as unknown as { MSStream: unknown }).MSStream;
     setIsIOS(isIOSDevice);
-
-    // Listen for beforeinstallprompt event
-    const handleBeforeInstallPrompt = (e: Event) => {
-      e.preventDefault();
-      setDeferredPrompt(e as BeforeInstallPromptEvent);
-    };
-
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-
-    return () => {
-      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-    };
   }, []);
 
   const handleInstall = async () => {
-    if (!deferredPrompt) return;
-
-    deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
-    
-    if (outcome === 'accepted') {
-      setDeferredPrompt(null);
-    }
+    await triggerInstall();
   };
 
   return (
@@ -93,7 +64,7 @@ export default function InstallAppPage() {
                   </li>
                 </ol>
               </div>
-            ) : deferredPrompt ? (
+            ) : isInstallable ? (
               <button
                 onClick={handleInstall}
                 className="inline-flex items-center gap-2 rounded-xl bg-[#00cfff] px-8 py-4 font-extrabold text-[#0d1117] shadow-md hover:brightness-110 transition-all"
