@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Header from '../components/header';
 import Footer from '../components/footer';
-import { User, Edit, Clock, CheckCircle, XCircle, FileText, Calendar, Tag, Newspaper } from 'lucide-react';
+import { User, Edit, Clock, CheckCircle, XCircle, FileText, Calendar, Tag, Newspaper, Trash2, ExternalLink } from 'lucide-react';
 
 type UserSubmission = {
   id: number;
@@ -22,9 +22,17 @@ type UserProfile = {
   whatsappNumber: string;
 };
 
+type PublishedPost = {
+  id: number;
+  title: string;
+  slug: string;
+  published_at: string;
+};
+
 export default function ProfilePage() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [submissions, setSubmissions] = useState<UserSubmission[]>([]);
+  const [publishedPosts, setPublishedPosts] = useState<PublishedPost[]>([]);
   const [isEditingNickname, setIsEditingNickname] = useState(false);
   const [newNickname, setNewNickname] = useState('');
   const [isLoading, setIsLoading] = useState(true);
@@ -43,6 +51,19 @@ export default function ProfilePage() {
         }
         setProfile(data);
         setNewNickname(data.nickname || '');
+        
+        // Fetch user's published posts
+        fetch('/api/user/published-posts')
+          .then(res => res.json())
+          .then(postsData => {
+            if (postsData.posts) {
+              setPublishedPosts(postsData.posts);
+            }
+          })
+          .catch(() => {
+            setPublishedPosts([]);
+          });
+        
         setIsLoading(false);
       })
       .catch(err => {
@@ -63,6 +84,26 @@ export default function ProfilePage() {
         setSubmissions([]);
       });
   }, []);
+
+  async function handleDeletePost(postId: number) {
+    if (!confirm('Are you sure you want to delete this post?')) return;
+    
+    try {
+      const res = await fetch(`/api/user/delete-post/${postId}`, {
+        method: 'DELETE'
+      });
+      
+      if (res.ok) {
+        setPublishedPosts(prev => prev.filter(p => p.id !== postId));
+        setUpdateMessage('Post deleted successfully');
+        setTimeout(() => setUpdateMessage(null), 3000);
+      } else {
+        setError('Failed to delete post');
+      }
+    } catch {
+      setError('Failed to delete post');
+    }
+  }
 
   const handleUpdateNickname = async () => {
     if (!newNickname.trim() || newNickname === profile?.nickname) {
@@ -247,6 +288,50 @@ export default function ProfilePage() {
               </div>
             </div>
           </div>
+
+          {/* Published Posts Section */}
+          {publishedPosts.length > 0 && (
+            <div className="rounded-3xl border border-[var(--border)] bg-[var(--bg-card)] p-8 shadow-2xl mb-6">
+              <h2 className="text-xl font-bold text-white mb-6 flex items-center gap-2" style={{ fontFamily: 'var(--font-en)' }}>
+                <CheckCircle size={24} className="text-[#90ee90]" />
+                My Published Posts
+              </h2>
+              <div className="space-y-4">
+                {publishedPosts.map((post) => (
+                  <div
+                    key={post.id}
+                    className="flex items-center gap-4 p-4 rounded-xl border border-[var(--border)] bg-[var(--bg-primary)]"
+                  >
+                    <div className="flex-shrink-0">
+                      <Newspaper size={16} className="text-[#ffd42a]" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold text-white truncate">{post.title}</h3>
+                      <div className="flex items-center gap-4 mt-1 text-sm text-[var(--text-muted)]">
+                        <span>{new Date(post.published_at).toLocaleDateString()}</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Link
+                        href={`/posts/${post.id}`}
+                        className="p-2 rounded-lg bg-[var(--bg-card)] text-[var(--text-muted)] hover:text-[#00cfff]"
+                        title="View Post"
+                      >
+                        <ExternalLink size={16} />
+                      </Link>
+                      <button
+                        onClick={() => handleDeletePost(post.id)}
+                        className="p-2 rounded-lg bg-[var(--bg-card)] text-red-400 hover:text-red-300"
+                        title="Delete Post"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Submissions Section */}
           <div className="rounded-3xl border border-[var(--border)] bg-[var(--bg-card)] p-8 shadow-2xl">
