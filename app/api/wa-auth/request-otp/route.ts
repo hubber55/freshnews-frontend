@@ -25,7 +25,7 @@ async function sendOtpViaWhatspie(receiverDigits: string, otp: string) {
   if (!token) throw new Error('Missing WHATSPIE_API_TOKEN');
   if (!device) throw new Error('Missing WHATSPIE_DEVICE');
 
-  const message = `Your FreshNews OTP is: ${otp}`;
+  const message = `Freshnews OTP: ${otp}`;
 
   const res = await fetch('https://api.whatspie.com/messages', {
     method: 'POST',

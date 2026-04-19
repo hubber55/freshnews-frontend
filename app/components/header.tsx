@@ -40,14 +40,12 @@ type HeaderProps = {
 export default function Header({ titleColorClass = 'text-[#ffd42a]' }: HeaderProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [userName, setUserName] = useState<string | null>(null);
+  const [installNotice, setInstallNotice] = useState<string | null>(null);
   const isLoggedIn = !!userName;
   const { isInstallable, triggerInstall, isInstalled } = usePWAInstall();
   
-  // Filter out Install As App if already installed
   const allLinks = isLoggedIn ? USER_MENU_ITEMS : GUEST_LINKS;
-  const navLinks = isInstalled 
-    ? allLinks.filter(link => link.href !== '/install-app')
-    : allLinks;
+  const navLinks = allLinks;
 
   useEffect(() => {
     // Fetch user name
@@ -65,22 +63,6 @@ export default function Header({ titleColorClass = 'text-[#ffd42a]' }: HeaderPro
     await fetch('/api/auth/logout', { method: 'POST' });
     setUserName(null);
     window.location.href = '/';
-  };
-
-  const handleInstallClick = async (e: React.MouseEvent) => {
-    // Check both state and global variable for the install prompt
-    const hasPrompt = isInstallable || (typeof window !== 'undefined' && window.deferredInstallPrompt);
-    
-    if (hasPrompt && !isInstalled) {
-      e.preventDefault();
-      e.stopPropagation();
-      const installed = await triggerInstall();
-      if (installed) {
-        setMenuOpen(false);
-      }
-      return;
-    }
-    // Otherwise, let it navigate to the install-app page for instructions
   };
 
   return (
@@ -146,11 +128,17 @@ export default function Header({ titleColorClass = 'text-[#ffd42a]' }: HeaderPro
                   Welcome {userName}
                 </div>
               )}
+              {installNotice && (
+                <div className="mx-4 mb-2 rounded-lg border border-[#90ee90]/30 bg-[#90ee90]/10 px-4 py-2 text-sm font-semibold text-[#90ee90]">
+                  {installNotice}
+                </div>
+              )}
               {navLinks.map((link: MenuItem) => {
                 // For guest users, dim out items that require auth
                 const isDimmed = !isLoggedIn && link.requiresAuth;
                 const targetHref = isDimmed ? '/signup' : link.href;
                 const isInstallLink = link.href === '/install-app';
+                const isInstallDisabled = isInstallLink && isInstalled;
                 
                 // Use button for install link when prompt is available to prevent navigation
                 if (isInstallLink && isInstallable && !isInstalled) {
@@ -172,6 +160,26 @@ export default function Header({ titleColorClass = 'text-[#ffd42a]' }: HeaderPro
                       onMouseLeave={(e) => {
                         e.currentTarget.style.backgroundColor = 'transparent';
                         e.currentTarget.style.color = link.color || 'var(--text-primary)';
+                      }}
+                    >
+                      {link.label}
+                    </button>
+                  );
+                }
+
+                if (isInstallDisabled) {
+                  return (
+                    <button
+                      key={link.href}
+                      type="button"
+                      onClick={() => {
+                        setInstallNotice('Already Installed');
+                      }}
+                      className="w-full text-left block px-6 py-4 text-[17px] font-semibold border-b border-[var(--border)]/30"
+                      style={{
+                        color: 'var(--text-muted)',
+                        opacity: 0.6,
+                        cursor: 'not-allowed',
                       }}
                     >
                       {link.label}
