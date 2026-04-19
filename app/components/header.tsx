@@ -72,13 +72,17 @@ export default function Header({ titleColorClass = 'text-[#ffd42a]' }: HeaderPro
   };
 
   const handleInstallClick = async (e: React.MouseEvent) => {
-    // If install prompt is available, trigger it directly
-    if (isInstallable && !isInstalled) {
+    // Check both state and global variable for the install prompt
+    const hasPrompt = isInstallable || (typeof window !== 'undefined' && window.deferredInstallPrompt);
+    
+    if (hasPrompt && !isInstalled) {
       e.preventDefault();
+      e.stopPropagation();
       const installed = await triggerInstall();
       if (installed) {
         setMenuOpen(false);
       }
+      return;
     }
     // Otherwise, let it navigate to the install-app page for instructions
   };
@@ -156,9 +160,13 @@ export default function Header({ titleColorClass = 'text-[#ffd42a]' }: HeaderPro
                   <Link
                     key={link.href}
                     href={targetHref}
-                    onClick={(e) => {
+                    onClick={async (e) => {
                       if (isInstallLink) {
-                        handleInstallClick(e);
+                        await handleInstallClick(e);
+                        // If install was triggered, don't navigate
+                        if (window.deferredInstallPrompt && !isInstalled) {
+                          return;
+                        }
                       }
                       setMenuOpen(false);
                     }}
