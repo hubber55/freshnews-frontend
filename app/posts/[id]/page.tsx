@@ -183,10 +183,10 @@ export default async function PostPage({ params }: PageProps) {
             <div className="article-body text-[var(--text-primary)]">
               {bodyItems.map((item, index) => {
                 return (
-                  <p 
+                  <p
                     key={`${post.id}-${index}`}
-                    className={item.isCredit 
-                      ? "text-[10px] italic opacity-60 mt-12 mb-2 leading-relaxed tracking-wide" 
+                    className={item.isCredit
+                      ? "text-[10px] italic opacity-60 mt-12 mb-2 leading-relaxed tracking-wide"
                       : "mb-6 leading-loose"}
                   >
                     {item.text}
