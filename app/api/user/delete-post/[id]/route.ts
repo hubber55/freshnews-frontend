@@ -3,8 +3,9 @@ import { NextResponse } from 'next/server';
 
 export async function DELETE(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   const supabase = await createClient();
   
   // Get current user
@@ -14,7 +15,7 @@ export async function DELETE(
     return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
   }
   
-  const postId = parseInt(params.id);
+  const postId = parseInt(id);
   
   // Verify the post belongs to the user
   const { data: post, error: fetchError } = await supabase
