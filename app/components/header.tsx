@@ -160,13 +160,9 @@ export default function Header({ titleColorClass = 'text-[#ffd42a]' }: HeaderPro
                   <Link
                     key={link.href}
                     href={targetHref}
-                    onClick={async (e) => {
+                    onClick={(e) => {
                       if (isInstallLink) {
-                        await handleInstallClick(e);
-                        // If install was triggered, don't navigate
-                        if (window.deferredInstallPrompt && !isInstalled) {
-                          return;
-                        }
+                        handleInstallClick(e);
                       }
                       setMenuOpen(false);
                     }}
