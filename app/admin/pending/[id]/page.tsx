@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
 import Link from 'next/link';
 import { getSubmission, approveSubmission, rejectSubmission, updateSubmission, deleteSubmission } from '../actions';
 
@@ -16,8 +16,11 @@ interface Submission {
   created_at: string;
 }
 
-export default function ReviewSubmissionPage({ params }: { params: { id: string } }) {
+export default function ReviewSubmissionPage() {
   const router = useRouter();
+  const params = useParams();
+  const id = params?.id as string;
+  
   const [submission, setSubmission] = useState<Submission | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -28,8 +31,9 @@ export default function ReviewSubmissionPage({ params }: { params: { id: string 
   const [content, setContent] = useState('');
 
   const fetchSubmission = useCallback(async () => {
+    if (!id) return;
     try {
-      const data = await getSubmission(params.id);
+      const data = await getSubmission(id);
       setSubmission(data);
       setTitle(data.title);
       setContent(data.content);
@@ -38,7 +42,7 @@ export default function ReviewSubmissionPage({ params }: { params: { id: string 
     } finally {
       setLoading(false);
     }
-  }, [params.id]);
+  }, [id]);
 
   useEffect(() => {
     fetchSubmission();
@@ -53,7 +57,8 @@ export default function ReviewSubmissionPage({ params }: { params: { id: string 
       formData.set('title', title);
       formData.set('content', content);
       
-      await approveSubmission(params.id, formData);
+      if (!id) throw new Error('Missing submission ID');
+      await approveSubmission(id, formData);
       alert('Post published successfully!');
       router.push('/admin/pending');
     } catch (err: any) {
@@ -68,7 +73,8 @@ export default function ReviewSubmissionPage({ params }: { params: { id: string 
     
     setSaving(true);
     try {
-      await rejectSubmission(params.id);
+      if (!id) throw new Error('Missing submission ID');
+      await rejectSubmission(id);
       alert('Submission rejected.');
       router.push('/admin/pending');
     } catch (err: any) {
@@ -85,7 +91,8 @@ export default function ReviewSubmissionPage({ params }: { params: { id: string 
       formData.set('title', title);
       formData.set('content', content);
       
-      await updateSubmission(params.id, formData);
+      if (!id) throw new Error('Missing submission ID');
+      await updateSubmission(id, formData);
       alert('Changes saved successfully.');
     } catch (err: any) {
       alert('Error: ' + err.message);
@@ -99,7 +106,8 @@ export default function ReviewSubmissionPage({ params }: { params: { id: string 
     
     setSaving(true);
     try {
-      await deleteSubmission(params.id);
+      if (!id) throw new Error('Missing submission ID');
+      await deleteSubmission(id);
       alert('Submission deleted successfully.');
       router.push('/admin/pending');
     } catch (err: any) {
