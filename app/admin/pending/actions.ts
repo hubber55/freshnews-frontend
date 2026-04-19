@@ -42,13 +42,6 @@ export async function approveSubmission(submissionId: string, formData: FormData
     throw new Error('Content is required');
   }
 
-  // Generate slug from title
-  const slug = title
-    .toLowerCase()
-    .replace(/[^a-z0-9\s-]/g, '')
-    .replace(/\s+/g, '-')
-    .substring(0, 100);
-
   // Insert into posts table - core columns only
   const { data: newPost, error: insertError } = await supabase
     .from('posts')
@@ -59,8 +52,7 @@ export async function approveSubmission(submissionId: string, formData: FormData
       image_url: submission.image_url || null,
       source_name: 'User Submission',
       published_at: new Date().toISOString(),
-      is_deleted: false,
-      slug: `${slug}-${Date.now()}`
+      is_deleted: false
     })
     .select()
     .single();

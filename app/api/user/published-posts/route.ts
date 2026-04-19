@@ -14,7 +14,7 @@ export async function GET() {
   // Fetch user's published posts
   const { data: posts, error } = await supabase
     .from('posts')
-    .select('id, title, slug, published_at')
+    .select('id, title, published_at')
     .eq('user_id', user.id)
     .eq('is_published', true)
     .order('published_at', { ascending: false });

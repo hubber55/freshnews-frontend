@@ -25,7 +25,6 @@ type UserProfile = {
 type PublishedPost = {
   id: number;
   title: string;
-  slug: string;
   published_at: string;
 };
 
