@@ -194,15 +194,15 @@ export default function ProfilePage() {
     <div className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)]">
       <Header />
       
-      <main className="px-4 pt-20 pb-10">
-        <div className="mx-auto w-full max-w-[800px]">
+      <main className="px-4 pt-24 pb-10">
+        <div className="mx-auto w-full max-w-[800px] px-2">
           {/* Profile Header */}
           <div className="rounded-3xl border border-[var(--border)] bg-[var(--bg-card)] p-8 shadow-2xl mb-6">
             <div className="flex items-center gap-4 mb-6">
               <div className="rounded-full bg-[#ffd42a]/10 p-4">
                 <User size={32} className="text-[#ffd42a]" />
               </div>
-              <div>
+              <div className="ml-4">
                 <h1 className="text-2xl font-extrabold text-white" style={{ fontFamily: 'var(--font-en)' }}>
                   My Profile
                 </h1>
@@ -389,18 +389,18 @@ export default function ProfilePage() {
           </div>
 
           {/* Quick Actions */}
-          <div className="mt-6 rounded-3xl border border-[var(--border)] bg-[var(--bg-card)] p-6 shadow-2xl">
-            <h3 className="text-lg font-bold text-white mb-4" style={{ fontFamily: 'var(--font-en)' }}>
+          <div className="mt-6 rounded-3xl border border-[var(--border)] bg-[var(--bg-card)] p-6 shadow-2xl mx-4">
+            <h3 className="text-lg font-bold text-white mb-4 text-center" style={{ fontFamily: 'var(--font-en)' }}>
               Quick Actions
             </h3>
-            <div className="flex flex-wrap gap-3">
-              <Link href="/submit?type=news" className="rounded-lg bg-[#ffd42a] px-4 py-2 text-sm font-bold text-[#0d1117] hover:brightness-110">
+            <div className="flex flex-wrap justify-center gap-4">
+              <Link href="/submit?type=news" className="rounded-lg bg-blue-900 px-6 py-3 text-sm font-bold text-white hover:bg-blue-800 transition">
                 Submit News
               </Link>
-              <Link href="/submit?type=event" className="rounded-lg bg-[#90ee90] px-4 py-2 text-sm font-bold text-[#0d1117] hover:brightness-110">
+              <Link href="/submit?type=event" className="rounded-lg bg-green-900 px-6 py-3 text-sm font-bold text-white hover:bg-green-800 transition">
                 Submit Event
               </Link>
-              <Link href="/submit?type=classified" className="rounded-lg bg-[#ff69b4] px-4 py-2 text-sm font-bold text-[#0d1117] hover:brightness-110">
+              <Link href="/submit?type=classified" className="rounded-lg bg-pink-900 px-6 py-3 text-sm font-bold text-white hover:bg-pink-800 transition">
                 Submit Classified
               </Link>
             </div>
