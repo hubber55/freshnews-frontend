@@ -16,13 +16,12 @@ interface Submission {
   created_at: string;
 }
 
-export default function ReviewSubmissionPage({ params }: { params: Promise<{ id: string }> }) {
+export default function ReviewSubmissionPage({ params }: { params: { id: string } }) {
   const router = useRouter();
   const [submission, setSubmission] = useState<Submission | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
-  const [submissionId, setSubmissionId] = useState<string>('');
   
   // Form state
   const [title, setTitle] = useState('');
@@ -30,9 +29,7 @@ export default function ReviewSubmissionPage({ params }: { params: Promise<{ id:
 
   const fetchSubmission = useCallback(async () => {
     try {
-      const { id } = await params;
-      setSubmissionId(id);
-      const data = await getSubmission(id);
+      const data = await getSubmission(params.id);
       setSubmission(data);
       setTitle(data.title);
       setContent(data.content);
@@ -41,7 +38,7 @@ export default function ReviewSubmissionPage({ params }: { params: Promise<{ id:
     } finally {
       setLoading(false);
     }
-  }, [params]);
+  }, [params.id]);
 
   useEffect(() => {
     fetchSubmission();
@@ -56,7 +53,7 @@ export default function ReviewSubmissionPage({ params }: { params: Promise<{ id:
       formData.set('title', title);
       formData.set('content', content);
       
-      await approveSubmission(submissionId, formData);
+      await approveSubmission(params.id, formData);
       alert('Post published successfully!');
       router.push('/admin/pending');
     } catch (err: any) {
@@ -71,7 +68,7 @@ export default function ReviewSubmissionPage({ params }: { params: Promise<{ id:
     
     setSaving(true);
     try {
-      await rejectSubmission(submissionId);
+      await rejectSubmission(params.id);
       alert('Submission rejected.');
       router.push('/admin/pending');
     } catch (err: any) {
@@ -88,7 +85,7 @@ export default function ReviewSubmissionPage({ params }: { params: Promise<{ id:
       formData.set('title', title);
       formData.set('content', content);
       
-      await updateSubmission(submissionId, formData);
+      await updateSubmission(params.id, formData);
       alert('Changes saved successfully.');
     } catch (err: any) {
       alert('Error: ' + err.message);
@@ -102,7 +99,7 @@ export default function ReviewSubmissionPage({ params }: { params: Promise<{ id:
     
     setSaving(true);
     try {
-      await deleteSubmission(submissionId);
+      await deleteSubmission(params.id);
       alert('Submission deleted successfully.');
       router.push('/admin/pending');
     } catch (err: any) {
