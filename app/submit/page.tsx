@@ -250,7 +250,7 @@ function SubmitContent() {
             </div>
 
             <div>
-              <label className="mb-2 block text-sm font-bold text-[var(--text-secondary)]">Content (max 800 words)</label>{/* v2 - 800 words */}
+              <label className="mb-2 block text-sm font-bold text-[var(--text-secondary)]">Content (Maximum 800 words allowed)</label>
               <textarea
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
@@ -365,7 +365,7 @@ function SubmitContent() {
                       />
                     </div>
                     <div>
-                      <label className="mb-2 block text-sm font-bold text-[var(--text-secondary)]">News Content (max 800 words)</label>
+                      <label className="mb-2 block text-sm font-bold text-[var(--text-secondary)]">News Content (Maximum 800 words allowed)</label>
                       <textarea
                         value={newsContent}
                         onChange={(e) => setNewsContent(e.target.value)}
