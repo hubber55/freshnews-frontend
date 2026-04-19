@@ -9,6 +9,73 @@ import Header from '../components/header';
 // Define types for better state management
 type Category = { id: number; name: string };
 type Subcategory = { id: number; name: string; category_id: number };
+const MAX_UPLOAD_BYTES = 3 * 1024 * 1024; // 3MB
+
+async function compressImageFile(file: File, maxBytes = MAX_UPLOAD_BYTES): Promise<File> {
+  if (!file.type.startsWith('image/')) {
+    throw new Error('Only image files are allowed');
+  }
+
+  if (file.size <= maxBytes) {
+    return file;
+  }
+
+  const dataUrl = await new Promise<string>((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ''));
+    reader.onerror = () => reject(new Error('Failed to read image file'));
+    reader.readAsDataURL(file);
+  });
+
+  const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+    const image = new Image();
+    image.onload = () => resolve(image);
+    image.onerror = () => reject(new Error('Failed to load image for compression'));
+    image.src = dataUrl;
+  });
+
+  const canvas = document.createElement('canvas');
+  let width = img.width;
+  let height = img.height;
+  const maxDimension = 1600;
+  if (Math.max(width, height) > maxDimension) {
+    const ratio = maxDimension / Math.max(width, height);
+    width = Math.max(1, Math.floor(width * ratio));
+    height = Math.max(1, Math.floor(height * ratio));
+  }
+
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) {
+    throw new Error('Failed to initialize image compressor');
+  }
+  ctx.drawImage(img, 0, 0, width, height);
+
+  let quality = 0.9;
+  let compressedBlob: Blob | null = null;
+  while (quality >= 0.4) {
+    // eslint-disable-next-line no-await-in-loop
+    compressedBlob = await new Promise<Blob | null>((resolve) =>
+      canvas.toBlob((blob) => resolve(blob), 'image/jpeg', quality)
+    );
+    if (compressedBlob && compressedBlob.size <= maxBytes) {
+      break;
+    }
+    quality -= 0.1;
+  }
+
+  if (!compressedBlob) {
+    throw new Error('Image compression failed');
+  }
+
+  if (compressedBlob.size > maxBytes) {
+    throw new Error('Image is too large. Please choose an image smaller than 3MB.');
+  }
+
+  const baseName = file.name.replace(/\.[^.]+$/, '');
+  return new File([compressedBlob], `${baseName}.jpg`, { type: 'image/jpeg' });
+}
 
 function SubmitContent() {
   const supabase = createClient();
@@ -24,8 +91,6 @@ function SubmitContent() {
   const [content, setContent] = useState('');
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState('');
-  const [imageType, setImageType] = useState('url');
-  const [imageUrl, setImageUrl] = useState('');
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [externalUrl, setExternalUrl] = useState('');
   const [hyperlinkText, setHyperlinkText] = useState('Visit us');
@@ -34,8 +99,6 @@ function SubmitContent() {
   const [newsTitle, setNewsTitle] = useState('');
   const [newsContent, setNewsContent] = useState('');
   const [newsTags, setNewsTags] = useState('');
-  const [newsImageType, setNewsImageType] = useState('url');
-  const [newsImageUrl, setNewsImageUrl] = useState('');
   const [newsImageFile, setNewsImageFile] = useState<File | null>(null);
   const [categories, setCategories] = useState<Category[]>([]);
   const [subcategories, setSubcategories] = useState<Subcategory[]>([]);
@@ -129,6 +192,12 @@ function SubmitContent() {
       }
     }
 
+    if (!imageFile) {
+      setError('Please upload an image (max 3MB).');
+      setIsSubmitting(false);
+      return;
+    }
+
     const formData = new FormData();
     formData.append('type', type);
     formData.append('title', title);
@@ -136,11 +205,7 @@ function SubmitContent() {
     formData.append('tags', tags.join(','));
     formData.append('categoryId', selectedCategory);
     formData.append('subcategoryId', selectedSubcategory);
-    if (imageFile) {
-      formData.append('imageFile', imageFile);
-    } else {
-      formData.append('imageUrl', imageUrl);
-    }
+    formData.append('imageFile', imageFile);
     formData.append('externalUrl', externalUrl);
     formData.append('hyperlinkText', hyperlinkText);
     formData.append('isPremium', String(premiumAd));
@@ -150,11 +215,7 @@ function SubmitContent() {
       formData.append('newsTitle', newsTitle);
       formData.append('newsContent', newsContent);
       formData.append('newsTags', newsTags);
-      if (newsImageFile) {
-        formData.append('newsImageFile', newsImageFile);
-      } else {
-        formData.append('newsImageUrl', newsImageUrl);
-      }
+      if (newsImageFile) formData.append('newsImageFile', newsImageFile);
     }
 
     try {
@@ -271,29 +332,27 @@ function SubmitContent() {
 
             <div>
               <label className="mb-2 block text-sm font-bold text-[var(--text-secondary)]">Image</label>
-              <select
-                value={imageType}
-                onChange={(e) => setImageType(e.target.value)}
-                className="w-full rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-4 py-3 text-white focus:border-[#00cfff] focus:outline-none focus:ring-1 focus:ring-[#00cfff]"
-              >
-                <option value="url">Image URL</option>
-                <option value="upload">Upload Image</option>
-              </select>
-              {imageType === 'url' ? (
-                <input
-                  value={imageUrl}
-                  onChange={(e) => setImageUrl(e.target.value)}
-                  placeholder="https://example.com/image.jpg"
-                  className="mt-2 w-full rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-4 py-3 text-white focus:border-[#00cfff] focus:outline-none focus:ring-1 focus:ring-[#00cfff]"
-                />
-              ) : (
-                <input
-                  type="file"
-                  onChange={(e) => setImageFile(e.target.files?.[0] || null)}
-                  accept="image/*"
-                  className="mt-2 w-full rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-4 py-3 text-white file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#ffd42a] file:text-[#1a1a1a] hover:file:bg-[#ffe066]"
-                />
-              )}
+              <input
+                type="file"
+                onChange={async (e) => {
+                  const picked = e.target.files?.[0] || null;
+                  if (!picked) {
+                    setImageFile(null);
+                    return;
+                  }
+                  try {
+                    const compressed = await compressImageFile(picked);
+                    setImageFile(compressed);
+                  } catch (err: any) {
+                    setError(err.message || 'Image processing failed');
+                    e.currentTarget.value = '';
+                    setImageFile(null);
+                  }
+                }}
+                accept="image/*"
+                className="mt-2 w-full rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-4 py-3 text-white file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#ffd42a] file:text-[#1a1a1a] hover:file:bg-[#ffe066]"
+              />
+              <p className="mt-1 text-xs text-[var(--text-muted)]">Upload only. Max 3MB (auto-compressed when needed).</p>
             </div>
 
             {type === 'ad' && (
@@ -350,29 +409,27 @@ function SubmitContent() {
                     </div>
                     <div>
                       <label className="mb-2 block text-sm font-bold text-[var(--text-secondary)]">News Image</label>
-                      <select
-                        value={newsImageType}
-                        onChange={(e) => setNewsImageType(e.target.value)}
-                        className="w-full rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-4 py-3 text-white focus:border-[#00cfff] focus:outline-none focus:ring-1 focus:ring-[#00cfff]"
-                      >
-                        <option value="url">Image URL</option>
-                        <option value="upload">Upload Image</option>
-                      </select>
-                      {newsImageType === 'url' ? (
-                        <input
-                          value={newsImageUrl}
-                          onChange={(e) => setNewsImageUrl(e.target.value)}
-                          placeholder="https://example.com/image.jpg"
-                          className="mt-2 w-full rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-4 py-3 text-white focus:border-[#00cfff] focus:outline-none focus:ring-1 focus:ring-[#00cfff]"
-                        />
-                      ) : (
-                        <input
-                          type="file"
-                          onChange={(e) => setNewsImageFile(e.target.files?.[0] || null)}
-                          accept="image/*"
-                          className="mt-2 w-full rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-4 py-3 text-white file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#ffd42a] file:text-[#1a1a1a] hover:file:bg-[#ffe066]"
-                        />
-                      )}
+                      <input
+                        type="file"
+                        onChange={async (e) => {
+                          const picked = e.target.files?.[0] || null;
+                          if (!picked) {
+                            setNewsImageFile(null);
+                            return;
+                          }
+                          try {
+                            const compressed = await compressImageFile(picked);
+                            setNewsImageFile(compressed);
+                          } catch (err: any) {
+                            setError(err.message || 'News image processing failed');
+                            e.currentTarget.value = '';
+                            setNewsImageFile(null);
+                          }
+                        }}
+                        accept="image/*"
+                        className="mt-2 w-full rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-4 py-3 text-white file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#ffd42a] file:text-[#1a1a1a] hover:file:bg-[#ffe066]"
+                      />
+                      <p className="mt-1 text-xs text-[var(--text-muted)]">Upload only. Max 3MB (auto-compressed when needed).</p>
                     </div>
                   </div>
                 )}

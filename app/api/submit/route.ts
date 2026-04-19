@@ -3,6 +3,8 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/app/utils/supabase/server';
 import { getCurrentUser } from '@/lib/auth';
 
+const MAX_UPLOAD_BYTES = 3 * 1024 * 1024; // 3MB
+
 export async function POST(req: Request) {
   const supabase = await createClient();
   const user = await getCurrentUser();
@@ -20,7 +22,6 @@ export async function POST(req: Request) {
     const categoryId = formData.get('categoryId') as string;
     const subcategoryId = formData.get('subcategoryId') as string;
     const imageFile = formData.get('imageFile') as File | null;
-    const imageUrl = formData.get('imageUrl') as string;
     const externalUrl = formData.get('externalUrl') as string;
     const hyperlinkText = formData.get('hyperlinkText') as string;
     const isPremium = formData.get('isPremium') === 'true';
@@ -37,24 +38,30 @@ export async function POST(req: Request) {
     if (contentWordCount > 800) {
       return NextResponse.json({ error: 'Content exceeds 800 words' }, { status: 400 });
     }
+    if (!imageFile || imageFile.size <= 0) {
+      return NextResponse.json({ error: 'Image upload is required' }, { status: 400 });
+    }
+    if (!imageFile.type.startsWith('image/')) {
+      return NextResponse.json({ error: 'Invalid image file type' }, { status: 400 });
+    }
+    if (imageFile.size > MAX_UPLOAD_BYTES) {
+      return NextResponse.json({ error: 'Image exceeds 3MB limit' }, { status: 400 });
+    }
 
-    let finalImageUrl: string | undefined = imageUrl;
+    let finalImageUrl: string | undefined;
 
     // --- Image Upload ---
-    if (imageFile && imageFile.size > 0) {
-      const fileExtension = imageFile.name.split('.').pop();
-      const fileName = `${user.id}-${Date.now()}.${fileExtension}`;
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('submissions')
-        .upload(fileName, imageFile);
+    const fileExtension = imageFile.name.split('.').pop();
+    const fileName = `${user.id}-${Date.now()}.${fileExtension}`;
+    const { data: uploadData, error: uploadError } = await supabase.storage
+      .from('submissions')
+      .upload(fileName, imageFile);
 
-      if (uploadError) {
-        throw new Error(`Image upload failed: ${uploadError.message}`);
-      }
-
-      const { data: urlData } = supabase.storage.from('submissions').getPublicUrl(uploadData.path);
-      finalImageUrl = urlData.publicUrl;
+    if (uploadError) {
+      throw new Error(`Image upload failed: ${uploadError.message}`);
     }
+    const { data: urlData } = supabase.storage.from('submissions').getPublicUrl(uploadData.path);
+    finalImageUrl = urlData.publicUrl;
 
     // --- Database Insertion ---
     const { data: submissionData, error: submissionError } = await supabase
@@ -87,13 +94,19 @@ export async function POST(req: Request) {
       const newsContent = formData.get('newsContent') as string;
       const newsTags = (formData.get('newsTags') as string).split(',').map(t => t.trim());
       const newsImageFile = formData.get('newsImageFile') as File | null;
-      const newsImageUrl = formData.get('newsImageUrl') as string;
 
       if (!newsTitle || !newsContent) {
         // Not a hard error, just skip if fields are missing
       } else {
-        let finalNewsImageUrl: string | undefined = newsImageUrl;
+        let finalNewsImageUrl: string | undefined;
         if (newsImageFile && newsImageFile.size > 0) {
+          if (!newsImageFile.type.startsWith('image/')) {
+            return NextResponse.json({ error: 'Invalid news image file type' }, { status: 400 });
+          }
+          if (newsImageFile.size > MAX_UPLOAD_BYTES) {
+            return NextResponse.json({ error: 'News image exceeds 3MB limit' }, { status: 400 });
+          }
+
           const fileExtension = newsImageFile.name.split('.').pop();
           const fileName = `${user.id}-news-${Date.now()}.${fileExtension}`;
           const { data: uploadData, error: uploadError } = await supabase.storage

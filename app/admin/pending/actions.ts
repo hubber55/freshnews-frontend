@@ -34,25 +34,20 @@ export async function approveSubmission(submissionId: string, formData: FormData
   const tagsString = (formData.get('tags') as string || '').trim();
   const tags = tagsString.split(',').map(t => t.trim()).filter(Boolean);
 
-  if (!title) {
-    throw new Error('Title is required');
-  }
-
-  if (!content) {
-    throw new Error('Content is required');
-  }
+  // Generate slug from title
+  const slug = title
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .substring(0, 100);
 
   // Insert into posts table - core columns only
   const { data: newPost, error: insertError } = await supabase
     .from('posts')
     .insert({
       title,
-      summary: content,
-      tags,
-      image_url: submission.image_url || null,
-      source_name: 'FRESHNEWS',
-      published_at: new Date().toISOString(),
-      is_deleted: false
+      content,
+      slug: `${slug}-${Date.now()}`
     })
     .select()
     .single();
@@ -106,7 +101,8 @@ export async function updateSubmission(submissionId: string, formData: FormData)
     .from('submissions')
     .update({
       title,
-      content
+      content,
+      tags
     })
     .eq('id', submissionId);
 

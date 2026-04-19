@@ -8,7 +8,7 @@ Extracts title, link, description, published date, and OG image.
 import feedparser
 import requests
 from bs4 import BeautifulSoup
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 import logging
 import re
 import base64
@@ -16,6 +16,7 @@ from urllib.parse import urlparse
 from config import MALAYALAM_RSS_FEEDS, FETCH_TIMEOUT_SECONDS
 
 logger = logging.getLogger(__name__)
+IST = timezone(timedelta(hours=5, minutes=30))
 
 
 def http_request(method, url, **kwargs):
@@ -594,7 +595,7 @@ def parse_date(entry):
                 return datetime(*parsed[:6], tzinfo=timezone.utc)
             except Exception:
                 continue
-    return datetime.now(timezone.utc)
+    return None
 
 
 def fetch_feed_articles(feed_config, max_articles=5):
@@ -616,6 +617,8 @@ def fetch_feed_articles(feed_config, max_articles=5):
             logger.warning(f"⚠️  Failed to parse {feed_name}: {feed.bozo_exception}")
             return []
             
+        today_ist = datetime.now(IST).date()
+
         for entry in feed.entries[:max_articles]:
             title = clean_html(entry.get("title", ""))
             link = entry.get("link", "")
@@ -628,6 +631,14 @@ def fetch_feed_articles(feed_config, max_articles=5):
                     
             published = parse_date(entry)
             if not title or not link:
+                continue
+            if not published:
+                logger.debug(f"  ⏭️ Skipping undated article: {title[:60]}...")
+                continue
+
+            published_ist = published.astimezone(IST).date()
+            if published_ist != today_ist:
+                logger.info(f"  ⏭️ Skipping non-today article ({published_ist}): {title[:50]}...")
                 continue
                 
             image_url = extract_image_from_entry(entry)

@@ -18,6 +18,8 @@ logger = logging.getLogger(__name__)
 def normalize_title(title):
     """Normalize a title for comparison - remove extra spaces, punctuation."""
     title = title.strip().lower()
+    # Remove trailing source segment (e.g. "... - Some Source")
+    title = re.sub(r"\s[-|]\s[a-z0-9 .]{2,}$", "", title)
     # Remove common Malayalam/English punctuation and extra whitespace
     title = re.sub(r'[:\-–—|•·,;!?\'\"()[\]{}]', ' ', title)
     title = re.sub(r'\s+', ' ', title)
@@ -67,6 +69,19 @@ def token_overlap_ratio(title1, title2):
     return common / min(len(t1), len(t2))
 
 
+def normalize_snippet(text):
+    """Normalize article snippet for near-duplicate detection across sources."""
+    if not text:
+        return ""
+    text = text.strip().lower()
+    text = re.sub(r"<[^>]*>", " ", text)
+    text = re.sub(r'[:\-–—|•·,;!?\'\"()[\]{}]', ' ', text)
+    text = re.sub(r'\s+', ' ', text).strip()
+    tokens = text.split()
+    # First 40 tokens usually capture the core event details.
+    return " ".join(tokens[:40])
+
+
 def is_duplicate_title(new_title, existing_title):
     """Multi-signal duplicate check for close titles."""
     norm_new = normalize_title(new_title)
@@ -102,6 +117,7 @@ def deduplicate_articles(articles, existing_posts):
     unique_articles = []
     seen_titles = []
     seen_urls = set()
+    seen_snippets = set()
 
     # Backward compatible: accept either list[str] or list[dict]
     for entry in existing_posts or []:
@@ -119,6 +135,7 @@ def deduplicate_articles(articles, existing_posts):
     for article in articles:
         title = article["title"]
         article_url = normalize_url(article.get("link", ""))
+        article_snippet = normalize_snippet(article.get("description", ""))
         is_duplicate = False
 
         # 1) URL-level duplicate (strongest signal)
@@ -136,12 +153,20 @@ def deduplicate_articles(articles, existing_posts):
                 )
                 is_duplicate = True
                 break
+
+        # 3) Snippet-level duplicate across current batch/source variants
+        if not is_duplicate and article_snippet:
+            if article_snippet in seen_snippets:
+                logger.debug(f"🔄 Duplicate snippet: '{title[:50]}...'")
+                is_duplicate = True
         
         if not is_duplicate:
             unique_articles.append(article)
             seen_titles.append(title)
             if article_url:
                 seen_urls.add(article_url)
+            if article_snippet:
+                seen_snippets.add(article_snippet)
     
     duplicates_found = len(articles) - len(unique_articles)
     logger.info(
