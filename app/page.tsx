@@ -1,7 +1,8 @@
 import Link from 'next/link';
+import { connection } from 'next/server';
 
 import { supabase } from '@/lib/supabase';
-import { Clock } from 'lucide-react';
+import { Clock, Home } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { hasMinimumWords, limitWords } from '../lib/posts';
 import Header from './components/header';
@@ -15,11 +16,13 @@ type HomeProps = {
 };
 
 export default async function Home({ searchParams }: HomeProps) {
+  await connection();
+
   const params = await searchParams;
   const activeTag = params.tag?.trim() || '';
   const page = Math.max(1, Number.parseInt(params.page ?? '1', 10) || 1);
-  const pageSize = 50;
-  const overfetch = 200;
+  const pageSize = 100;
+  const overfetch = 300;
   const from = (page - 1) * pageSize;
 
   let query = supabase
@@ -167,6 +170,20 @@ export default async function Home({ searchParams }: HomeProps) {
               </article>
             ))}
           </div>
+
+          {page > 1 ? (
+            <div className="mt-20 text-center">
+              <div className="h-8" />
+              <div className="h-8" />
+              <Link
+                href="/"
+                className="inline-flex items-center gap-2 rounded-lg bg-[#000080] px-7 py-3.5 text-[16px] font-bold text-white shadow-md transition-all hover:bg-[#000066] hover:shadow-lg hover:scale-[1.02] active:scale-95"
+              >
+                <Home size={18} strokeWidth={2.5} />
+                Back to Home Page
+              </Link>
+            </div>
+          ) : null}
 
           {/* PAGINATION */}
           <div className="mt-10 flex items-center justify-between border-t border-[var(--border)] pt-6">
