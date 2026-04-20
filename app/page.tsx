@@ -104,6 +104,7 @@ export default async function Home({ searchParams }: HomeProps) {
                     <LazyImage
                       src={heroPost.image_url}
                       alt={heroPost.title}
+                      eager
                     />
                   ) : (
                     <div className="absolute inset-0 flex items-center justify-center bg-[#21262d] text-sm text-[var(--text-muted)]">
@@ -132,8 +133,9 @@ export default async function Home({ searchParams }: HomeProps) {
           )}
 
           {/* REMAINING CARDS */}
+          {/* First 3 posts are likely visible above the fold — load eagerly */}
           <div className="mt-6 space-y-7">
-            {remainingPosts.map((post) => (
+            {remainingPosts.map((post, index) => (
               <article
                 key={post.id}
                 className="overflow-hidden rounded-2xl bg-[var(--bg-card)] border border-[var(--border)]"
@@ -144,6 +146,7 @@ export default async function Home({ searchParams }: HomeProps) {
                       <LazyImage
                         src={post.image_url}
                         alt={post.title}
+                        eager={index < 3}
                       />
                     ) : (
                       <div className="absolute inset-0 flex items-center justify-center bg-[#21262d] text-sm text-[var(--text-muted)]">

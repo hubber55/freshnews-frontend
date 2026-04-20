@@ -8,19 +8,44 @@ type LazyImageProps = {
   className?: string;
   /** Extra inline styles for the <img> element */
   imgStyle?: React.CSSProperties;
+  /**
+   * When true, the image is above the fold — skip shimmer and load immediately
+   * with loading="eager" and fetchpriority="high" for best LCP performance.
+   * When false (default), use DailyHunt-style shimmer + lazy loading.
+   */
+  eager?: boolean;
 };
 
 /**
  * LazyImage — DailyHunt-style progressive image loading.
  *
- * 1. Renders a shimmer skeleton immediately (placeholder).
- * 2. Loads the real image off-screen with loading="lazy" decoding="async".
- * 3. When it loads, fades in the image over the shimmer.
- * 4. If it errors, keeps showing the shimmer (graceful degradation).
+ * - `eager=true`  → above-the-fold images: no shimmer, loading="eager", fetchpriority="high"
+ * - `eager=false` → below-the-fold images: shimmer placeholder + loading="lazy"
  */
-export default function LazyImage({ src, alt, className = '', imgStyle }: LazyImageProps) {
-  const [loaded, setLoaded] = useState(false);
+export default function LazyImage({ src, alt, className = '', imgStyle, eager = false }: LazyImageProps) {
+  const [loaded, setLoaded] = useState(eager); // eager images are treated as already loaded
   const [errored, setErrored] = useState(false);
+
+  if (eager) {
+    // Above-the-fold: render immediately, no shimmer, high priority
+    return errored ? (
+      <div className="lazy-error" aria-label="Image unavailable">
+        <span>📰</span>
+      </div>
+    ) : (
+      <img
+        src={src}
+        alt={alt}
+        loading="eager"
+        // @ts-expect-error — fetchpriority is valid HTML but not yet in TS types
+        fetchpriority="high"
+        decoding="sync"
+        className={`lazy-img lazy-img--loaded ${className}`}
+        style={imgStyle}
+        onError={() => setErrored(true)}
+      />
+    );
+  }
 
   return (
     <>
