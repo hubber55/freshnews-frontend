@@ -9,6 +9,7 @@ import Header from './components/header';
 import Footer from './components/footer';
 import HomeRefreshRedirect from './components/HomeRefreshRedirect';
 import TrackedLink from './components/TrackedLink';
+import LazyImage from './components/LazyImage';
 
 // export const revalidate = 60; // Disabled for testing
 
@@ -100,10 +101,9 @@ export default async function Home({ searchParams }: HomeProps) {
               <TrackedLink href={`/posts/${heroPost.id}`} className="block" trackEvent={{ postId: heroPost.id, eventType: 'click' }}>
                 <div className="relative w-full overflow-hidden" style={{ paddingTop: '56.25%' }}>
                   {heroPost.image_url ? (
-                    <img
+                    <LazyImage
                       src={heroPost.image_url}
                       alt={heroPost.title}
-                      className="absolute inset-0 h-full w-full object-cover object-center"
                     />
                   ) : (
                     <div className="absolute inset-0 flex items-center justify-center bg-[#21262d] text-sm text-[var(--text-muted)]">
@@ -141,10 +141,9 @@ export default async function Home({ searchParams }: HomeProps) {
                 <TrackedLink href={`/posts/${post.id}`} className="block" trackEvent={{ postId: post.id, eventType: 'click' }}>
                   <div className="relative w-full overflow-hidden" style={{ paddingTop: '56.25%' }}>
                     {post.image_url ? (
-                      <img
+                      <LazyImage
                         src={post.image_url}
                         alt={post.title}
-                        className="absolute inset-0 h-full w-full object-cover object-center"
                       />
                     ) : (
                       <div className="absolute inset-0 flex items-center justify-center bg-[#21262d] text-sm text-[var(--text-muted)]">

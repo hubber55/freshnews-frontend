@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import AuthHashHandler from './components/AuthHashHandler';
+import SlowNetworkBanner from './components/SlowNetworkBanner';
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://freshnews.top'),
@@ -87,6 +88,7 @@ export default function RootLayout({
       </head>
       <body>
         <AuthHashHandler />
+        <SlowNetworkBanner />
         {children}
       </body>
     </html>
