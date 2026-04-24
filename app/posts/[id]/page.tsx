@@ -11,7 +11,7 @@ import Header from '../../components/header';
 import Footer from '../../components/footer';
 import TagBadge from '../../components/tag-badge';
 import CommentsSection from '../../components/CommentsSection';
-import LazyImage from '../../components/LazyImage';
+
 
 type PageProps = {
   params: Promise<{
@@ -168,15 +168,13 @@ export default async function PostPage({ params }: PageProps) {
             {/* IMAGE */}
             <div className="mb-8 w-full overflow-hidden rounded-xl">
               {post.image_url ? (
-                /* Using a standard img tag here to prevent .lazy-img absolute positioning from escaping the container */
                 <img
                   src={post.image_url}
                   alt={post.title}
-                  className="w-full h-auto rounded-xl object-contain"
-                  style={{ maxHeight: '600px', backgroundColor: '#1c2128' }}
+                  className="w-full max-h-[500px] object-cover object-center"
                 />
               ) : (
-                <div className="flex aspect-[16/9] w-full items-center justify-center bg-[#21262d] text-sm text-[var(--text-muted)]">
+                <div className="flex h-48 w-full items-center justify-center bg-[#21262d] text-sm text-[var(--text-muted)]">
                   No Image Available
                 </div>
               )}
@@ -239,10 +237,9 @@ export default async function PostPage({ params }: PageProps) {
                   className="group flex items-start gap-3 rounded-xl border border-[var(--border)] p-3 transition-colors hover:border-[#ffd42a]/50 hover:bg-[var(--bg-primary)]"
                 >
                   {prevPost.image_url && (
-                    <LazyImage
+                    <img
                       src={prevPost.image_url}
                       alt={prevPost.title}
-                      eager={true}
                       className="h-16 w-16 flex-shrink-0 rounded-lg object-cover"
                     />
                   )}
@@ -276,10 +273,9 @@ export default async function PostPage({ params }: PageProps) {
                     </div>
                   </div>
                   {nextPost.image_url && (
-                    <LazyImage
+                    <img
                       src={nextPost.image_url}
                       alt={nextPost.title}
-                      eager={true}
                       className="h-16 w-16 flex-shrink-0 rounded-lg object-cover"
                     />
                   )}
