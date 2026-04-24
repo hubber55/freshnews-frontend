@@ -166,16 +166,16 @@ export default async function PostPage({ params }: PageProps) {
             </div>
 
             {/* IMAGE */}
-            <div className="mb-8 w-full overflow-hidden rounded-xl">
+            <div className="relative mb-8 w-full overflow-hidden rounded-xl" style={{ paddingTop: '56.25%' }}>
               {post.image_url ? (
                 <LazyImage
                   src={post.image_url}
                   alt={post.title}
                   eager={true}
-                  className="w-full h-auto"
+                  className="absolute inset-0 w-full h-full object-cover"
                 />
               ) : (
-                <div className="flex aspect-[16/9] w-full items-center justify-center bg-[#21262d] text-sm text-[var(--text-muted)]">
+                <div className="absolute inset-0 flex items-center justify-center bg-[#21262d] text-sm text-[var(--text-muted)]">
                   No Image Available
                 </div>
               )}
