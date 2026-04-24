@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Menu, X, Search, LogOut, User } from 'lucide-react';
+import { X, Search, LogOut, User } from 'lucide-react';
 import { usePWAInstall } from '../hooks/usePWAInstall';
 
 const GUEST_LINKS = [
@@ -59,6 +59,72 @@ export default function Header({ titleColorClass = 'text-[#ffd42a]' }: HeaderPro
       });
   }, []);
 
+  // Menu button effects scheduler
+  useEffect(() => {
+    const btn = document.getElementById('menuBtn');
+    const fx = document.getElementById('fx');
+    if (!btn || !fx) return;
+
+    // session gate (stop after click for entire session)
+    const KEY = 'menuFxDisabled';
+    if (sessionStorage.getItem(KEY) === '1') return;
+
+    const GLOW_COLORS = [
+      'fx-glow-gold',
+      'fx-glow-white',
+      'fx-glow-pink',
+      'fx-glow-green',
+      'fx-glow-cyan'
+    ];
+
+    let running = true;
+    let cycleCount = 0;
+    const MAX_CYCLES = 6;
+
+    function clearFx() {
+      if (fx) fx.className = '';
+    }
+
+    function runOnce() {
+      if (!running || !fx) return;
+      clearFx();
+      
+      // Random glow color each time
+      const name = GLOW_COLORS[Math.floor(Math.random() * GLOW_COLORS.length)];
+      
+      fx.classList.add(name);
+      setTimeout(clearFx, 8000); // 8 seconds duration
+      cycleCount++;
+    }
+
+    function scheduleNext() {
+      if (!running) return;
+      const delay = 20000 + Math.random() * 25000; // 20–45s
+      setTimeout(() => {
+        if (!running) return;
+        if (cycleCount >= MAX_CYCLES) return;
+        runOnce();
+        scheduleNext();
+      }, delay);
+    }
+
+    // First run (on load) - always glow
+    runOnce();
+    scheduleNext();
+
+    // Stop for entire session on click
+    btn.addEventListener('click', () => {
+      running = false;
+      clearFx();
+      sessionStorage.setItem(KEY, '1');
+    }, { passive: true });
+
+    return () => {
+      running = false;
+      clearFx();
+    };
+  }, []);
+
   const handleLogout = async () => {
     await fetch('/api/auth/logout', { method: 'POST' });
     setUserName(null);
@@ -69,20 +135,30 @@ export default function Header({ titleColorClass = 'text-[#ffd42a]' }: HeaderPro
     <>
       <header className="sticky top-0 z-30 bg-[var(--bg-card)] border-b border-[var(--border)]">
         <div className="mx-auto flex h-28 w-full max-w-[800px] items-center justify-between px-4">
-          <button
-            type="button"
-            aria-label="Open menu"
-            onClick={() => setMenuOpen(true)}
-            className="flex h-14 w-14 items-center justify-center text-[var(--text-secondary)] hover:text-white transition-colors"
-          >
-            <Menu size={28} strokeWidth={2.5} />
-          </button>
+          {/* Animated Menu Button */}
+          <div className="menu-wrapper">
+            <button
+              type="button"
+              className="menu-btn"
+              id="menuBtn"
+              aria-label="Open menu"
+              onClick={() => setMenuOpen(true)}
+            >
+              <span></span>
+              <span></span>
+              <span></span>
+            </button>
+            <div id="fx" aria-hidden="true"></div>
+          </div>
           <Link href="/" className="flex-1 flex items-center justify-center h-full mx-2">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/logos/freshnews_header.png"
               alt="FreshNews.top Logo"
               className="h-full w-full object-cover"
+              loading="eager"
+              decoding="sync"
+              style={{ contentVisibility: 'auto' }}
             />
           </Link>
           <button

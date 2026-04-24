@@ -5,16 +5,16 @@ export async function DELETE(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const { id } = await params;
   const supabase = await createClient();
-  
+
   // Get current user
   const { data: { user } } = await supabase.auth.getUser();
-  
+
   if (!user) {
     return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
   }
-  
+
+  const { id } = await params;
   const postId = parseInt(id);
   
   // Verify the post belongs to the user

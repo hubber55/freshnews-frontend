@@ -72,6 +72,23 @@ export default function RootLayout({
     <html lang="en">
       <head>
         <meta name="theme-color" content="#ffd42a" />
+        <meta name="monetag" content="efbbd56f8d306f8f6c34678415ffa024" />
+        
+        {/* Preload critical resources */}
+        <link rel="preload" href="/logos/freshnews_header.png" as="image" type="image/png" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href="https://luvdgrpykesexfuqgvvt.supabase.co" />
+        
+        {/* Preconnect to common external image domains for faster loading */}
+        <link rel="preconnect" href="https://news.google.com" />
+        <link rel="preconnect" href="https://img.dtnext.in" />
+        <link rel="preconnect" href="https://images.malayalam.news" />
+        <link rel="preconnect" href="https://img.onmanorama.com" />
+        <link rel="preconnect" href="https://img.mathrubhumi.com" />
+        <link rel="dns-prefetch" href="https://akm-img-a-in.tosshub.com" />
+        <link rel="dns-prefetch" href="https://static.asianetnews.com" />
+        
         <script
           dangerouslySetInnerHTML={{
             __html: `

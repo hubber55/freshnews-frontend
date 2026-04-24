@@ -5,6 +5,7 @@ import { redirect } from 'next/navigation'
 import { promises as fs } from 'fs'
 import path from 'path'
 import { v4 as uuidv4 } from 'uuid'
+import { createClient as createSupabaseAdmin } from '@supabase/supabase-js'
 
 export async function updatePost(postId: string, prevState: any, formData: FormData) {
   const supabase = await createClient()
@@ -39,6 +40,7 @@ export async function updatePost(postId: string, prevState: any, formData: FormD
 export async function deletePostWithRedirect(postId: string, prevState: any, formData: FormData) {
   const supabase = await createClient()
 
+  // Verify auth
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error('Unauthorized')
 
@@ -53,7 +55,12 @@ export async function deletePostWithRedirect(postId: string, prevState: any, for
     }
   }
 
-  const { error } = await supabase
+  // Use service role key for delete to bypass RLS issues
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
+  const supabaseAdmin = createSupabaseAdmin(supabaseUrl, serviceRoleKey)
+
+  const { error } = await supabaseAdmin
     .from('posts')
     .update({
       is_deleted: true,

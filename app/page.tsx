@@ -11,7 +11,7 @@ import HomeRefreshRedirect from './components/HomeRefreshRedirect';
 import TrackedLink from './components/TrackedLink';
 import LazyImage from './components/LazyImage';
 
-// export const revalidate = 60; // Disabled for testing
+export const revalidate = 120; // Revalidate every 2 minutes
 
 type HomeProps = {
   searchParams: Promise<{ tag?: string; page?: string }>;
@@ -24,12 +24,12 @@ export default async function Home({ searchParams }: HomeProps) {
   const activeTag = params.tag?.trim() || '';
   const page = Math.max(1, Number.parseInt(params.page ?? '1', 10) || 1);
   const pageSize = 100;
-  const overfetch = 300;
+  const overfetch = 120;
   const from = (page - 1) * pageSize;
 
   let query = supabase
     .from('posts')
-    .select('*')
+    .select('id, title, summary, image_url, source_name, published_at, tags, is_deleted')
     .eq('is_deleted', false)
     .order('published_at', { ascending: false })
     .range(from, from + overfetch - 1);
@@ -101,11 +101,15 @@ export default async function Home({ searchParams }: HomeProps) {
               <TrackedLink href={`/posts/${heroPost.id}`} className="block" trackEvent={{ postId: heroPost.id, eventType: 'click' }}>
                 <div className="relative w-full overflow-hidden" style={{ paddingTop: '56.25%' }}>
                   {heroPost.image_url ? (
-                    <LazyImage
-                      src={heroPost.image_url}
-                      alt={heroPost.title}
-                      eager
-                    />
+                    <>
+                      <LazyImage
+                        src={heroPost.image_url}
+                        alt={heroPost.title}
+                        eager={true}
+                        className="absolute inset-0 w-full h-full object-cover"
+                        imgStyle={{ aspectRatio: '16/9' }}
+                      />
+                    </>
                   ) : (
                     <div className="absolute inset-0 flex items-center justify-center bg-[#21262d] text-sm text-[var(--text-muted)]">
                       No Image Available
@@ -133,7 +137,6 @@ export default async function Home({ searchParams }: HomeProps) {
           )}
 
           {/* REMAINING CARDS */}
-          {/* First 3 posts are likely visible above the fold — load eagerly */}
           <div className="mt-6 space-y-7">
             {remainingPosts.map((post, index) => (
               <article
@@ -143,11 +146,14 @@ export default async function Home({ searchParams }: HomeProps) {
                 <TrackedLink href={`/posts/${post.id}`} className="block" trackEvent={{ postId: post.id, eventType: 'click' }}>
                   <div className="relative w-full overflow-hidden" style={{ paddingTop: '56.25%' }}>
                     {post.image_url ? (
+                      <>
                       <LazyImage
                         src={post.image_url}
                         alt={post.title}
                         eager={index < 3}
+                        className="absolute inset-0 w-full h-full object-cover"
                       />
+                      </>
                     ) : (
                       <div className="absolute inset-0 flex items-center justify-center bg-[#21262d] text-sm text-[var(--text-muted)]">
                         No Image Available

@@ -58,6 +58,14 @@ MALAYALAM_RSS_FEEDS = [
     google_news_query_feed("Asianet News", "Asianet News Malayalam"),
     google_news_site_feed("Deepika", "deepika.com"),
     google_news_query_feed("News10 Malayalam", "News10 Malayalam"),
+    google_news_query_feed("Filmibeat", "Filmibeat Malayalam", "entertainment"),
+    google_news_site_feed("Express Kerala", "expresskerala.com"),
+    google_news_site_feed("Pathram Online", "pathramonline.com"),
+    google_news_site_feed("Time Kerala", "timekerala.com"),
+    google_news_site_feed("Anweshanam", "anweshanam.com"),
+    google_news_query_feed("TV9 Malayalam", "TV9 Malayalam"),
+    google_news_query_feed("B4blaze News", "B4blaze Malayalam"),
+    google_news_query_feed("MyKhel Malayalam", "MyKhel Malayalam", "sports"),
     {
         "name": "Sathyam Online",
         "url": "https://www.sathyamonline.com/rss",
@@ -159,12 +167,12 @@ FETCH_TIMEOUT_SECONDS = 15        # Timeout for HTTP requests
 MAX_RECENT_POSTS_CHECK = 1000     # Check last N Supabase posts for duplicates
 
 # ─── Day/Night Scheduling ───
-# Daytime: 6 AM - 10 PM IST → 1 article per 5 minutes
-# Nighttime: 10 PM - 6 AM IST → 1 article per 15 minutes
-DAY_START_HOUR = 6                # 6 AM IST
-DAY_END_HOUR = 22                 # 10 PM IST
-DAY_DELAY_SECONDS = 300           # 5 minutes
-NIGHT_DELAY_SECONDS = 900         # 15 minutes
+# Daytime: 5 AM - 11 PM IST → 30 seconds interval
+# Nighttime: 11 PM - 5 AM IST → 3 minutes interval
+DAY_START_HOUR = 5                # 5 AM IST
+DAY_END_HOUR = 23                 # 11 PM IST
+DAY_DELAY_SECONDS = 30            # 30 seconds
+NIGHT_DELAY_SECONDS = 180         # 3 minutes
 
 # â”€â”€â”€ Blogger Post Settings â”€â”€â”€
 BLOGGER_LABELS_MAP = {

@@ -1,0 +1,23 @@
+# Ignore Python backend files
+*.py
+__pycache__/
+venv/
+.venv/
+requirements.txt
+*.log
+freshnews.log
+
+# Ignore HTML/XML templates
+blogger-template.xml
+blogger_editor.html
+blogger_new_post.html
+
+# Ignore backup and zips
+BACKUP/
+FRESHNEWS.zip
+
+# Standard ignores
+node_modules/
+.next/
+.git/
+.github/

@@ -188,3 +188,87 @@ a {
   color: #6e7681;
 }
 
+/* ===== ANIMATED MENU BUTTON ===== */
+.menu-wrapper {
+  position: relative;
+  width: 56px;
+  height: 56px;
+  overflow: visible;
+}
+
+.menu-btn {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  border: 2px solid #ffc400;
+  background: #0e0e0e;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  box-shadow: 0 0 10px rgba(255,196,0,.5);
+  cursor: pointer;
+  position: relative;
+  z-index: 2;
+  transition: all 0.3s ease;
+}
+
+.menu-btn span {
+  width: 22px;
+  height: 2px;
+  background: #ffc400;
+  border-radius: 2px;
+}
+
+/* effect layer - constrained to wrapper */
+#fx {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  overflow: hidden;
+  border-radius: 12px;
+}
+
+/* ===== GLOW PULSE WITH RANDOM COLORS ===== */
+.fx-glow-gold {
+  animation: glowPulseGold 1.5s ease-in-out 3;
+}
+@keyframes glowPulseGold {
+  0%, 100% { box-shadow: 0 0 10px rgba(255,196,0,0.5), inset 0 0 10px rgba(255,196,0,0.2); }
+  50% { box-shadow: 0 0 30px rgba(255,196,0,0.9), 0 0 50px rgba(255,196,0,0.4), inset 0 0 20px rgba(255,196,0,0.3); }
+}
+
+.fx-glow-white {
+  animation: glowPulseWhite 1.5s ease-in-out 3;
+}
+@keyframes glowPulseWhite {
+  0%, 100% { box-shadow: 0 0 10px rgba(255,255,255,0.5), inset 0 0 10px rgba(255,255,255,0.2); }
+  50% { box-shadow: 0 0 30px rgba(255,255,255,0.9), 0 0 50px rgba(255,255,255,0.4), inset 0 0 20px rgba(255,255,255,0.3); }
+}
+
+.fx-glow-pink {
+  animation: glowPulsePink 1.5s ease-in-out 3;
+}
+@keyframes glowPulsePink {
+  0%, 100% { box-shadow: 0 0 10px rgba(255,105,180,0.5), inset 0 0 10px rgba(255,105,180,0.2); }
+  50% { box-shadow: 0 0 30px rgba(255,105,180,0.9), 0 0 50px rgba(255,105,180,0.4), inset 0 0 20px rgba(255,105,180,0.3); }
+}
+
+.fx-glow-green {
+  animation: glowPulseGreen 1.5s ease-in-out 3;
+}
+@keyframes glowPulseGreen {
+  0%, 100% { box-shadow: 0 0 10px rgba(144,238,144,0.5), inset 0 0 10px rgba(144,238,144,0.2); }
+  50% { box-shadow: 0 0 30px rgba(144,238,144,0.9), 0 0 50px rgba(144,238,144,0.4), inset 0 0 20px rgba(144,238,144,0.3); }
+}
+
+.fx-glow-cyan {
+  animation: glowPulseCyan 1.5s ease-in-out 3;
+}
+@keyframes glowPulseCyan {
+  0%, 100% { box-shadow: 0 0 10px rgba(0,255,255,0.5), inset 0 0 10px rgba(0,255,255,0.2); }
+  50% { box-shadow: 0 0 30px rgba(0,255,255,0.9), 0 0 50px rgba(0,255,255,0.4), inset 0 0 20px rgba(0,255,255,0.3); }
+}
+

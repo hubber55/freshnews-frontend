@@ -1,6 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
+
+// Default placeholder image for news
+const DEFAULT_PLACEHOLDER = '/images/news-placeholder.svg';
 
 type LazyImageProps = {
   src: string;
@@ -17,14 +20,42 @@ type LazyImageProps = {
 };
 
 /**
- * LazyImage — DailyHunt-style progressive image loading.
+ * LazyImage — DailyHunt-style progressive image loading with retry logic.
  *
  * - `eager=true`  → above-the-fold images: no shimmer, loading="eager", fetchpriority="high"
  * - `eager=false` → below-the-fold images: shimmer placeholder + loading="lazy"
  */
 export default function LazyImage({ src, alt, className = '', imgStyle, eager = false }: LazyImageProps) {
-  const [loaded, setLoaded] = useState(eager); // eager images are treated as already loaded
+  const [loaded, setLoaded] = useState(eager);
   const [errored, setErrored] = useState(false);
+  const [currentSrc, setCurrentSrc] = useState(src);
+  const [retryCount, setRetryCount] = useState(0);
+  const imgRef = useRef<HTMLImageElement>(null);
+
+  // Reset state when src changes
+  useEffect(() => {
+    setCurrentSrc(src);
+    setLoaded(eager);
+    setErrored(false);
+    setRetryCount(0);
+  }, [src, eager]);
+
+  // Handle cached images that don't trigger onLoad
+  useEffect(() => {
+    if (imgRef.current?.complete) {
+      setLoaded(true);
+    }
+  }, [currentSrc]);
+
+  const handleError = () => {
+    if (retryCount < 1 && currentSrc !== DEFAULT_PLACEHOLDER) {
+      // Retry once with placeholder
+      setRetryCount(1);
+      setCurrentSrc(DEFAULT_PLACEHOLDER);
+    } else {
+      setErrored(true);
+    }
+  };
 
   if (eager) {
     // Above-the-fold: render immediately, no shimmer, high priority
@@ -34,15 +65,16 @@ export default function LazyImage({ src, alt, className = '', imgStyle, eager = 
       </div>
     ) : (
       <img
-        src={src}
+        src={currentSrc}
         alt={alt}
         loading="eager"
         // @ts-expect-error — fetchpriority is valid HTML but not yet in TS types
         fetchpriority="high"
         decoding="sync"
+        referrerPolicy="no-referrer"
         className={`lazy-img lazy-img--loaded ${className}`}
         style={imgStyle}
-        onError={() => setErrored(true)}
+        onError={handleError}
       />
     );
   }
@@ -57,14 +89,16 @@ export default function LazyImage({ src, alt, className = '', imgStyle, eager = 
       {/* The actual image — invisible until loaded, then fades in */}
       {!errored && (
         <img
-          src={src}
+          ref={imgRef}
+          src={currentSrc}
           alt={alt}
           loading="lazy"
           decoding="async"
+          referrerPolicy="no-referrer"
           className={`lazy-img ${loaded ? 'lazy-img--loaded' : ''} ${className}`}
           style={imgStyle}
           onLoad={() => setLoaded(true)}
-          onError={() => setErrored(true)}
+          onError={handleError}
         />
       )}
 
