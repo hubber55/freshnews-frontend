@@ -173,6 +173,7 @@ export default async function PostPage({ params }: PageProps) {
                   alt={post.title}
                   eager={true}
                   className="absolute inset-0 w-full h-full object-cover"
+                  imgStyle={{ aspectRatio: '16/9' }}
                 />
               ) : (
                 <div className="absolute inset-0 flex items-center justify-center bg-[#21262d] text-sm text-[var(--text-muted)]">
