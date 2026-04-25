@@ -13,6 +13,7 @@ import logging
 import sys
 import time
 import re
+import random
 from datetime import datetime, timezone, timedelta
 
 from config import (
@@ -50,6 +51,9 @@ BLOCKED_TITLE_PATTERNS = [
     r"\bsubscribe\b",
 ]
 
+# Global state for source rotation
+recent_sources = []
+
 def get_current_delay():
     """Return the appropriate delay based on current IST time."""
     now_ist = datetime.now(IST)
@@ -85,8 +89,22 @@ def run_rotation():
     # 1. Get existing posts for deduplication straight from DB
     existing_posts = get_existing_posts()
 
+    # Shuffle feeds to randomize the order each rotation
+    feeds = list(MALAYALAM_RSS_FEEDS)
+    random.shuffle(feeds)
+
     # Iterate continuously through each source
-    for feed_config in MALAYALAM_RSS_FEEDS:
+    for feed_config in feeds:
+        feed_name = feed_config['name']
+        
+        # Group similar sources (e.g., "Kerala Kaumudi Cinema" -> "Kerala Kaumudi")
+        base_source = feed_name.replace(" Cinema", "").replace(" Latest", "").strip()
+        
+        # Ensure we don't publish from the same source back-to-back
+        if base_source in recent_sources:
+            logger.info(f"  ⏭️ Skipping {feed_name} to rotate sources (published recently).")
+            continue
+
         articles = fetch_feed_articles(feed_config, max_articles=20)
         if not articles:
             continue
@@ -187,6 +205,11 @@ def run_rotation():
                     "title": best_article.get("title", ""),
                     "original_url": best_article.get("link", ""),
                 })
+                
+                # Update recent sources to prevent consecutive posts from same source
+                recent_sources.append(base_source)
+                if len(recent_sources) > 3:
+                    recent_sources.pop(0)
                 
         except Exception as e:
              logger.error(f"  Article Pipeline failed: {e}")

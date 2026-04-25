@@ -25,7 +25,7 @@ Instructions:
 1. Rephrase the article in Malayalam. Target EXACTLY 100 to 150 words (Maximum 170). 
 2. EXTREMELY IMPORTANT: Create frequent paragraphs. You MUST start a new paragraph approximately every 30 to 50 words to ensure maximum readability. Every paragraph must be separated by exactly one blank line. 
 3. DO NOT include prefixes like "സമ്മറി:", "Summary:", or "കീവേർഡുകൾ:". Provide only the clean article text.
-4. You must extract exactly 3 keywords related to the article. THESE 3 KEYWORDS MUST BE IN ENGLISH ONLY AND MUST BE SINGLE WORDS. Do NOT write keywords in Malayalam!
+4. You must extract exactly 3 keywords related to the article. THESE KEYWORDS MUST BE IN ENGLISH ONLY. Keywords can be 1 or 2 words if needed, but each MUST be strictly under 20 characters in length. Do NOT write keywords in Malayalam!
 5. Rewrite the wording to be concise and newspaper-like. Avoid overlong headlines and avoid repeating the title sentence inside the opening paragraph.
 
 You must reply with a valid JSON object in EXACTLY this format:
@@ -216,6 +216,7 @@ def summarize_article(article):
                 parsed = json.loads(content)
                 summary = str(parsed.get("summary", "")).strip()
                 tags = [str(t).strip() for t in parsed.get("keywords", []) if str(t).strip()]
+                tags = [t for t in tags if len(t) < 20]
                 tags = tags[:4]
 
                 if summary and len(summary) > 50:
@@ -232,7 +233,8 @@ def summarize_article(article):
                     if json_match:
                         parsed = json.loads(json_match.group())
                         summary = str(parsed.get("summary", "")).strip()
-                        tags = [str(t).strip() for t in parsed.get("keywords", []) if str(t).strip()][:4]
+                        tags = [str(t).strip() for t in parsed.get("keywords", []) if str(t).strip()]
+                        tags = [t for t in tags if len(t) < 20][:4]
                         if summary and len(summary) > 50:
                             logger.info(f"  ✅ [{provider_name}] Salvaged JSON. Summarized: {title[:50]}... | Tags: {tags}")
                             return summary, tags
