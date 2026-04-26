@@ -49,9 +49,10 @@ function trackShare(payload: TrackPayload) {
 }
 
 export default function ShareButtons({ postId, title, url }: ShareButtonsProps) {
-  const whatsappTagline = 'Latest News - Also Submit your News / Classifieds for free';
+  const italicTagline = '_Submit your Own News/Events/Ads - freshnews.top_';
+  const formattedText = `${title}\n${url}\n${italicTagline}`;
   const encodedUrl = encodeURIComponent(url);
-  const encodedWhatsappText = encodeURIComponent(`${whatsappTagline}\n${url}`);
+  const encodedWhatsappText = encodeURIComponent(formattedText);
   const [copied, setCopied] = useState(false);
 
   const handleNativeShare = async () => {
@@ -61,8 +62,7 @@ export default function ShareButtons({ postId, title, url }: ShareButtonsProps) 
         trackShare({ postId, sessionId, eventType: 'share', network: 'native' });
         await navigator.share({
           title,
-          text: whatsappTagline,
-          url,
+          text: formattedText,
         });
         return;
       } catch {
@@ -75,12 +75,12 @@ export default function ShareButtons({ postId, title, url }: ShareButtonsProps) 
   const handleWhatsAppShare = async () => {
     const sessionId = getOrCreateSessionId();
     trackShare({ postId, sessionId, eventType: 'share', network: 'whatsapp' });
+
     if (typeof navigator !== 'undefined' && navigator.share) {
       try {
         await navigator.share({
           title,
-          text: whatsappTagline,
-          url,
+          text: formattedText,
         });
         return;
       } catch {

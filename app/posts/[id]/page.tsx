@@ -11,6 +11,9 @@ import Header from '../../components/header';
 import Footer from '../../components/footer';
 import TagBadge from '../../components/tag-badge';
 import CommentsSection from '../../components/CommentsSection';
+import PostTracker from '../../components/PostTracker';
+import NetworkAd from '../../components/NetworkAd';
+import { createAdminClient } from '../../../lib/supabase-admin';
 
 
 type PageProps = {
@@ -133,6 +136,16 @@ export default async function PostPage({ params }: PageProps) {
 
   const { prevPost, nextPost } = await getAdjacentPosts(post.id, post.published_at ?? null);
 
+  // Fetch Ad Network Code from the server-side admin client so public rendering
+  // does not depend on anon read access to admin_settings.
+  const adminSupabase = createAdminClient();
+  const { data: adSettings } = await adminSupabase
+    .from('admin_settings')
+    .select('value')
+    .eq('key', 'adsterra_code')
+    .single();
+  const adCode = typeof adSettings?.value === 'string' ? adSettings.value.trim() : '';
+
   return (
     <div className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)]">
       <Header />
@@ -209,12 +222,15 @@ export default async function PostPage({ params }: PageProps) {
               <ShareButtons postId={post.id} title={post.title} url={articleUrl} />
             </div>
 
+            {/* AUTOMATIC VIEW TRACKING */}
+            <PostTracker postId={post.id} />
+
             {/* COMMENTS SECTION - positioned above Back to Home */}
             <div className="mt-10">
               <CommentsSection postId={post.id} />
             </div>
 
-            {/* BACK TO HOME BUTTON with 3 line breaks spacing after comments */}
+            {adCode && <NetworkAd code={adCode} />}
             <div className="mt-20 text-center">
               <div className="h-8" /> {/* Line break 1 */}
               <div className="h-8" /> {/* Line break 2 */}

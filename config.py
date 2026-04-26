@@ -66,94 +66,26 @@ MALAYALAM_RSS_FEEDS = [
     google_news_query_feed("TV9 Malayalam", "TV9 Malayalam"),
     google_news_query_feed("B4blaze News", "B4blaze Malayalam"),
     google_news_query_feed("MyKhel Malayalam", "MyKhel Malayalam", "sports"),
-    {
-        "name": "Sathyam Online",
-        "url": "https://www.sathyamonline.com/rss",
-        "category": "general",
-    },
-    {
-        "name": "Newsthen",
-        "url": "https://newsthen.com/feed",
-        "category": "general",
-    },
-    {
-        "name": "Media Mangalam",
-        "url": "https://mediamangalam.com/feed",
-        "category": "general",
-    },
+    google_news_site_feed("Sathyam Online", "sathyamonline.com"),
+    google_news_site_feed("Newsthen", "newsthen.com"),
+    google_news_site_feed("Media Mangalam", "mediamangalam.com"),
     google_news_site_feed("OneIndia Malayalam", "malayalam.oneindia.com"),
-    {
-        "name": "Kvartha",
-        "url": "https://www.kvartha.com/feed.xml",
-        "category": "general",
-    },
-    {
-        "name": "24 News",
-        "url": "https://www.twentyfournews.com/feed",
-        "category": "general",
-    },
-    {
-        "name": "Kerala Online News",
-        "url": "https://keralaonlinenews.com/feed",
-        "category": "general",
-    },
-    {
-        "name": "Dhanam",
-        "url": "https://dhanamonline.com/feed",
-        "category": "general",
-    },
-    {
-        "name": "Malayali Life",
-        "url": "https://malayalilife.com/feed",
-        "category": "general",
-    },
-    {
-        "name": "Malayalam Express",
-        "url": "https://malayalamexpress.in/feed",
-        "category": "general",
-    },
-    {
-        "name": "Samakalika Malayalam",
-        "url": "https://samakalikamalayalam.com/feed",
-        "category": "general",
-    },
+    google_news_site_feed("Kvartha", "kvartha.com"),
+    google_news_query_feed("24 News", "24 News Malayalam"),
+    google_news_site_feed("Kerala Online News", "keralaonlinenews.com"),
+    google_news_site_feed("Dhanam", "dhanamonline.com"),
+    google_news_site_feed("Malayali Life", "malayalilife.com"),
+    google_news_site_feed("Malayalam Express", "malayalamexpress.in"),
+    google_news_site_feed("Samakalika Malayalam", "samakalikamalayalam.com"),
 
-    # Existing legacy/default sources
-    {
-        "name": "Mathrubhumi",
-        "url": "https://www.mathrubhumi.com/sitemaps/mathrubhumi/rss",
-        "category": "general"
-    },
-    {
-        "name": "Marunadan Malayali",
-        "url": "https://marunadanmalayalee.com/google_feeds.xml",
-        "category": "general"
-    },
-    {
-        "name": "Kairali News",
-        "url": "https://www.kairalinewsonline.com/feed",
-        "category": "general"
-    },
-    {
-        "name": "Janam TV",
-        "url": "https://janamtv.com/feed/",
-        "category": "general"
-    },
-    {
-        "name": "Janmabhumi",
-        "url": "https://janmabhumi.in/feed/",
-        "category": "general"
-    },
-    {
-        "name": "Siraj Live",
-        "url": "https://www.sirajlive.com/feed/",
-        "category": "general"
-    },
-    {
-        "name": "Suprabhaatham",
-        "url": "https://www.suprabhaatham.com/feed/",
-        "category": "general"
-    },
+    # Legacy/Default sources converted to Google RSS proxy to bypass XML/403 errors
+    google_news_site_feed("Mathrubhumi", "mathrubhumi.com"),
+    google_news_site_feed("Marunadan Malayali", "marunadanmalayalee.com"),
+    google_news_site_feed("Kairali News", "kairalinewsonline.com"),
+    google_news_site_feed("Janam TV", "janamtv.com"),
+    google_news_site_feed("Janmabhumi", "janmabhumi.in"),
+    google_news_site_feed("Siraj Live", "sirajlive.com"),
+    google_news_site_feed("Suprabhaatham", "suprabhaatham.com"),
     
     # DriveSpark (moved to last since it's working)
     google_news_query_feed("DriveSpark", "DriveSpark Malayalam"),

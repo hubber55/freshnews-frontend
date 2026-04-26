@@ -113,15 +113,26 @@ export async function updateSubmission(submissionId: string, formData: FormData)
 }
 
 export async function deleteSubmission(submissionId: string) {
-  const supabase = await createClient();
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
   
-  const { error } = await supabase
+  // Need to import here to avoid Top Level Await issues if not already imported
+  const { createClient: createSupabaseAdmin } = await import('@supabase/supabase-js');
+  const supabaseAdmin = createSupabaseAdmin(supabaseUrl, serviceRoleKey);
+  
+  const { data, error } = await supabaseAdmin
     .from('submissions')
     .delete()
-    .eq('id', submissionId);
+    .eq('id', parseInt(submissionId, 10))
+    .select();
 
   if (error) throw new Error('Failed to delete submission: ' + error.message);
   
+  if (!data || data.length === 0) {
+    console.warn(`Attempted to delete submission ${submissionId} but no rows were returned.`);
+  }
+  
   revalidatePath('/admin/pending');
+  revalidatePath('/admin/pending/[id]', 'page');
   return { success: true };
 }

@@ -10,6 +10,8 @@ import Footer from './components/footer';
 import HomeRefreshRedirect from './components/HomeRefreshRedirect';
 import TrackedLink from './components/TrackedLink';
 import LazyImage from './components/LazyImage';
+import NetworkAd from './components/NetworkAd';
+import { createAdminClient } from '@/lib/supabase-admin';
 
 export const revalidate = 120; // Revalidate every 2 minutes
 
@@ -40,6 +42,18 @@ export default async function Home({ searchParams }: HomeProps) {
   }
 
   const { data: posts } = await query;
+
+  // Fetch ad-related settings from the server-side admin client so public rendering
+  // does not depend on anon read access to admin_settings.
+  const adminSupabase = createAdminClient();
+  const { data: adSettings } = await adminSupabase
+    .from('admin_settings')
+    .select('key, value')
+    .in('key', ['adsterra_code']);
+
+  const adSettingsMap = new Map((adSettings ?? []).map((setting) => [setting.key, setting.value]));
+  const adCode = typeof adSettingsMap.get('adsterra_code') === 'string' ? adSettingsMap.get('adsterra_code')!.trim() : '';
+
   const eligiblePostsAll = (posts ?? []).filter((post) => hasMinimumWords(post.summary, 70));
   const eligiblePosts = eligiblePostsAll.slice(0, pageSize);
   const hasNextPage = eligiblePostsAll.length > pageSize || (posts?.length ?? 0) === overfetch;
@@ -76,6 +90,7 @@ export default async function Home({ searchParams }: HomeProps) {
       <HomeRefreshRedirect page={page} activeTag={activeTag} />
       <Header titleColorClass="text-white" />
 
+
       <main className="pb-4">
         {/* SECTION HEADER */}
         <section className="mx-auto mt-5 w-full max-w-[800px] px-5 sm:px-6">
@@ -97,88 +112,98 @@ export default async function Home({ searchParams }: HomeProps) {
 
           {/* HERO CARD */}
           {heroPost && (
-            <article className="overflow-hidden rounded-2xl bg-[var(--bg-card)] border border-[var(--border)]">
-              <TrackedLink href={`/posts/${heroPost.id}`} className="block" trackEvent={{ postId: heroPost.id, eventType: 'click' }}>
-                <div className="relative w-full overflow-hidden" style={{ paddingTop: '56.25%' }}>
-                  {heroPost.image_url ? (
-                    <>
-                      <LazyImage
-                        src={heroPost.image_url}
-                        alt={heroPost.title}
-                        eager={true}
-                        className="absolute inset-0 w-full h-full object-cover"
-                        imgStyle={{ aspectRatio: '16/9' }}
-                      />
-                    </>
-                  ) : (
-                    <div className="absolute inset-0 flex items-center justify-center bg-[#21262d] text-sm text-[var(--text-muted)]">
-                      No Image Available
-                    </div>
-                  )}
-                  <span className="source-badge">{heroPost.source_name}</span>
-                </div>
-
-                <div className="px-5 py-3 sm:py-4">
-                  <div className="mb-2 flex items-center gap-2 text-[11.5px] text-[var(--text-muted)]" style={{ fontFamily: 'var(--font-en)' }}>
-                    {heroPost.published_at && (
-                      <span className="flex items-center gap-1">
-                        <Clock size={13} />
-                        {formatDistanceToNow(new Date(heroPost.published_at), { addSuffix: true })}
-                      </span>
-                    )}
-                  </div>
-
-                  <h2 className="card-title-hero mb-2 text-white">
-                    {limitWords(heroPost.title, 10)}
-                  </h2>
-                </div>
-              </TrackedLink>
-            </article>
-          )}
-
-          {/* REMAINING CARDS */}
-          <div className="mt-6 space-y-7">
-            {remainingPosts.map((post, index) => (
-              <article
-                key={post.id}
-                className="overflow-hidden rounded-2xl bg-[var(--bg-card)] border border-[var(--border)]"
-              >
-                <TrackedLink href={`/posts/${post.id}`} className="block" trackEvent={{ postId: post.id, eventType: 'click' }}>
+            <>
+              <article className="overflow-hidden rounded-2xl bg-[var(--bg-card)] border border-[var(--border)]">
+                <TrackedLink href={`/posts/${heroPost.id}`} className="block" trackEvent={{ postId: heroPost.id, eventType: 'click' }}>
                   <div className="relative w-full overflow-hidden" style={{ paddingTop: '56.25%' }}>
-                    {post.image_url ? (
+                    {heroPost.image_url ? (
                       <>
-                      <LazyImage
-                        src={post.image_url}
-                        alt={post.title}
-                        eager={index < 3}
-                        className="absolute inset-0 w-full h-full object-cover"
-                      />
+                        <LazyImage
+                          src={heroPost.image_url}
+                          alt={heroPost.title}
+                          eager={true}
+                          className="absolute inset-0 w-full h-full object-cover"
+                          imgStyle={{ aspectRatio: '16/9' }}
+                        />
                       </>
                     ) : (
                       <div className="absolute inset-0 flex items-center justify-center bg-[#21262d] text-sm text-[var(--text-muted)]">
                         No Image Available
                       </div>
                     )}
-                    <span className="source-badge">{post.source_name}</span>
+                    <span className="source-badge">{heroPost.source_name}</span>
                   </div>
 
                   <div className="px-5 py-3 sm:py-4">
                     <div className="mb-2 flex items-center gap-2 text-[11.5px] text-[var(--text-muted)]" style={{ fontFamily: 'var(--font-en)' }}>
-                      {post.published_at && (
+                      {heroPost.published_at && (
                         <span className="flex items-center gap-1">
                           <Clock size={13} />
-                          {formatDistanceToNow(new Date(post.published_at), { addSuffix: true })}
+                          {formatDistanceToNow(new Date(heroPost.published_at), { addSuffix: true })}
                         </span>
                       )}
                     </div>
 
-                    <h3 className="card-title mb-2 text-white">
-                      {limitWords(post.title, 10)}
-                    </h3>
+                    <h2 className="card-title-hero mb-2 text-white">
+                      {limitWords(heroPost.title, 10)}
+                    </h2>
                   </div>
                 </TrackedLink>
               </article>
-            ))}
+            </>
+          )}
+
+          {/* REMAINING CARDS */}
+          <div className="mt-6 space-y-7">
+            {remainingPosts.map((post, index) => {
+              const totalPosition = (page === 1 ? index + 2 : (page - 1) * pageSize + index + 1);
+              // Show ad after the 2nd post, then every 10 posts after that.
+              const showAdAfter = totalPosition === 2 || (totalPosition > 2 && (totalPosition - 2) % 10 === 0);
+              
+              return (
+                <div key={post.id} className="space-y-7">
+                  <article
+                    className="overflow-hidden rounded-2xl bg-[var(--bg-card)] border border-[var(--border)]"
+                  >
+                    <TrackedLink href={`/posts/${post.id}`} className="block" trackEvent={{ postId: post.id, eventType: 'click' }}>
+                      <div className="relative w-full overflow-hidden" style={{ paddingTop: '56.25%' }}>
+                        {post.image_url ? (
+                          <>
+                          <LazyImage
+                            src={post.image_url}
+                            alt={post.title}
+                            eager={index < 3}
+                            className="absolute inset-0 w-full h-full object-cover"
+                          />
+                          </>
+                        ) : (
+                          <div className="absolute inset-0 flex items-center justify-center bg-[#21262d] text-sm text-[var(--text-muted)]">
+                            No Image Available
+                          </div>
+                        )}
+                        <span className="source-badge">{post.source_name}</span>
+                      </div>
+
+                      <div className="px-5 py-3 sm:py-4">
+                        <div className="mb-2 flex items-center gap-2 text-[11.5px] text-[var(--text-muted)]" style={{ fontFamily: 'var(--font-en)' }}>
+                          {post.published_at && (
+                            <span className="flex items-center gap-1">
+                              <Clock size={13} />
+                              {formatDistanceToNow(new Date(post.published_at), { addSuffix: true })}
+                            </span>
+                          )}
+                        </div>
+
+                        <h3 className="card-title mb-2 text-white">
+                          {limitWords(post.title, 10)}
+                        </h3>
+                      </div>
+                    </TrackedLink>
+                  </article>
+                  {showAdAfter && adCode && <NetworkAd code={adCode} />}
+                </div>
+              );
+            })}
           </div>
 
           {page > 1 ? (

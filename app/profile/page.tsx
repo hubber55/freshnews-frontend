@@ -37,19 +37,26 @@ export default function ProfilePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [updateMessage, setUpdateMessage] = useState<string | null>(null);
+  const [nicknameEditCount, setNicknameEditCount] = useState(0);
+  const [emailEditCount, setEmailEditCount] = useState(0);
+  const [isEditingEmail, setIsEditingEmail] = useState(false);
+  const [newEmail, setNewEmail] = useState('');
 
   useEffect(() => {
     // Fetch user profile and submissions
     fetch('/api/auth/me')
       .then(res => res.json())
       .then(data => {
-        if (!data.name) {
+        if (!data.name && !data.whatsappNumber) {
           // Not logged in, redirect to login
           window.location.href = '/login?redirect=/profile';
           return;
         }
         setProfile(data);
         setNewNickname(data.nickname || '');
+        setNewEmail(data.email || '');
+        setNicknameEditCount(data.nicknameEditCount || 0);
+        setEmailEditCount(data.emailEditCount || 0);
         
         // Fetch user's published posts
         fetch('/api/user/published-posts')
@@ -104,6 +111,18 @@ export default function ProfilePage() {
     }
   }
 
+  const handleStartEditNickname = () => {
+    if (nicknameEditCount >= 3) {
+      alert('You have reached the maximum limit of 3 nickname changes for this account.');
+      return;
+    }
+    
+    const remaining = 3 - nicknameEditCount;
+    if (confirm(`To prevent abuse, Nickname can only be edited a maximum of 3 times in a lifetime.\n\nYou have ${remaining} ${remaining === 1 ? 'change' : 'changes'} remaining.\n\nDo you want to proceed?`)) {
+      setIsEditingNickname(true);
+    }
+  };
+
   const handleUpdateNickname = async () => {
     if (!newNickname.trim() || newNickname === profile?.nickname) {
       setIsEditingNickname(false);
@@ -120,6 +139,7 @@ export default function ProfilePage() {
       const data = await res.json();
       if (data.ok) {
         setProfile(prev => prev ? { ...prev, nickname: newNickname.trim() } : null);
+        setNicknameEditCount(prev => prev + 1);
         setUpdateMessage('Nickname updated successfully!');
         setTimeout(() => setUpdateMessage(null), 3000);
       } else {
@@ -129,6 +149,45 @@ export default function ProfilePage() {
       setError('Failed to update nickname');
     }
     setIsEditingNickname(false);
+  };
+
+  const handleUpdateEmail = async () => {
+    if (!newEmail.trim() || newEmail === profile?.email) {
+      setIsEditingEmail(false);
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/user/update-email', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ email: newEmail.trim() }),
+      });
+
+      const data = await res.json();
+      if (data.ok) {
+        setProfile(prev => prev ? { ...prev, email: newEmail.trim() } : null);
+        setUpdateMessage('Email updated successfully!');
+        setTimeout(() => setUpdateMessage(null), 3000);
+      } else {
+        setError(data.error || 'Failed to update email');
+      }
+    } catch (err) {
+      setError('Failed to update email');
+    }
+    setIsEditingEmail(false);
+  };
+
+  const handleStartEditEmail = () => {
+    if (emailEditCount >= 3) {
+      alert('You have reached the maximum limit of 3 email changes for this account.');
+      return;
+    }
+    
+    const remaining = 3 - emailEditCount;
+    if (confirm(`To prevent abuse, Email can only be edited a maximum of 3 times in a lifetime.\n\nYou have ${remaining} ${remaining === 1 ? 'change' : 'changes'} remaining.\n\nDo you want to proceed?`)) {
+      setIsEditingEmail(true);
+    }
   };
 
   const getStatusIcon = (status: string) => {
@@ -194,7 +253,7 @@ export default function ProfilePage() {
     <div className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)]">
       <Header />
       
-      <main className="px-4 pt-24 pb-10">
+      <main className="px-4 pt-8 pb-10">
         <div className="mx-auto w-full max-w-[800px] px-2">
           {/* Profile Header */}
           <div className="rounded-3xl border border-[var(--border)] bg-[var(--bg-card)] p-8 shadow-2xl mb-6">
@@ -233,39 +292,41 @@ export default function ProfilePage() {
               </div>
 
               {/* Nickname - Editable */}
-              <div className="flex items-center justify-between py-3 border-b border-[var(--border)]">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between py-4 border-b border-[var(--border)] gap-2">
                 <span className="text-[var(--text-secondary)]">Nickname</span>
                 {isEditingNickname ? (
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 w-full sm:w-auto sm:max-w-md">
                     <input
                       type="text"
                       value={newNickname}
                       onChange={(e) => setNewNickname(e.target.value)}
                       maxLength={20}
-                      className="rounded-lg border border-[var(--border)] bg-[var(--bg-primary)] px-3 py-1.5 text-white text-sm focus:border-[#ffd42a] focus:outline-none"
+                      className="flex-1 min-w-0 rounded-lg border border-[var(--border)] bg-[var(--bg-primary)] px-3 py-1.5 text-white text-sm focus:border-[#ffd42a] focus:outline-none"
                       placeholder="Public display name"
                     />
-                    <button
-                      onClick={handleUpdateNickname}
-                      className="text-sm text-[#90ee90] hover:text-[#b5f5b5] font-semibold"
-                    >
-                      Save
-                    </button>
-                    <button
-                      onClick={() => {
-                        setIsEditingNickname(false);
-                        setNewNickname(profile.nickname || '');
-                      }}
-                      className="text-sm text-[var(--text-muted)] hover:text-white"
-                    >
-                      Cancel
-                    </button>
+                    <div className="flex items-center gap-2 shrink-0 pr-1">
+                      <button
+                        onClick={handleUpdateNickname}
+                        className="text-sm text-[#90ee90] hover:text-[#b5f5b5] font-bold"
+                      >
+                        Save
+                      </button>
+                      <button
+                        onClick={() => {
+                          setIsEditingNickname(false);
+                          setNewNickname(profile.nickname || '');
+                        }}
+                        className="text-sm text-[var(--text-muted)] hover:text-white"
+                      >
+                        Cancel
+                      </button>
+                    </div>
                   </div>
                 ) : (
                   <div className="flex items-center gap-2">
                     <span className="font-semibold text-white">{profile.nickname || 'Not set'}</span>
                     <button
-                      onClick={() => setIsEditingNickname(true)}
+                      onClick={handleStartEditNickname}
                       className="text-[var(--text-muted)] hover:text-[#ffd42a]"
                     >
                       <Edit size={16} />
@@ -274,16 +335,55 @@ export default function ProfilePage() {
                 )}
               </div>
 
-              {/* Email */}
-              <div className="flex items-center justify-between py-3 border-b border-[var(--border)]">
+              {/* Email - Editable */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between py-4 border-b border-[var(--border)] gap-2">
                 <span className="text-[var(--text-secondary)]">Email</span>
-                <span className="font-semibold text-white">{profile.email}</span>
+                {isEditingEmail ? (
+                  <div className="flex items-center gap-2 w-full sm:w-auto sm:max-w-md">
+                    <input
+                      type="email"
+                      value={newEmail}
+                      onChange={(e) => setNewEmail(e.target.value)}
+                      className="flex-1 min-w-0 rounded-lg border border-[var(--border)] bg-[var(--bg-primary)] px-3 py-1.5 text-white text-sm focus:border-[#ffd42a] focus:outline-none"
+                      placeholder="Enter email"
+                    />
+                    <div className="flex items-center gap-2 shrink-0 pr-1">
+                      <button
+                        onClick={handleUpdateEmail}
+                        className="text-sm text-[#90ee90] hover:text-[#b5f5b5] font-bold"
+                      >
+                        Save
+                      </button>
+                      <button
+                        onClick={() => {
+                          setIsEditingEmail(false);
+                          setNewEmail(profile.email || '');
+                        }}
+                        className="text-sm text-[var(--text-muted)] hover:text-white"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold text-white">{profile.email || 'Not set'}</span>
+                    <button
+                      onClick={handleStartEditEmail}
+                      className="text-[var(--text-muted)] hover:text-[#ffd42a]"
+                    >
+                      <Edit size={16} />
+                    </button>
+                  </div>
+                )}
               </div>
 
               {/* WhatsApp */}
               <div className="flex items-center justify-between py-3">
                 <span className="text-[var(--text-secondary)]">WhatsApp</span>
-                <span className="font-semibold text-white">+{profile.whatsappNumber}</span>
+                <span className="font-semibold text-white">
+                  {profile.whatsappNumber ? `+${profile.whatsappNumber.replace(/^\+/, '')}` : 'Not set'}
+                </span>
               </div>
             </div>
           </div>
@@ -372,15 +472,36 @@ export default function ProfilePage() {
                         <span>{new Date(submission.submitted_at).toLocaleDateString()}</span>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[var(--bg-card)]">
-                      {getStatusIcon(submission.status)}
-                      <span className={`text-sm font-medium ${
-                        submission.status === 'published' ? 'text-[#90ee90]' :
-                        submission.status === 'pending' ? 'text-[#ffd42a]' :
-                        'text-red-400'
-                      }`}>
-                        {getStatusText(submission.status)}
-                      </span>
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[var(--bg-card)]">
+                        {getStatusIcon(submission.status)}
+                        <span className={`text-sm font-medium ${
+                          submission.status === 'published' ? 'text-[#90ee90]' :
+                          submission.status === 'pending' ? 'text-[#ffd42a]' :
+                          'text-red-400'
+                        }`}>
+                          {getStatusText(submission.status)}
+                        </span>
+                      </div>
+                      <button
+                        onClick={async () => {
+                          if (!confirm('Are you sure you want to delete this submission?')) return;
+                          try {
+                            const res = await fetch(`/api/user/delete-submission/${submission.id}`, { method: 'DELETE' });
+                            if (res.ok) {
+                              setSubmissions(prev => prev.filter(s => s.id !== submission.id));
+                              setUpdateMessage('Submission deleted');
+                              setTimeout(() => setUpdateMessage(null), 3000);
+                            }
+                          } catch (err) {
+                            setError('Failed to delete submission');
+                          }
+                        }}
+                        className="p-2 rounded-lg bg-[var(--bg-card)] text-red-400 hover:bg-red-400 hover:text-white transition-all"
+                        title="Delete Submission"
+                      >
+                        <Trash2 size={16} />
+                      </button>
                     </div>
                   </div>
                 ))}

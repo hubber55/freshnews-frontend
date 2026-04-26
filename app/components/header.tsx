@@ -11,17 +11,19 @@ const GUEST_LINKS = [
   { href: '/submit?type=news', label: 'Submit News', color: '#ffd42a', requiresAuth: true },
   { href: '/submit?type=event', label: 'Submit Events', color: '#90ee90', requiresAuth: true },
   { href: '/install-app', label: 'Install As App', color: '#00cfff', requiresAuth: false, isInstallLink: true },
+  { href: '/faq', label: 'FAQ' },
   { href: '/contact', label: 'Contact Us' },
 ];
 
 const USER_MENU_ITEMS = [
   { href: '/', label: 'Home' },
-  { href: '/profile', label: 'Profile', color: '#ffd42a' },
   { href: '/submit?type=ad', label: 'Submit Ads', color: '#00cfff' },
   { href: '/submit?type=news', label: 'Submit News', color: '#ffd42a' },
   { href: '/submit?type=event', label: 'Submit Events', color: '#90ee90' },
   { href: '/install-app', label: 'Install As App', color: '#00cfff', isInstallLink: true },
+  { href: '/faq', label: 'FAQ' },
   { href: '/contact', label: 'Contact Us' },
+  { href: '/profile', label: 'Profile', color: '#ffd42a' },
 ];
 
 // Type for menu items with optional color
@@ -108,8 +110,7 @@ export default function Header({ titleColorClass = 'text-[#ffd42a]' }: HeaderPro
       }, delay);
     }
 
-    // First run (on load) - always glow
-    runOnce();
+    // First run (on load) - removed immediate glow
     scheduleNext();
 
     // Stop for entire session on click

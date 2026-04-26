@@ -22,9 +22,9 @@ export default async function AdminPostsPage() {
   }
 
   const postIds = (posts ?? []).map((p) => p.id)
-  const metricsByPostId = new Map<number, { clickSessions: number; fb: number; x: number; telegram: number; whatsapp: number; native: number }>()
+  const metricsByPostId = new Map<number, { clicks: number; fb: number; x: number; telegram: number; whatsapp: number; native: number }>()
   for (const id of postIds) {
-    metricsByPostId.set(id, { clickSessions: 0, fb: 0, x: 0, telegram: 0, whatsapp: 0, native: 0 })
+    metricsByPostId.set(id, { clicks: 0, fb: 0, x: 0, telegram: 0, whatsapp: 0, native: 0 })
   }
 
   if (postIds.length > 0) {
@@ -46,9 +46,8 @@ export default async function AdminPostsPage() {
       if (!metricsByPostId.has(postId)) continue
 
       if (eventType === 'click') {
-        const set = clickSessionsByPost.get(postId) ?? new Set<string>()
-        if (sessionId) set.add(sessionId)
-        clickSessionsByPost.set(postId, set)
+        const m = metricsByPostId.get(postId)!
+        m.clicks += 1
         continue
       }
 
@@ -62,10 +61,7 @@ export default async function AdminPostsPage() {
       }
     }
 
-    for (const [postId, set] of clickSessionsByPost.entries()) {
-      const m = metricsByPostId.get(postId)
-      if (m) m.clickSessions = set.size
-    }
+    // Removed session iteration since we use total clicks directly now
   }
 
   return (
@@ -87,7 +83,7 @@ export default async function AdminPostsPage() {
               <th className="px-6 py-4">Title</th>
               <th className="px-6 py-4">Source</th>
               <th className="px-6 py-4">Date</th>
-              <th className="px-6 py-4">Clicks (Sessions)</th>
+              <th className="px-6 py-4">Clicks</th>
               <th className="px-6 py-4">Shares</th>
               <th className="px-6 py-4">Image</th>
               <th className="px-6 py-4">Status</th>
@@ -96,7 +92,7 @@ export default async function AdminPostsPage() {
           </thead>
           <tbody>
             {posts?.map((post) => {
-              const m = metricsByPostId.get(post.id) ?? { clickSessions: 0, fb: 0, x: 0, telegram: 0, whatsapp: 0, native: 0 }
+              const m = metricsByPostId.get(post.id) ?? { clicks: 0, fb: 0, x: 0, telegram: 0, whatsapp: 0, native: 0 }
               return (
               <tr key={post.id} className="border-b border-[var(--border)] last:border-0 hover:bg-[#21262d]/50">
                 <td className="px-6 py-4 font-medium text-white max-w-xs truncate" title={post.title}>
@@ -107,7 +103,7 @@ export default async function AdminPostsPage() {
                   {post.published_at ? format(new Date(post.published_at), 'MMM d, yyyy') : 'N/A'}
                 </td>
                 <td className="px-6 py-4 font-semibold">
-                  <span className={m.clickSessions > 0 ? 'text-[#00cfff]' : 'text-white'}>{m.clickSessions}</span>
+                  <span className={m.clicks > 0 ? 'text-[#00cfff]' : 'text-white'}>{m.clicks}</span>
                 </td>
                 <td className="px-6 py-4 text-[12px]" style={{ fontFamily: 'var(--font-en)' }}>
                   <span className={m.fb > 0 ? 'text-[#00cfff] font-bold' : 'text-[var(--text-secondary)]'}>FB {m.fb}</span>

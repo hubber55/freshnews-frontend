@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import './globals.css';
 import AuthHashHandler from './components/AuthHashHandler';
 import SlowNetworkBanner from './components/SlowNetworkBanner';
+import BottomNav from './components/BottomNav';
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://freshnews.top'),
@@ -74,6 +75,9 @@ export default function RootLayout({
         <meta name="theme-color" content="#ffd42a" />
         <meta name="monetag" content="efbbd56f8d306f8f6c34678415ffa024" />
         
+        {/* BidVertiser site verification */}
+        <noscript dangerouslySetInnerHTML={{ __html: '<!-- Bidvertiser2104551 -->' }} />
+        
         {/* Preload critical resources */}
         <link rel="preload" href="/logos/freshnews_header.png" as="image" type="image/png" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -103,10 +107,11 @@ export default function RootLayout({
           }}
         />
       </head>
-      <body>
+      <body className="pb-14 md:pb-0">
         <AuthHashHandler />
         <SlowNetworkBanner />
         {children}
+        <BottomNav />
       </body>
     </html>
   );

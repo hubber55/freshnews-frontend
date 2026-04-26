@@ -1,60 +1,180 @@
+'use client';
+
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { FileText, Tag, Settings, HelpCircle, Clock } from 'lucide-react';
+import { 
+  FileText, Tag, Settings, HelpCircle, 
+  Clock, Users, Megaphone, Calendar, 
+  ChevronRight, AlertCircle, TrendingUp 
+} from 'lucide-react';
 
 export default function AdminDashboardPage() {
+  const [stats, setStats] = useState({
+    pendingSubmissions: 0,
+    endingPosts: 0,
+    totalUsers: 0
+  });
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetch('/api/admin/stats')
+      .then(res => res.json())
+      .then(data => {
+        setStats(data);
+        setLoading(false);
+      })
+      .catch(err => console.error('Error fetching stats:', err));
+  }, []);
+
+  const adminModules = [
+    {
+      title: 'Pending Submissions',
+      desc: 'Review and approve user news/ads.',
+      href: '/admin/pending',
+      icon: Clock,
+      color: '#ffd42a',
+      count: stats.pendingSubmissions,
+      urgent: stats.pendingSubmissions > 0
+    },
+    {
+      title: 'Manage Classifieds',
+      desc: 'View and manage all active classified ads.',
+      href: '/admin/classifieds',
+      icon: Megaphone,
+      color: '#00cfff',
+      count: 0, // Will implement later
+      urgent: false
+    },
+    {
+      title: 'Manage Events',
+      desc: 'Manage upcoming events and gatherings.',
+      href: '/admin/events',
+      icon: Calendar,
+      color: '#90ee90',
+      count: 0,
+      urgent: false
+    },
+    {
+      title: 'Registered Users',
+      desc: 'User activity and submission stats.',
+      href: '/admin/users',
+      icon: Users,
+      color: '#ff90e8',
+      count: stats.totalUsers,
+      urgent: false
+    },
+    {
+      title: 'All Posts',
+      desc: 'Manage currently published content.',
+      href: '/admin/posts',
+      icon: FileText,
+      color: '#ffffff',
+      count: 0,
+      urgent: false
+    },
+    {
+      title: 'Content Hierarchy',
+      desc: 'Categories and Sub-branches.',
+      href: '/admin/categories',
+      icon: Tag,
+      color: '#90ee90',
+      count: 0,
+      urgent: false
+    },
+    {
+      title: 'Manage FAQs',
+      desc: 'Add or edit help documentation.',
+      href: '/admin/faq',
+      icon: HelpCircle,
+      color: '#00cfff',
+      count: 0,
+      urgent: false
+    },
+    {
+      title: 'System Settings',
+      desc: 'Notification and business rules.',
+      href: '/admin/settings',
+      icon: Settings,
+      color: 'var(--text-secondary)',
+      count: 0,
+      urgent: false
+    }
+  ];
+
   return (
-    <div className="p-8">
-      <h1 className="text-2xl font-bold text-white mb-6">Admin Dashboard</h1>
+    <div className="p-8 max-w-7xl mx-auto">
+      <div className="mb-10 flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-extrabold text-white mb-2">Admin Dashboard</h1>
+          <p className="text-[var(--text-muted)]">Welcome back. Here is what is happening across FreshNews.</p>
+        </div>
+        <div className="px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[10px] font-mono text-[var(--text-muted)] uppercase tracking-widest">
+          Ver: 1.3.2
+        </div>
+      </div>
+
+      {/* QUICK STATS */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
+        <div className="p-6 rounded-2xl bg-[#ffd42a]/5 border border-[#ffd42a]/20 flex items-center justify-between">
+          <div>
+            <p className="text-sm font-bold text-[#ffd42a]/70 uppercase mb-1">Pending Approval</p>
+            <h3 className="text-3xl font-black text-white">{loading ? '...' : stats.pendingSubmissions}</h3>
+          </div>
+          <div className="p-3 rounded-xl bg-[#ffd42a]/10">
+            <Clock className="text-[#ffd42a]" size={28} />
+          </div>
+        </div>
+
+        <div className="p-6 rounded-2xl bg-red-500/5 border border-red-500/20 flex items-center justify-between">
+          <div>
+            <p className="text-sm font-bold text-red-500/70 uppercase mb-1">Ending Soon</p>
+            <h3 className="text-3xl font-black text-white">{loading ? '...' : stats.endingPosts}</h3>
+          </div>
+          <div className="p-3 rounded-xl bg-red-500/10">
+            <AlertCircle className="text-red-500" size={28} />
+          </div>
+        </div>
+      </div>
+
+      <div className="mb-6 flex items-center gap-2">
+        <TrendingUp size={20} className="text-[#00cfff]" />
+        <h2 className="text-xl font-bold text-white uppercase tracking-wider text-sm">Control Center</h2>
+      </div>
+
+      {/* MODULES GRID */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <Link href="/admin/pending" className="block p-6 rounded-xl bg-[var(--bg-card)] border border-[var(--border)] hover:border-[#ffd42a]/50 transition-all">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="p-2 rounded-lg bg-[#ffd42a]/10">
-              <Clock size={24} className="text-[#ffd42a]" />
+        {adminModules.map((mod) => (
+          <Link 
+            key={mod.title} 
+            href={mod.href}
+            className={`group relative p-6 rounded-2xl bg-[var(--bg-card)] border border-[var(--border)] hover:border-white/30 transition-all active:scale-[0.98]`}
+          >
+            <div className="flex items-start justify-between mb-4">
+              <div className="p-3 rounded-xl" style={{ backgroundColor: `${mod.color}15` }}>
+                <mod.icon size={28} style={{ color: mod.color }} />
+              </div>
+              <ChevronRight className="text-[var(--text-muted)] group-hover:text-white transition-colors" size={20} />
             </div>
-            <h2 className="text-xl font-bold text-white">Pending Posts</h2>
-          </div>
-          <p className="text-[var(--text-muted)]">Review, edit and approve user submissions.</p>
-        </Link>
-        
-        <Link href="/admin/posts" className="block p-6 rounded-xl bg-[var(--bg-card)] border border-[var(--border)] hover:border-[#90ee90]/50 transition-all">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="p-2 rounded-lg bg-[#90ee90]/10">
-              <FileText size={24} className="text-[#90ee90]" />
+            
+            <div className="relative">
+              <h3 className="text-xl font-bold text-white mb-1 flex items-center gap-2">
+                {mod.title}
+                {mod.urgent && (
+                  <span className="flex h-2 w-2 rounded-full bg-red-500 animate-pulse" />
+                )}
+              </h3>
+              <p className="text-[var(--text-muted)] text-sm leading-relaxed">
+                {mod.desc}
+              </p>
             </div>
-            <h2 className="text-xl font-bold text-white">All Posts</h2>
-          </div>
-          <p className="text-[var(--text-muted)]">View and manage all published posts.</p>
-        </Link>
-        
-        <Link href="/admin/categories" className="block p-6 rounded-xl bg-[var(--bg-card)] border border-[var(--border)] hover:border-[#90ee90]/50 transition-all">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="p-2 rounded-lg bg-[#90ee90]/10">
-              <Tag size={24} className="text-[#90ee90]" />
-            </div>
-            <h2 className="text-xl font-bold text-white">Manage Categories</h2>
-          </div>
-          <p className="text-[var(--text-muted)]">Add, edit, and delete submission categories.</p>
-        </Link>
-        
-        <Link href="/admin/faq" className="block p-6 rounded-xl bg-[var(--bg-card)] border border-[var(--border)] hover:border-[#00cfff]/50 transition-all">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="p-2 rounded-lg bg-[#00cfff]/10">
-              <HelpCircle size={24} className="text-[#00cfff]" />
-            </div>
-            <h2 className="text-xl font-bold text-white">Manage FAQs</h2>
-          </div>
-          <p className="text-[var(--text-muted)]">Add, edit, and delete FAQ entries.</p>
-        </Link>
-        
-        <Link href="/admin/settings" className="block p-6 rounded-xl bg-[var(--bg-card)] border border-[var(--border)] hover:border-[var(--text-secondary)]/50 transition-all">
-          <div className="flex items-center gap-3 mb-3">
-            <div className="p-2 rounded-lg bg-[var(--text-secondary)]/10">
-              <Settings size={24} className="text-[var(--text-secondary)]" />
-            </div>
-            <h2 className="text-xl font-bold text-white">Settings</h2>
-          </div>
-          <p className="text-[var(--text-muted)]">Configure admin settings, like the notification number.</p>
-        </Link>
+
+            {mod.count > 0 && (
+              <div className="absolute top-6 right-12 px-2 py-0.5 rounded bg-white/10 text-[10px] font-bold text-white uppercase tracking-widest">
+                {mod.count} Active
+              </div>
+            )}
+          </Link>
+        ))}
       </div>
     </div>
   );

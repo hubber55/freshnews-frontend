@@ -86,7 +86,7 @@ function SubmitContent() {
   
   // Get type from query param or default to 'news'
   const typeParam = searchParams.get('type');
-  const [type, setType] = useState(typeParam === 'classified' ? 'news' : (typeParam || 'news')); // news, ad, event
+  const [type, setType] = useState(typeParam || 'news'); // news, ad, event, classified
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
   const [tags, setTags] = useState<string[]>([]);
@@ -264,12 +264,50 @@ function SubmitContent() {
                 className="w-full rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-4 py-3 text-white focus:border-[#00cfff] focus:outline-none focus:ring-1 focus:ring-[#00cfff]"
               >
                 <option value="news">News</option>
+                <option value="event">Event</option>
+                <option value="classified">Classifieds</option>
                 <option value="ad">Main Ad</option>
               </select>
             </div>
 
+            {(type === 'ad' || type === 'classified') && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="mb-2 block text-sm font-bold text-[var(--text-secondary)]">Main Category</label>
+                  <select
+                    value={selectedCategory}
+                    onChange={(e) => setSelectedCategory(e.target.value)}
+                    required
+                    className="w-full rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-4 py-3 text-white focus:border-[#00cfff] focus:outline-none focus:ring-1 focus:ring-[#00cfff]"
+                  >
+                    <option value="">Select Category</option>
+                    {categories.map((cat) => (
+                      <option key={cat.id} value={cat.id}>{cat.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="mb-2 block text-sm font-bold text-[var(--text-secondary)]">Sub Category</label>
+                  <select
+                    value={selectedSubcategory}
+                    onChange={(e) => setSelectedSubcategory(e.target.value)}
+                    required
+                    disabled={!selectedCategory}
+                    className="w-full rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-4 py-3 text-white focus:border-[#00cfff] focus:outline-none focus:ring-1 focus:ring-[#00cfff] disabled:opacity-50"
+                  >
+                    <option value="">Select Subcategory</option>
+                    {filteredSubcategories.map((sub) => (
+                      <option key={sub.id} value={sub.id}>{sub.name}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            )}
+
             <div>
-              <label className="mb-2 block text-sm font-bold text-[var(--text-secondary)]">Title (max 70 chars)</label>
+              <label className="mb-2 block text-sm font-bold text-[var(--text-secondary)]">
+                Title (English or Malayalam - max 70 chars)
+              </label>
               <input
                 value={title}
                 onChange={(e) => setTitle(e.target.value.slice(0, 70))}
@@ -278,7 +316,9 @@ function SubmitContent() {
             </div>
 
             <div>
-              <label className="mb-2 block text-sm font-bold text-[var(--text-secondary)]">Content (Max 800 words)</label>
+              <label className="mb-2 block text-sm font-bold text-[var(--text-secondary)]">
+                Content (English or Malayalam - Max 800 words)
+              </label>
               <textarea
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
@@ -330,8 +370,31 @@ function SubmitContent() {
               />
             </div>
 
+            {(type === 'ad' || type === 'classified') && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="mb-2 block text-sm font-bold text-[var(--text-secondary)]">External URL (optional)</label>
+                  <input
+                    value={externalUrl}
+                    onChange={(e) => setExternalUrl(e.target.value)}
+                    placeholder="https://example.com"
+                    className="w-full rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-4 py-3 text-white focus:border-[#00cfff] focus:outline-none focus:ring-1 focus:ring-[#00cfff]"
+                  />
+                </div>
+                <div>
+                  <label className="mb-2 block text-sm font-bold text-[var(--text-secondary)]">Link Text</label>
+                  <input
+                    value={hyperlinkText}
+                    onChange={(e) => setHyperlinkText(e.target.value)}
+                    placeholder="Visit us"
+                    className="w-full rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-4 py-3 text-white focus:border-[#00cfff] focus:outline-none focus:ring-1 focus:ring-[#00cfff]"
+                  />
+                </div>
+              </div>
+            )}
+
             <div>
-              <label className="mb-2 block text-sm font-bold text-[var(--text-secondary)]">Image</label>
+              <label className="mb-2 block text-sm font-bold text-[var(--text-secondary)]">Featured Image</label>
               <input
                 type="file"
                 onChange={async (e) => {

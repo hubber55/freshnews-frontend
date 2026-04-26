@@ -114,6 +114,7 @@ export default function ReviewSubmissionPage() {
       if (!id) throw new Error('Missing submission ID');
       await deleteSubmission(id);
       alert('Submission deleted successfully.');
+      router.refresh();
       router.push('/admin/pending');
     } catch (err: any) {
       alert('Error: ' + err.message);

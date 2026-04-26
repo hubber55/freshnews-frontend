@@ -20,22 +20,30 @@ export default function AdminFAQPage() {
   const [message, setMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    // Fetch FAQs from API
-    fetch('/api/admin/faqs')
-      .then(res => res.json())
-      .then(data => {
-        if (data.faqs) {
-          setFaqs(data.faqs);
-        } else {
-          // Fallback to empty array if no data
+    async function fetchFaqs() {
+      const { createClient } = await import('@/app/utils/supabase/client');
+      const supabase = createClient();
+      
+      const { data, error } = await supabase
+        .from('admin_settings')
+        .select('value')
+        .eq('key', 'site_faqs')
+        .single();
+        
+      if (!error && data?.value) {
+        try {
+          const parsed = JSON.parse(data.value);
+          setFaqs(parsed);
+        } catch (e) {
           setFaqs([]);
         }
-        setIsLoading(false);
-      })
-      .catch(() => {
+      } else {
         setFaqs([]);
-        setIsLoading(false);
-      });
+      }
+      setIsLoading(false);
+    }
+    
+    fetchFaqs();
   }, []);
 
   const handleAddNew = () => {
@@ -94,20 +102,20 @@ export default function AdminFAQPage() {
     setMessage(null);
 
     try {
-      const res = await fetch('/api/admin/faqs', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ faqs }),
-      });
+      const { createClient } = await import('@/app/utils/supabase/client');
+      const supabase = createClient();
+      
+      const { error } = await supabase
+        .from('admin_settings')
+        .upsert({ key: 'site_faqs', value: JSON.stringify(faqs) }, { onConflict: 'key' });
 
-      const data = await res.json();
-      if (data.ok) {
+      if (!error) {
         setMessage('FAQs saved successfully!');
       } else {
-        setMessage(data.error || 'Failed to save FAQs');
+        setMessage('Failed to save FAQs: ' + error.message);
       }
-    } catch (err) {
-      setMessage('Failed to save FAQs');
+    } catch (err: any) {
+      setMessage('Failed to save FAQs: ' + err.message);
     }
 
     setIsSaving(false);

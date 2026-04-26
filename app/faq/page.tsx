@@ -51,12 +51,35 @@ export default function FAQPage() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // In production, fetch from API
-    // fetch('/api/faqs').then(...)
+    async function fetchFaqs() {
+      const { createClient } = await import('@/app/utils/supabase/client');
+      const supabase = createClient();
+      
+      const { data, error } = await supabase
+        .from('admin_settings')
+        .select('value')
+        .eq('key', 'site_faqs')
+        .single();
+        
+      if (!error && data?.value) {
+        try {
+          const parsed = JSON.parse(data.value);
+          if (parsed && parsed.length > 0) {
+            setFaqs(parsed);
+            setIsLoading(false);
+            return;
+          }
+        } catch (e) {
+          console.error(e);
+        }
+      }
+      
+      // Fallback to dummy data if not configured
+      setFaqs(DUMMY_FAQS);
+      setIsLoading(false);
+    }
     
-    // For now, use dummy data
-    setFaqs(DUMMY_FAQS);
-    setIsLoading(false);
+    fetchFaqs();
   }, []);
 
   const toggleFAQ = (id: number) => {
@@ -67,7 +90,7 @@ export default function FAQPage() {
     <div className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)]">
       <Header />
       
-      <main className="px-4 pt-20 pb-10">
+      <main className="px-4 pt-8 pb-10">
         <div className="mx-auto w-full max-w-[800px]">
           {/* Header */}
           <div className="text-center mb-10">

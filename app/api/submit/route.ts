@@ -63,6 +63,45 @@ export async function POST(req: Request) {
     const { data: urlData } = supabase.storage.from('submissions').getPublicUrl(uploadData.path);
     finalImageUrl = urlData.publicUrl;
 
+    // --- Expiry and Limits for Classifieds ---
+    let expiresAt: string | null = null;
+    if (type === 'classified') {
+      // 1. Fetch parameters from admin_settings
+      const { data: settings } = await supabase
+        .from('admin_settings')
+        .select('key, value')
+        .in('key', ['classified_expiry_days', 'classified_limit_per_month']);
+      
+      const expiryDays = parseInt(settings?.find(s => s.key === 'classified_expiry_days')?.value || '30');
+      const monthlyLimit = parseInt(settings?.find(s => s.key === 'classified_limit_per_month')?.value || '2');
+
+      // 2. Check monthly limit for this category
+      if (categoryId) {
+        const startOfMonth = new Date();
+        startOfMonth.setDate(1);
+        startOfMonth.setHours(0, 0, 0, 0);
+
+        const { count: existingAds } = await supabase
+          .from('submissions')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', user.id)
+          .eq('type', 'classified')
+          .eq('category_id', parseInt(categoryId))
+          .gte('created_at', startOfMonth.toISOString());
+
+        if ((existingAds || 0) >= monthlyLimit) {
+          return NextResponse.json({ 
+            error: `You have reached the monthly limit of ${monthlyLimit} ads for this category.` 
+          }, { status: 429 });
+        }
+      }
+
+      // 3. Set expiry date
+      const expiryDate = new Date();
+      expiryDate.setDate(expiryDate.getDate() + expiryDays);
+      expiresAt = expiryDate.toISOString();
+    }
+
     // --- Database Insertion ---
     const { data: submissionData, error: submissionError } = await supabase
       .from('submissions')
@@ -79,6 +118,7 @@ export async function POST(req: Request) {
         hyperlink_text: hyperlinkText,
         is_premium: isPremium,
         status: 'pending',
+        expires_at: expiresAt,
       })
       .select()
       .single();
@@ -138,7 +178,7 @@ export async function POST(req: Request) {
     }
 
     // --- WhatsApp Notifications ---
-    const userMessage = `Your ${type} submission "${title}" has been received and will be published after admin approval.`;
+    const userMessage = `Your ${type} submission "${title}" has been received and will be published after Admin Approval.`;
     await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/send-whatsapp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
