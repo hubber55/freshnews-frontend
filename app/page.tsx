@@ -15,6 +15,48 @@ import { createAdminClient } from '@/lib/supabase-admin';
 
 export const revalidate = 120; // Revalidate every 2 minutes
 
+type HeaderInsert = {
+  enabled?: boolean;
+  placement?: 'head' | 'body';
+  scope?: 'all' | 'home';
+  code?: string;
+};
+
+type AdNetwork = {
+  enabled?: boolean;
+  code?: string;
+};
+
+function safeParseHeaderInserts(value: unknown): HeaderInsert[] {
+  if (typeof value !== 'string') return [];
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) ? (parsed as HeaderInsert[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+function safeParseAdNetworks(value: unknown): AdNetwork[] {
+  if (typeof value !== 'string') return [];
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) ? (parsed as AdNetwork[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+function pickAdCode(options: { adNetworksJson: unknown; randomEnabled: boolean; legacyAdsterra: string }) {
+  const networks = safeParseAdNetworks(options.adNetworksJson)
+    .filter((n) => (n?.enabled ?? true) && typeof n?.code === 'string' && n.code.trim())
+    .map((n) => n.code!.trim());
+
+  if (networks.length === 0) return options.legacyAdsterra;
+  if (!options.randomEnabled) return networks[0];
+  return networks[Math.floor(Math.random() * networks.length)];
+}
+
 type HomeProps = {
   searchParams: Promise<{ tag?: string; page?: string }>;
 };
@@ -49,10 +91,22 @@ export default async function Home({ searchParams }: HomeProps) {
   const { data: adSettings } = await adminSupabase
     .from('admin_settings')
     .select('key, value')
-    .in('key', ['adsterra_code']);
+    .in('key', ['adsterra_code', 'header_inserts', 'ad_networks', 'ad_networks_random']);
 
   const adSettingsMap = new Map((adSettings ?? []).map((setting) => [setting.key, setting.value]));
-  const adCode = typeof adSettingsMap.get('adsterra_code') === 'string' ? adSettingsMap.get('adsterra_code')!.trim() : '';
+  const legacyAdsterra = typeof adSettingsMap.get('adsterra_code') === 'string' ? adSettingsMap.get('adsterra_code')!.trim() : '';
+  const randomAdsEnabled = String(adSettingsMap.get('ad_networks_random') ?? '').toLowerCase() === 'true';
+  const adCode = pickAdCode({
+    adNetworksJson: adSettingsMap.get('ad_networks'),
+    randomEnabled: randomAdsEnabled,
+    legacyAdsterra,
+  });
+  const headerInserts = safeParseHeaderInserts(adSettingsMap.get('header_inserts'));
+
+  const homepageHeaderHtml = headerInserts
+    .filter((ins) => (ins?.enabled ?? true) && (ins?.scope ?? 'all') === 'home' && typeof ins?.code === 'string' && ins.code.trim())
+    .map((ins) => ins.code!.trim())
+    .join('\n');
 
   const eligiblePostsAll = (posts ?? []).filter((post) => hasMinimumWords(post.summary, 70));
   const eligiblePosts = eligiblePostsAll.slice(0, pageSize);
@@ -89,7 +143,9 @@ export default async function Home({ searchParams }: HomeProps) {
     <div className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)]">
       <HomeRefreshRedirect page={page} activeTag={activeTag} />
       <Header titleColorClass="text-white" />
-
+      {homepageHeaderHtml ? (
+        <div aria-hidden="true" className="hidden" dangerouslySetInnerHTML={{ __html: homepageHeaderHtml }} />
+      ) : null}
 
       <main className="pb-4">
         {/* SECTION HEADER */}

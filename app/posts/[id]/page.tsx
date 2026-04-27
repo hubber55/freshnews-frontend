@@ -15,6 +15,31 @@ import PostTracker from '../../components/PostTracker';
 import NetworkAd from '../../components/NetworkAd';
 import { createAdminClient } from '../../../lib/supabase-admin';
 
+type AdNetwork = {
+  enabled?: boolean;
+  code?: string;
+};
+
+function safeParseAdNetworks(value: unknown): AdNetwork[] {
+  if (typeof value !== 'string') return [];
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) ? (parsed as AdNetwork[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+function pickAdCode(options: { adNetworksJson: unknown; randomEnabled: boolean; legacyAdsterra: string }) {
+  const networks = safeParseAdNetworks(options.adNetworksJson)
+    .filter((n) => (n?.enabled ?? true) && typeof n?.code === 'string' && n.code.trim())
+    .map((n) => n.code!.trim());
+
+  if (networks.length === 0) return options.legacyAdsterra;
+  if (!options.randomEnabled) return networks[0];
+  return networks[Math.floor(Math.random() * networks.length)];
+}
+
 
 type PageProps = {
   params: Promise<{
@@ -141,10 +166,17 @@ export default async function PostPage({ params }: PageProps) {
   const adminSupabase = createAdminClient();
   const { data: adSettings } = await adminSupabase
     .from('admin_settings')
-    .select('value')
-    .eq('key', 'adsterra_code')
-    .single();
-  const adCode = typeof adSettings?.value === 'string' ? adSettings.value.trim() : '';
+    .select('key, value')
+    .in('key', ['adsterra_code', 'ad_networks', 'ad_networks_random']);
+
+  const adSettingsMap = new Map((adSettings ?? []).map((s) => [s.key, s.value]));
+  const legacyAdsterra = typeof adSettingsMap.get('adsterra_code') === 'string' ? adSettingsMap.get('adsterra_code')!.trim() : '';
+  const randomAdsEnabled = String(adSettingsMap.get('ad_networks_random') ?? '').toLowerCase() === 'true';
+  const adCode = pickAdCode({
+    adNetworksJson: adSettingsMap.get('ad_networks'),
+    randomEnabled: randomAdsEnabled,
+    legacyAdsterra,
+  });
 
   return (
     <div className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)]">
