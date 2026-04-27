@@ -77,17 +77,21 @@ function isMountTargetAd(code: string): boolean {
 function AdSlot({ code }: { code: string }) {
   if (!code) return null;
 
-  if (isMountTargetAd(code)) {
-    // Render directly — the div will be in the initial HTML before any JS runs.
-    return (
-      <div className="my-8 flex justify-center overflow-hidden min-h-[250px] w-full">
+  return (
+    <div className="relative my-8 w-full rounded-lg overflow-hidden min-h-[250px]" style={{ border: '2px solid #ff00ff' }}>
+      <span
+        className="absolute top-1 right-2 z-10 text-[9px] font-semibold leading-none"
+        style={{ color: '#ff00ff', fontFamily: 'var(--font-en)' }}
+      >
+        Ad
+      </span>
+      {isMountTargetAd(code) ? (
         <div className="w-full" dangerouslySetInnerHTML={{ __html: code }} />
-      </div>
-    );
-  }
-
-  // Fallback: use iframe-based client component for self-contained ad snippets.
-  return <NetworkAd code={code} />;
+      ) : (
+        <NetworkAd code={code} />
+      )}
+    </div>
+  );
 }
 
 type HomeProps = {
@@ -246,8 +250,9 @@ export default async function Home({ searchParams }: HomeProps) {
           <div className="mt-6 space-y-7">
             {remainingPosts.map((post, index) => {
               const totalPosition = (page === 1 ? index + 2 : (page - 1) * pageSize + index + 1);
-              // Show ad after the 2nd post, then every 10 posts after that.
-              const showAdAfter = totalPosition === 2 || (totalPosition > 2 && (totalPosition - 2) % 10 === 0);
+              // Show ad after positions 2, 12, 22 (every 10), then every 20 posts after the 3rd ad.
+              const showAdAfter = totalPosition === 2 || totalPosition === 12 || totalPosition === 22
+                || (totalPosition > 22 && (totalPosition - 22) % 20 === 0);
               
               return (
                 <div key={post.id} className="space-y-7">

@@ -126,7 +126,7 @@ export default function NetworkAd({ code }: NetworkAdProps) {
   if (!code) return null;
 
   return (
-    <div ref={wrapperRef} className="my-8 flex justify-center overflow-hidden min-h-[250px] w-full">
+    <div ref={wrapperRef} className="flex justify-center overflow-hidden min-h-[250px] w-full">
       {useDirect ? (
         <div ref={directRef} className="w-full max-w-full min-h-[250px]" />
       ) : (

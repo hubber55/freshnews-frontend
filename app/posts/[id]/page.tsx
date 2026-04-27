@@ -47,14 +47,21 @@ function isMountTargetAd(code: string): boolean {
 
 function AdSlot({ code }: { code: string }) {
   if (!code) return null;
-  if (isMountTargetAd(code)) {
-    return (
-      <div className="my-8 flex justify-center overflow-hidden min-h-[250px] w-full">
+  return (
+    <div className="relative my-8 w-full rounded-lg overflow-hidden min-h-[250px]" style={{ border: '2px solid #ff00ff' }}>
+      <span
+        className="absolute top-1 right-2 z-10 text-[9px] font-semibold leading-none"
+        style={{ color: '#ff00ff', fontFamily: 'var(--font-en)' }}
+      >
+        Ad
+      </span>
+      {isMountTargetAd(code) ? (
         <div className="w-full" dangerouslySetInnerHTML={{ __html: code }} />
-      </div>
-    );
-  }
-  return <NetworkAd code={code} />;
+      ) : (
+        <NetworkAd code={code} />
+      )}
+    </div>
+  );
 }
 
 
