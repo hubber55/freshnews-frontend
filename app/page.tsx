@@ -57,6 +57,39 @@ function pickAdCode(options: { adNetworksJson: unknown; randomEnabled: boolean; 
   return networks[Math.floor(Math.random() * networks.length)];
 }
 
+/**
+ * Detects whether the ad code is a "mount target" pattern (e.g. mybid.io / bidvertiser).
+ * These ads place a `<div id="...">` in the page and a library script loaded in the <head>
+ * finds and populates them. They MUST be in the server-rendered HTML so the library script
+ * can find them on page load — rendering them via a client component is too late.
+ */
+function isMountTargetAd(code: string): boolean {
+  const trimmed = code.trim();
+  // Match patterns like <div id="2028306"></div> (with possible whitespace/attrs)
+  return /^\s*<div[^>]+id\s*=\s*["'][^"']+["'][^>]*>\s*<\/div>\s*$/i.test(trimmed);
+}
+
+/**
+ * Server-rendered ad slot. For mount-target ads (mybid.io), renders the div directly
+ * in the initial HTML so the head-loaded library script can find it.
+ * For other ad types (Adsterra etc.), uses the client-side NetworkAd iframe component.
+ */
+function AdSlot({ code }: { code: string }) {
+  if (!code) return null;
+
+  if (isMountTargetAd(code)) {
+    // Render directly — the div will be in the initial HTML before any JS runs.
+    return (
+      <div className="my-8 flex justify-center overflow-hidden min-h-[250px] w-full">
+        <div className="w-full" dangerouslySetInnerHTML={{ __html: code }} />
+      </div>
+    );
+  }
+
+  // Fallback: use iframe-based client component for self-contained ad snippets.
+  return <NetworkAd code={code} />;
+}
+
 type HomeProps = {
   searchParams: Promise<{ tag?: string; page?: string }>;
 };
@@ -256,7 +289,7 @@ export default async function Home({ searchParams }: HomeProps) {
                       </div>
                     </TrackedLink>
                   </article>
-                  {showAdAfter && adCode && <NetworkAd code={adCode} />}
+                  {showAdAfter && adCode && <AdSlot code={adCode} />}
                 </div>
               );
             })}

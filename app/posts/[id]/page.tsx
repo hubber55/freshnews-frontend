@@ -40,6 +40,23 @@ function pickAdCode(options: { adNetworksJson: unknown; randomEnabled: boolean; 
   return networks[Math.floor(Math.random() * networks.length)];
 }
 
+function isMountTargetAd(code: string): boolean {
+  const trimmed = code.trim();
+  return /^\s*<div[^>]+id\s*=\s*["'][^"']+["'][^>]*>\s*<\/div>\s*$/i.test(trimmed);
+}
+
+function AdSlot({ code }: { code: string }) {
+  if (!code) return null;
+  if (isMountTargetAd(code)) {
+    return (
+      <div className="my-8 flex justify-center overflow-hidden min-h-[250px] w-full">
+        <div className="w-full" dangerouslySetInnerHTML={{ __html: code }} />
+      </div>
+    );
+  }
+  return <NetworkAd code={code} />;
+}
+
 
 type PageProps = {
   params: Promise<{
@@ -262,7 +279,7 @@ export default async function PostPage({ params }: PageProps) {
               <CommentsSection postId={post.id} />
             </div>
 
-            {adCode && <NetworkAd code={adCode} />}
+            {adCode && <AdSlot code={adCode} />}
             <div className="mt-20 text-center">
               <div className="h-8" /> {/* Line break 1 */}
               <div className="h-8" /> {/* Line break 2 */}
