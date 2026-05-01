@@ -210,7 +210,18 @@ export default async function RootLayout({
                 window.deferredInstallPrompt = e;
                 console.log('[PWA] Install prompt captured');
               });
-            `,
+
+              // Register Service Worker
+              if ('serviceWorker' in navigator) {
+                window.addEventListener('load', function() {
+                  navigator.serviceWorker.register('/sw.js').then(function(registration) {
+                    console.log('[PWA] ServiceWorker registered');
+                  }).catch(function(err) {
+                    console.log('[PWA] ServiceWorker registration failed: ', err);
+                  });
+                });
+              }
+            `
           }}
         />
       </head>
