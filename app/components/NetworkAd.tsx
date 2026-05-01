@@ -16,8 +16,8 @@ interface NetworkAdProps {
  * that looks like a numeric or short alphanumeric mount target.
  */
 function isMountTargetAd(code: string): boolean {
-  const trimmed = code.trim();
-  return /^\s*<div[^>]+id\s*=\s*["'][^"']+["'][^>]*>\s*<\/div>\s*$/i.test(trimmed);
+  // Match patterns like <div id="2028306"></div> — numeric / short IDs typical of mybid, mgid, etc.
+  return /\<div\s+id\s*=\s*["'][A-Za-z0-9_-]{3,20}["']\s*>\s*<\/div>/i.test(code);
 }
 
 export default function NetworkAd({ code }: NetworkAdProps) {
@@ -128,7 +128,7 @@ export default function NetworkAd({ code }: NetworkAdProps) {
   return (
     <div ref={wrapperRef} className="flex justify-center overflow-hidden min-h-[250px] w-full">
       {useDirect ? (
-        <div ref={directRef} className="w-full max-w-full min-h-[250px]" />
+        <div ref={directRef} className="w-full max-w-full min-h-[250px] bg-white text-black" />
       ) : (
         <iframe
           ref={iframeRef}
