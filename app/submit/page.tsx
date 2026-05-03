@@ -328,7 +328,9 @@ function SubmitContent() {
       router.push('/');
 
     } catch (error: unknown) {
-      setError(getErrorMessage(error, 'Submission failed'));
+      const msg = getErrorMessage(error, 'Submission failed');
+      setError(msg);
+      alert('Error: ' + msg);
     } finally {
       setIsSubmitting(false);
     }
@@ -552,6 +554,9 @@ function SubmitContent() {
                         if (picked.length === 0) return;
                         
                         const remaining = maxImages - imageFiles.length;
+                        if (picked.length > remaining) {
+                          alert(`Only ${maxImages} images allowed. Slicing selection to fit.`);
+                        }
                         const toProcess = picked.slice(0, remaining);
                         
                         try {

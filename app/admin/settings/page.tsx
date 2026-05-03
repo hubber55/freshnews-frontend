@@ -75,7 +75,8 @@ export default function AdminSettingsPage() {
     discount_per_5_days: '5',
     max_discount: '30',
     max_upload_images: '5',
-    ad_limit_per_month: '5'
+    ad_limit_per_month: '5',
+    classified_limit_per_month: '2'
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<string | null>(null);
@@ -216,6 +217,7 @@ export default function AdminSettingsPage() {
         { key: 'classified_expiry_days', label: 'Classified Expiry (Days)', placeholder: '30' },
         { key: 'max_upload_images', label: 'Max Images Per Submission', placeholder: '5' },
         { key: 'ad_limit_per_month', label: 'Ad Limit Per Month', placeholder: '5' },
+        { key: 'classified_limit_per_month', label: 'Classified Limit Per Month', placeholder: '2' },
       ]
     },
     {
