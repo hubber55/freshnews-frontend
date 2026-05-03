@@ -1,0 +1,59 @@
+'use client';
+
+import { useEffect } from 'react';
+import { createClient } from '@/app/utils/supabase/client';
+
+function parseHashParams(hash: string) {
+  const raw = (hash || '').replace(/^#/, '');
+  const params = new URLSearchParams(raw);
+  return {
+    access_token: params.get('access_token'),
+    refresh_token: params.get('refresh_token'),
+    type: params.get('type'),
+  };
+}
+
+export default function AuthCallbackPage() {
+  useEffect(() => {
+    const run = async () => {
+      const supabase = createClient();
+
+      try {
+        const { access_token, refresh_token } = parseHashParams(window.location.hash);
+
+        // Most recovery/magic links land with tokens in the hash fragment.
+        if (access_token && refresh_token) {
+          await supabase.auth.setSession({ access_token, refresh_token });
+        }
+      } catch {
+        // ignore
+      }
+
+      try {
+        const { data } = await supabase.auth.getUser();
+        if (data?.user) {
+          const params = new URLSearchParams(window.location.search);
+          const next = params.get('next') || '/admin/posts';
+          window.location.replace(next);
+          return;
+        }
+      } catch {
+        // ignore
+      }
+
+      // If we couldn't establish a session, send them to login explicitly.
+      window.location.replace('/admin/login');
+    };
+
+    run();
+  }, []);
+
+  return (
+    <main className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)] flex items-center justify-center p-6">
+      <div className="text-center">
+        <div className="text-lg font-bold" style={{ fontFamily: 'var(--font-en)' }}>Signing you in…</div>
+        <div className="mt-2 text-sm text-[var(--text-muted)]">Please wait.</div>
+      </div>
+    </main>
+  );
+}

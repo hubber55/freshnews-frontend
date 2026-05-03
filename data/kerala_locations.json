@@ -1,0 +1,59 @@
+{
+  "Thiruvananthapuram": [
+    "Thiruvananthapuram City", "Neyyattinkara", "Attingal", "Nedumangad", 
+    "Varkala", "Kattakkada", "Kilimanoor", "Kazhakootam", "Kovalam", "Venjarammoodu"
+  ],
+  "Kollam": [
+    "Kollam City", "Karunagappally", "Punalur", "Kottarakkara", 
+    "Paravur", "Pathanapuram", "Sasthamcotta", "Chathannoor", "Oachira"
+  ],
+  "Pathanamthitta": [
+    "Pathanamthitta Town", "Thiruvalla", "Adoor", "Pandalam", 
+    "Mallappally", "Ranni", "Kozhencherry", "Konni"
+  ],
+  "Alappuzha": [
+    "Alappuzha City", "Chengannur", "Kayamkulam", "Cherthala", 
+    "Mavelikkara", "Harippad", "Ambalappuzha", "Edathua"
+  ],
+  "Kottayam": [
+    "Kottayam Town", "Changanassery", "Pala", "Ettumanoor", 
+    "Kanjirappally", "Vaikom", "Erattupetta", "Ponkunnam", "Pampady"
+  ],
+  "Idukki": [
+    "Thodupuzha", "Munnar", "Kumily", "Kattappana", 
+    "Nedumkandam", "Peermade", "Adimali", "Painavu", "Vandiperiyar"
+  ],
+  "Ernakulam": [
+    "Kochi", "Ernakulam City", "Aluva", "Angamaly", "Perumbavoor", 
+    "Muvattupuzha", "Kothamangalam", "Kakkanad", "Tripunithura", 
+    "Paravur (North)", "Kalamassery", "Piravom", "Vyttila", "Edappally"
+  ],
+  "Thrissur": [
+    "Thrissur City", "Chalakudy", "Irinjalakuda", "Guruvayur", 
+    "Kodungallur", "Kunnamkulam", "Wadakkanchery", "Pudukkad", "Chavakkad", "Mala"
+  ],
+  "Palakkad": [
+    "Palakkad City", "Ottapalam", "Shornur", "Mannarkkad", 
+    "Pattambi", "Cherpulassery", "Alathur", "Chittur", "Vadakkencherry"
+  ],
+  "Malappuram": [
+    "Malappuram City", "Manjeri", "Tirur", "Perinthalmanna", "Ponnani", 
+    "Nilambur", "Kondotty", "Kottakkal", "Tirurangadi", "Edappal", "Valanchery"
+  ],
+  "Kozhikode": [
+    "Kozhikode City", "Vadakara", "Koyilandy", "Ramanattukara", 
+    "Feroke", "Thamarassery", "Mukkom", "Koduvally", "Balussery", "Nadapuram"
+  ],
+  "Wayanad": [
+    "Kalpetta", "Sulthan Bathery", "Mananthavady", "Meenangadi", 
+    "Panamaram", "Vythiri", "Pulpally"
+  ],
+  "Kannur": [
+    "Kannur City", "Thalassery", "Taliparamba", "Payyanur", "Mattannur", 
+    "Iritty", "Kuthuparamba", "Panoor", "Chakkarakkal", "Valapattanam"
+  ],
+  "Kasaragod": [
+    "Kasaragod Town", "Kanhangad", "Nileshwaram", "Uppala", 
+    "Trikaripur", "Cheruvathur", "Kumbla", "Manjeshwar", "Badiyadka"
+  ]
+}

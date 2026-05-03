@@ -1,0 +1,29 @@
+{
+  "name": "FreshNews.top - Malayalam News",
+  "short_name": "FreshNews",
+  "description": "Latest Malayalam News - Submit your News, Classifieds and Events for free",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0d1117",
+  "theme_color": "#ffd42a",
+  "orientation": "portrait",
+  "scope": "/",
+  "lang": "ml",
+  "icons": [
+    {
+      "src": "/logos/favicon_128.png?v=2",
+      "sizes": "128x128",
+      "type": "image/png"
+    },
+    {
+      "src": "/logos/favicon_256.png?v=2",
+      "sizes": "256x256",
+      "type": "image/png"
+    },
+    {
+      "src": "/logos/favicon_512.png?v=2",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

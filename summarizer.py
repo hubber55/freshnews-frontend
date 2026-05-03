@@ -18,25 +18,32 @@ from config import GROQ_API_KEY, GROQ_MODEL, MISTRAL_API_KEY, MISTRAL_MODEL
 
 logger = logging.getLogger(__name__)
 
-SUMMARIZE_PROMPT = """You are an expert Malayalam News Editor working for a digital newspaper.
-Your task is to rephrase the following news article into a detailed Malayalam article.
+SUMMARIZE_PROMPT = """You are an expert Malayalam News Editor.
+Your task is to REWRITE and SUMMARIZE the following news article. 
 
 Instructions:
-1. Rephrase the article in Malayalam. Target EXACTLY 100 to 150 words (Maximum 170). 
-2. EXTREMELY IMPORTANT: Create frequent paragraphs. You MUST start a new paragraph approximately every 30 to 50 words to ensure maximum readability. Every paragraph must be separated by exactly one blank line. 
-3. DO NOT include prefixes like "സമ്മറി:", "Summary:", or "കീവേർഡുകൾ:". Provide only the clean article text.
-4. You must extract exactly 3 keywords related to the article. THESE KEYWORDS MUST BE IN ENGLISH ONLY. Keywords can be 1 or 2 words if needed, but each MUST be strictly under 20 characters in length. Do NOT write keywords in Malayalam!
-5. Rewrite the wording to be concise and newspaper-like. Avoid overlong headlines and avoid repeating the title sentence inside the opening paragraph.
+1. REWRITE THE TITLE: Create a NEW, catchy, and SHORT title in Malayalam. It MUST be under 10 words. Summarize the core news into a concise headline.
+2. REWRITE THE CONTENT: Rephrase the article COMPLETELY in your own words in Malayalam. Do not copy sentences. Target 250 to 450 words. Write a professional newspaper article.
+3. LANGUAGE RULES: Use Malayalam script. English is ONLY allowed for proper nouns (names, places) or technical terms with no Malayalam equivalent.
+4. STRUCTURE: Use well-structured paragraphs. Start a new paragraph every 60-80 words.
+5. NO PREFIXES: Do not include "Summary:", "സമ്മറി:", etc.
+6. KEYWORDS: Extract 3 relevant English keywords (strictly English).
+7. FAQ: Generate 3 FAQ items (q and a) in Malayalam based on the news.
 
 You must reply with a valid JSON object in EXACTLY this format:
 {{
-  "summary": "Full Malayalam article text separated by \\n\\n for paragraphs. Do not use the word summary in the text.",
-  "keywords": ["Word1", "Word2", "Word3"]
+  "title": "Rewritten Malayalam Title",
+  "summary": "Full rewritten Malayalam article text with \\n\\n between paragraphs.",
+  "keywords": ["Word1", "Word2", "Word3"],
+  "faq": [
+    {{"q": "Question?", "a": "Answer."}},
+    {{"q": "Question?", "a": "Answer."}},
+    {{"q": "Question?", "a": "Answer."}}
+  ]
 }}
 
-Article Title: {title}
-
-Article Content: {description}
+Original Title: {title}
+Original Content: {description}
 """
 
 # ─── Provider Definitions ───
@@ -47,7 +54,7 @@ def _call_mistral(prompt):
         logger.debug("  ⏭️ Mistral: No API key configured, skipping.")
         return None
 
-    logger.info(f"  🤖 Trying PRIMARY: Mistral ({MISTRAL_MODEL})")
+    logger.info(f"  🤖 Using Mistral AI ({MISTRAL_MODEL})")
 
     headers = {
         "Authorization": f"Bearer {MISTRAL_API_KEY}",
@@ -56,12 +63,12 @@ def _call_mistral(prompt):
     payload = {
         "model": MISTRAL_MODEL,
         "messages": [
-            {"role": "system", "content": "You are a system that ONLY outputs standard, valid JSON."},
+            {"role": "system", "content": "You are a professional news editor. You only output valid JSON."},
             {"role": "user", "content": prompt}
         ],
         "response_format": {"type": "json_object"},
-        "max_tokens": 2500,
-        "temperature": 0.4
+        "max_tokens": 3500,
+        "temperature": 0.3 # Lower temperature for more consistent professional tone
     }
 
     for attempt in range(3):
@@ -70,116 +77,21 @@ def _call_mistral(prompt):
                 "https://api.mistral.ai/v1/chat/completions",
                 headers=headers,
                 json=payload,
-                timeout=60  # Mistral can be slower than Groq
-            )
-
-            # Handle rate limits
-            if response.status_code == 429:
-                try:
-                    err_data = response.json()
-                    err_msg = err_data.get("message", "") or str(err_data.get("error", ""))
-                    # Try to extract retry-after
-                    retry_after = response.headers.get("Retry-After", "")
-                    if retry_after:
-                        wait_t = float(retry_after) + 1.0
-                    else:
-                        match = re.search(r'(\d+\.?\d*)\s*s', err_msg)
-                        wait_t = float(match.group(1)) + 1.5 if match else 10.0
-                    logger.warning(f"  ⏳ Mistral rate limit hit. Waiting {wait_t:.1f}s (attempt {attempt+1}/3)...")
-                    time.sleep(wait_t)
-                    continue
-                except Exception:
-                    logger.warning(f"  ⏳ Mistral 429, waiting 10s (attempt {attempt+1}/3)...")
-                    time.sleep(10)
-                    continue
-
-            response.raise_for_status()
-            data = response.json()
-            content = data["choices"][0]["message"]["content"].strip()
-            return content
-
-        except requests.exceptions.HTTPError as e:
-            logger.warning(f"  ⚠️ Mistral HTTP error (attempt {attempt+1}/3): {e}")
-            if attempt < 2:
-                time.sleep(3)
-                continue
-            return None
-        except Exception as e:
-            logger.warning(f"  ⚠️ Mistral error (attempt {attempt+1}/3): {e}")
-            if attempt < 2:
-                time.sleep(3)
-                continue
-            return None
-
-    return None
-
-
-def _call_groq(prompt):
-    """Call Groq API (FALLBACK provider)."""
-    if not GROQ_API_KEY:
-        logger.debug("  ⏭️ Groq: No API key configured, skipping.")
-        return None
-
-    logger.info(f"  🤖 Trying FALLBACK: Groq ({GROQ_MODEL})")
-
-    headers = {
-        "Authorization": f"Bearer {GROQ_API_KEY}",
-        "Content-Type": "application/json"
-    }
-    payload = {
-        "model": GROQ_MODEL,
-        "messages": [
-            {"role": "system", "content": "You are a system that ONLY outputs standard, valid JSON."},
-            {"role": "user", "content": prompt}
-        ],
-        "response_format": {"type": "json_object"},
-        "max_tokens": 2500,
-        "temperature": 0.4
-    }
-
-    for attempt in range(3):
-        try:
-            response = requests.post(
-                "https://api.groq.com/openai/v1/chat/completions",
-                headers=headers,
-                json=payload,
-                timeout=40
+                timeout=60
             )
 
             if response.status_code == 429:
-                try:
-                    err_data = response.json()
-                    err_msg = err_data.get("error", {}).get("message", "")
-                    match = re.search(r'try again in ([\d\.]+)s', err_msg)
-                    if match:
-                        wait_t = float(match.group(1)) + 1.5
-                        logger.warning(f"  ⏳ Groq rate limit hit. Waiting {wait_t:.1f}s (attempt {attempt+1}/3)...")
-                        time.sleep(wait_t)
-                        continue
-                except Exception:
-                    pass
-                logger.warning(f"  ⏳ Groq 429, waiting 10s (attempt {attempt+1}/3)...")
+                logger.warning("  ⏳ Mistral rate limit hit. Waiting 10s...")
                 time.sleep(10)
                 continue
 
             response.raise_for_status()
             data = response.json()
-            content = data["choices"][0]["message"]["content"].strip()
-            return content
+            return data["choices"][0]["message"]["content"].strip()
 
-        except requests.exceptions.HTTPError as e:
-            logger.warning(f"  ⚠️ Groq HTTP error (attempt {attempt+1}/3): {e}")
-            if attempt < 2:
-                time.sleep(3)
-                continue
-            return None
         except Exception as e:
-            logger.warning(f"  ⚠️ Groq error (attempt {attempt+1}/3): {e}")
-            if attempt < 2:
-                time.sleep(3)
-                continue
-            return None
-
+            logger.warning(f"  ⚠️ Mistral error: {e}")
+            time.sleep(3)
     return None
 
 
@@ -187,15 +99,14 @@ def _call_groq(prompt):
 
 PROVIDERS = [
     ("Mistral", _call_mistral),
-    ("Groq", _call_groq),
+    # Groq fallback removed as per user request
 ]
 
 
 def summarize_article(article):
     """
-    Generate a Malayalam summary for a news article using multi-provider cascade.
-    Tries Mistral first (1B tokens/month), falls back to Groq (500K tokens/day).
-    Returns (summary_string, list_of_tags) or None if all providers fail.
+    Generate a Malayalam summary and rewritten title using Mistral AI.
+    Returns (rewritten_title, summary_string, list_of_tags, faq_list) or None.
     """
     title = article.get("title", "")
     description = article.get("description", "")
@@ -205,44 +116,33 @@ def summarize_article(article):
 
     prompt = SUMMARIZE_PROMPT.format(
         title=title,
-        description=description[:1500]  # Slightly more generous limit for Mistral's bigger context
+        description=description[:3000]
     )
 
-    # Try each provider in order
     for provider_name, provider_fn in PROVIDERS:
         content = provider_fn(prompt)
         if content:
             try:
                 parsed = json.loads(content)
+                new_title = str(parsed.get("title", title)).strip()
                 summary = str(parsed.get("summary", "")).strip()
                 tags = [str(t).strip() for t in parsed.get("keywords", []) if str(t).strip()]
-                tags = [t for t in tags if len(t) < 20]
-                tags = tags[:4]
+                tags = [t for t in tags if len(t) < 20][:4]
+                
+                raw_faq = parsed.get("faq", [])
+                faq = []
+                if isinstance(raw_faq, list):
+                    for item in raw_faq[:5]:
+                        if isinstance(item, dict) and item.get("q") and item.get("a"):
+                            faq.append({"q": str(item["q"]).strip(), "a": str(item["a"]).strip()})
 
                 if summary and len(summary) > 50:
-                    logger.info(f"  ✅ [{provider_name}] Summarized: {title[:50]}... | Tags: {tags}")
-                    return summary, tags
-                else:
-                    logger.warning(f"  ⚠️ [{provider_name}] Empty/short summary, trying next provider...")
-                    continue
-            except json.JSONDecodeError as e:
-                logger.warning(f"  ⚠️ [{provider_name}] Invalid JSON response: {e}")
-                # Try to salvage — sometimes the model wraps JSON in markdown
-                try:
-                    json_match = re.search(r'\{.*\}', content, re.DOTALL)
-                    if json_match:
-                        parsed = json.loads(json_match.group())
-                        summary = str(parsed.get("summary", "")).strip()
-                        tags = [str(t).strip() for t in parsed.get("keywords", []) if str(t).strip()]
-                        tags = [t for t in tags if len(t) < 20][:4]
-                        if summary and len(summary) > 50:
-                            logger.info(f"  ✅ [{provider_name}] Salvaged JSON. Summarized: {title[:50]}... | Tags: {tags}")
-                            return summary, tags
-                except Exception:
-                    pass
+                    logger.info(f"  ✅ Summarized: {new_title[:50]}...")
+                    return new_title, summary, tags, faq
+            except Exception as e:
+                logger.warning(f"  ⚠️ Error parsing AI response: {e}")
                 continue
 
-    logger.error("  ❌ All AI providers failed! Skipping article.")
     return None
 
 
@@ -258,9 +158,10 @@ def summarize_batch(articles, delay_seconds=15):
 
         result = summarize_article(article)
         if result:
-            summary, tags = result
+            summary, tags, faq = result
             article["summary"] = summary
             article["tags"] = tags
+            article["faq"] = faq
             valid_articles.append(article)
         else:
             logger.warning(f"  ⚠️ Dropping article '{article['title'][:40]}' due to summarization failure.")

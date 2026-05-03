@@ -168,13 +168,16 @@ def run_rotation():
                 logger.warning("  Skipping article because no valid image was found.")
                 continue
                  
-            # C. Summarize with AI (Mistral -> Groq cascade)
+            # C. Summarize with AI (Mistral primary)
             result = summarize_article(best_article)
             if not result:
                 logger.warning("  Skipping article due to AI failure.")
                 continue
             
-            summary, keywords = result
+            new_title, summary, keywords, faq = result
+            
+            # Update title with rewritten version
+            best_article["title"] = new_title
             
             # Generate Date Tag (e.g. 13th April 26)
             def get_day_suffix(n):
@@ -195,9 +198,9 @@ def run_rotation():
             
             final_tags = [date_tag] + ai_keywords
             
-            # Append Credit Line
             best_article["summary"] = summary + f"\n\nPhoto and News Source: {best_article['source_name']}"
             best_article["tags"] = final_tags
+            best_article["faq"] = faq
             
             # D. Publish directly to Supabase Postgre DB!
             if publish_via_supabase(best_article):

@@ -4,6 +4,9 @@
 ALTER TABLE public.posts ADD COLUMN IF NOT EXISTS is_deleted BOOLEAN DEFAULT FALSE;
 ALTER TABLE public.posts ADD COLUMN IF NOT EXISTS redirect_to TEXT DEFAULT NULL;
 
+-- Adding FAQ data (AI-generated Q&A pairs) stored as JSONB
+ALTER TABLE public.posts ADD COLUMN IF NOT EXISTS faq JSONB DEFAULT NULL;
+
 -- WhatsApp Auth Users
 CREATE TABLE public.wa_users (
     id SERIAL PRIMARY KEY,
@@ -108,8 +111,10 @@ CREATE TABLE public.submissions (
     image_url TEXT,
     external_url TEXT,
     hyperlink_text TEXT,
+    location TEXT, -- e.g. "Kerala, Ernakulam, Aluva"
     is_premium BOOLEAN DEFAULT FALSE,
     status TEXT DEFAULT 'pending', -- 'pending', 'approved', 'rejected'
+    expires_at TIMESTAMP WITH TIME ZONE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
@@ -120,6 +125,7 @@ CREATE TABLE public.ad_news (
     content VARCHAR(500) NOT NULL,
     tags TEXT[],
     image_url TEXT,
+    location TEXT, -- e.g. "Kerala, Ernakulam, Aluva"
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
@@ -129,3 +135,20 @@ CREATE TABLE public.admin_settings (
 );
 
 INSERT INTO public.admin_settings (key, value) VALUES ('admin_whatsapp_number', '') ON CONFLICT (key) DO NOTHING;
+
+-- WhatsApp Marketing Campaign
+CREATE TABLE IF NOT EXISTS public.whatsapp_marketing (
+    id SERIAL PRIMARY KEY,
+    phone_number TEXT UNIQUE NOT NULL,
+    status TEXT DEFAULT 'pending', -- 'pending', 'messaged', 'replied'
+    category TEXT DEFAULT 'general',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- WhatsApp Message Templates
+CREATE TABLE IF NOT EXISTS public.whatsapp_templates (
+    id SERIAL PRIMARY KEY,
+    category TEXT NOT NULL,
+    message_text TEXT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);

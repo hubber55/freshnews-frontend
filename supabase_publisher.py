@@ -98,6 +98,9 @@ def publish_via_supabase(article):
     original_url = article.get("link", "")
     original_url_fingerprint = url_fingerprint(original_url)
 
+    # FAQ data from AI (list of {q, a} dicts) — stored as JSONB
+    faq = article.get("faq", [])
+
     try:
         # Insert row into the 'posts' table
         data, count = supabase.table('posts').insert({
@@ -108,6 +111,7 @@ def publish_via_supabase(article):
             "tags": tags,
             "original_url": original_url,
             "original_url_fingerprint": original_url_fingerprint or None,
+            "faq": faq if faq else None,
         }).execute()
 
         logger.info(f"  \u2705 Inserted successfully into Supabase!")
