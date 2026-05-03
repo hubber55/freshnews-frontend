@@ -318,6 +318,7 @@ export default function MarketingAdminPage() {
                 <tr className="border-b border-[var(--border)]">
                   <th className="pb-3 text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Number</th>
                   <th className="pb-3 text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Source</th>
+                  <th className="pb-3 text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Subcat</th>
                   <th className="pb-3 text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider">Status</th>
                   <th className="pb-3 text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider text-right">Actions</th>
                 </tr>
@@ -328,6 +329,9 @@ export default function MarketingAdminPage() {
                     <td className="py-3 text-sm text-white font-mono">{num.phone_number}</td>
                     <td className="py-3 text-sm text-[var(--text-secondary)]">
                       <span className="px-2 py-0.5 rounded bg-white/5 border border-white/10 text-[10px]">{num.source || 'N/A'}</span>
+                    </td>
+                    <td className="py-3 text-[11px] text-[var(--text-muted)]">
+                      {num.subcategory || num.category || 'N/A'}
                     </td>
                     <td className="py-3">
                       <select 

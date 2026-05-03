@@ -52,15 +52,16 @@ def run_marketing_bot():
             target = response.data[0]
             number_id = target['id']
             phone_number = target['phone_number']
-            category = target['category']
+            # New system uses subcategory for templates, old system uses category
+            template_key = target.get('subcategory') or target.get('category') or 'general'
             
-            print(f"[{ist_now.strftime('%I:%M %p')}] Processing number {phone_number} for category '{category}'...")
+            print(f"[{ist_now.strftime('%I:%M %p')}] Processing {phone_number} (Source: {target.get('source', 'N/A')}, Category: {template_key})...")
             
-            # 3. Get templates for this exact category
-            templates_resp = supabase.table('whatsapp_templates').select('message_text').eq('category', category).execute()
+            # 3. Get templates for this category/subcategory
+            templates_resp = supabase.table('whatsapp_templates').select('message_text').eq('category', template_key).execute()
             
             if not templates_resp.data:
-                print(f"⚠️ WARNING: No templates found for category '{category}'. Falling back to default message.")
+                print(f"⚠️ WARNING: No templates found for '{template_key}'. Falling back to default message.")
                 message_text = "Hi, is this still available?"
             else:
                 # Pick a random template from the ones you added in the Admin Panel
