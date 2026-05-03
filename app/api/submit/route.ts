@@ -98,35 +98,43 @@ export async function POST(req: Request) {
 
     // --- Expiry and Limits for Classifieds ---
     let expiresAt: string | null = null;
-    if (type === 'classified') {
+    if (type === 'classified' || type === 'ad') {
       // 1. Fetch parameters from admin_settings
       const { data: settings } = await supabase
         .from('admin_settings')
         .select('key, value')
-        .in('key', ['classified_expiry_days', 'classified_limit_per_month']);
+        .in('key', ['classified_expiry_days', 'classified_limit_per_month', 'ad_expiry_days', 'ad_limit_per_month']);
       
-      const expiryDays = parseInt(settings?.find(s => s.key === 'classified_expiry_days')?.value || '30');
-      const monthlyLimit = parseInt(settings?.find(s => s.key === 'classified_limit_per_month')?.value || '2');
+      const isAd = type === 'ad';
+      const expiryKey = isAd ? 'ad_expiry_days' : 'classified_expiry_days';
+      const limitKey = isAd ? 'ad_limit_per_month' : 'classified_limit_per_month';
+      const defaultLimit = isAd ? '5' : '2';
 
-      // 2. Check monthly limit for this category
-      if (categoryId) {
-        const startOfMonth = new Date();
-        startOfMonth.setDate(1);
-        startOfMonth.setHours(0, 0, 0, 0);
+      const expiryDays = parseInt(settings?.find(s => s.key === expiryKey)?.value || '30');
+      const monthlyLimit = parseInt(settings?.find(s => s.key === limitKey)?.value || defaultLimit);
 
-        const { count: existingAds } = await supabase
-          .from('submissions')
-          .select('*', { count: 'exact', head: true })
-          .eq('user_id', user.id)
-          .eq('type', 'classified')
-          .eq('category_id', parseInt(categoryId))
-          .gte('created_at', startOfMonth.toISOString());
+      // 2. Check monthly limit
+      const startOfMonth = new Date();
+      startOfMonth.setDate(1);
+      startOfMonth.setHours(0, 0, 0, 0);
 
-        if ((existingAds || 0) >= monthlyLimit) {
-          return NextResponse.json({ 
-            error: `You have reached the monthly limit of ${monthlyLimit} ads for this category.` 
-          }, { status: 429 });
-        }
+      let query = supabase
+        .from('submissions')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user.id)
+        .eq('type', type)
+        .gte('created_at', startOfMonth.toISOString());
+      
+      if (type === 'classified' && categoryId) {
+        query = query.eq('category_id', parseInt(categoryId));
+      }
+
+      const { count: existingCount } = await query;
+
+      if ((existingCount || 0) >= monthlyLimit) {
+        return NextResponse.json({ 
+          error: `You have reached the monthly limit of ${monthlyLimit} ${type}s.` 
+        }, { status: 429 });
       }
 
       // 3. Set expiry date

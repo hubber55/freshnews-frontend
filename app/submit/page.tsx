@@ -502,15 +502,17 @@ function SubmitContent() {
                     className="w-full rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-4 py-3 text-white focus:border-[#00cfff] focus:outline-none focus:ring-1 focus:ring-[#00cfff]"
                   />
                 </div>
-                <div>
-                  <label className="mb-2 block text-sm font-bold text-[var(--text-secondary)]">Link Text</label>
-                  <input
-                    value={hyperlinkText}
-                    onChange={(e) => setHyperlinkText(e.target.value)}
-                    placeholder="Visit us"
-                    className="w-full rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-4 py-3 text-white focus:border-[#00cfff] focus:outline-none focus:ring-1 focus:ring-[#00cfff]"
-                  />
-                </div>
+                {externalUrl.trim() && (
+                  <div>
+                    <label className="mb-2 block text-sm font-bold text-[var(--text-secondary)]">Link Text</label>
+                    <input
+                      value={hyperlinkText}
+                      onChange={(e) => setHyperlinkText(e.target.value)}
+                      placeholder="Visit us"
+                      className="w-full rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-4 py-3 text-white focus:border-[#00cfff] focus:outline-none focus:ring-1 focus:ring-[#00cfff]"
+                    />
+                  </div>
+                )}
               </div>
             )}
 
