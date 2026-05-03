@@ -1,23 +1,42 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-export async function GET() {
+export async function GET(req: Request) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
   const supabase = createClient(supabaseUrl, key);
 
-  const { data, error } = await supabase.from('whatsapp_marketing').select('status');
-  if (error) return NextResponse.json({ stats: { pending: 0, messaged: 0, replied: 0 }, templates: [] });
+  const { searchParams } = new URL(req.url);
+  const filterSource = searchParams.get('source');
+  const filterStatus = searchParams.get('status');
+
+  let query = supabase.from('whatsapp_marketing').select('*');
+  
+  if (filterSource) query = query.eq('source', filterSource);
+  if (filterStatus) query = query.eq('status', filterStatus);
+
+  const { data: allData, error } = await query.order('created_at', { ascending: false });
+  
+  if (error) return NextResponse.json({ stats: { pending: 0, messaged: 0, replied: 0 }, templates: [], numbers: [] });
 
   const stats = {
-    pending: data.filter(d => d.status === 'pending').length,
-    messaged: data.filter(d => d.status === 'messaged').length,
-    replied: data.filter(d => d.status === 'replied').length,
+    pending: allData.filter(d => d.status === 'pending').length,
+    messaged: allData.filter(d => d.status === 'messaged').length,
+    replied: allData.filter(d => d.status === 'replied').length,
   };
 
   const { data: templates } = await supabase.from('whatsapp_templates').select('*').order('created_at', { ascending: false });
 
-  return NextResponse.json({ stats, templates: templates || [] });
+  // Get unique sources for filtering
+  const { data: sourcesData } = await supabase.from('whatsapp_marketing').select('source');
+  const sources = Array.from(new Set(sourcesData?.map(s => s.source).filter(Boolean) || []));
+
+  return NextResponse.json({ 
+    stats, 
+    templates: templates || [], 
+    numbers: allData.slice(0, 100), // Limit to 100 for performance
+    sources 
+  });
 }
 
 export async function POST(req: Request) {
@@ -27,7 +46,7 @@ export async function POST(req: Request) {
 
   try {
     const body = await req.json();
-    const { action, numbers, category } = body;
+    const { action, numbers, category, subcategory, source, id, status, phone_number } = body;
 
     if (action === 'upload_numbers') {
       const rawNumbers = (numbers || '').split(/[\n,]+/);
@@ -45,14 +64,35 @@ export async function POST(req: Request) {
       const payload = uniqueNumbers.map(num => ({
         phone_number: num,
         status: 'pending',
-        category: category || 'general'
+        category: category || 'general',
+        subcategory: subcategory || '',
+        source: source || ''
       }));
 
-      // Ignore duplicates, only insert new ones
-      const { error } = await supabase.from('whatsapp_marketing').upsert(payload, { onConflict: 'phone_number', ignoreDuplicates: true });
+      // upsert with phone_number as conflict target
+      const { error } = await supabase.from('whatsapp_marketing').upsert(payload, { 
+        onConflict: 'phone_number',
+        ignoreDuplicates: true 
+      });
+      
       if (error) throw error;
       
       return NextResponse.json({ ok: true, added: uniqueNumbers.length });
+    }
+
+    if (action === 'update_number') {
+      const { error } = await supabase
+        .from('whatsapp_marketing')
+        .update({ status, source, category, subcategory })
+        .eq('id', id);
+      if (error) throw error;
+      return NextResponse.json({ ok: true });
+    }
+
+    if (action === 'delete_number') {
+      const { error } = await supabase.from('whatsapp_marketing').delete().eq('id', id);
+      if (error) throw error;
+      return NextResponse.json({ ok: true });
     }
 
     if (action === 'delete_replied') {
