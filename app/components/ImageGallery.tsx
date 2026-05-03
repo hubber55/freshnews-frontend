@@ -30,7 +30,7 @@ export default function ImageGallery({ images, alt = 'Image' }: ImageGalleryProp
         style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
       >
         {images.map((url, idx) => (
-          <div key={idx} className="w-full flex-shrink-0 snap-center relative aspect-video sm:aspect-auto">
+          <div key={idx} className="w-full flex-shrink-0 snap-center relative aspect-video">
             <LazyImage
               src={url}
               alt={`${alt} - ${idx + 1}`}

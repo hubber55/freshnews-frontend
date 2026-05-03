@@ -17,6 +17,7 @@ type ClassifiedSubmission = {
   content: string | null;
   image_url: string | null;
   location: string | null;
+  post_id: number | null;
   status: string;
   created_at: string;
   expires_at: string | null;
@@ -57,6 +58,7 @@ export default async function ClassifiedsPage() {
       content,
       image_url,
       location,
+      post_id,
       status,
       created_at,
       expires_at,
@@ -104,26 +106,26 @@ export default async function ClassifiedsPage() {
         ) : (
           <div className="space-y-5">
             {classifieds.map((item) => {
-              const image = getPrimaryImage(item.image_url);
               const publishedAt = item.created_at;
+              const isLong = item.content && item.content.length > 200;
 
-              return (
-                <article key={item.id} className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--bg-card)]">
-                  <div className="grid gap-0 md:grid-cols-[280px_1fr]">
-                    <div className="relative min-h-[240px] bg-black/20">
-                      {item.image_url ? (
-                        <ImageGallery
-                          images={item.image_url.startsWith('[') ? JSON.parse(item.image_url) : [item.image_url]}
-                          alt={item.title}
-                        />
-                      ) : (
-                        <div className="flex h-full min-h-[240px] items-center justify-center text-sm text-[var(--text-muted)]">
-                          No Image Available
-                        </div>
-                      )}
-                    </div>
+              const CardContent = (
+                <div className="grid gap-0 md:grid-cols-[280px_1fr]">
+                  <div className="relative bg-black/20 md:border-r border-[var(--border)] min-h-[240px]">
+                    {item.image_url ? (
+                      <ImageGallery
+                        images={item.image_url.startsWith('[') ? JSON.parse(item.image_url) : [item.image_url]}
+                        alt={item.title}
+                      />
+                    ) : (
+                      <div className="flex h-full min-h-[240px] items-center justify-center text-sm text-[var(--text-muted)]">
+                        No Image Available
+                      </div>
+                    )}
+                  </div>
 
-                    <div className="p-5 sm:p-6">
+                  <div className="p-5 sm:p-6 flex flex-col justify-between">
+                    <div>
                       <div className="mb-3 flex flex-wrap items-center gap-2 text-[11px] font-bold uppercase tracking-wide text-[var(--text-secondary)]">
                         <span className="rounded-full bg-[#00cfff]/10 px-2.5 py-1 text-[#00cfff]">
                           {item.ad_categories?.name || 'Classified'}
@@ -133,11 +135,11 @@ export default async function ClassifiedsPage() {
                         ) : null}
                       </div>
 
-                      <h2 className="text-2xl font-extrabold leading-tight text-white">
+                      <h2 className="text-2xl font-extrabold leading-tight text-white mb-3">
                         {item.title}
                       </h2>
 
-                      <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-2 text-[12px] text-[var(--text-muted)]">
+                      <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[12px] text-[var(--text-muted)] mb-4">
                         {publishedAt ? (
                           <span className="flex items-center gap-1">
                             <Clock size={13} />
@@ -151,7 +153,7 @@ export default async function ClassifiedsPage() {
                           </span>
                         ) : null}
                         {item.expires_at ? (
-                          <span className="flex items-center gap-1">
+                          <span className="flex items-center gap-1 text-[#ffd42a]/80">
                             <CalendarDays size={13} />
                             Expires {formatDistanceToNow(new Date(item.expires_at), { addSuffix: true })}
                           </span>
@@ -159,12 +161,28 @@ export default async function ClassifiedsPage() {
                       </div>
 
                       {item.content ? (
-                        <p className="mt-4 whitespace-pre-line text-[14px] leading-6 text-[var(--text-secondary)]">
+                        <p className="whitespace-pre-line text-[14px] leading-6 text-[var(--text-secondary)] line-clamp-4">
                           {item.content}
                         </p>
                       ) : null}
                     </div>
+
+                    <div className="mt-4 pt-4 border-t border-white/5 flex justify-between items-center">
+                      <span className="text-[11px] font-bold text-[#ffd42a] hover:underline flex items-center gap-1 uppercase tracking-wider">
+                        {item.post_id ? 'View Full Post →' : (isLong ? 'Read More →' : '')}
+                      </span>
+                    </div>
                   </div>
+                </div>
+              );
+
+              return (
+                <article key={item.id} className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] hover:border-[#ffd42a]/30 transition-all duration-300 group">
+                  {item.post_id ? (
+                    <Link href={`/posts/${item.post_id}`}>
+                      {CardContent}
+                    </Link>
+                  ) : CardContent}
                 </article>
               );
             })}

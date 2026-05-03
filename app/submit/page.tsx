@@ -107,6 +107,7 @@ function SubmitContent() {
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState('');
   const [imageFiles, setImageFiles] = useState<File[]>([]);
+  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [maxImages, setMaxImages] = useState(5); // Default to 5, can be overridden by admin settings
   const [externalUrl, setExternalUrl] = useState('');
   const [hyperlinkText, setHyperlinkText] = useState('Visit us');
@@ -236,6 +237,14 @@ function SubmitContent() {
     }, () => {
       alert("Location access denied or failed");
       setIsLocating(false);
+    });
+  };
+
+  const removeImage = (index: number) => {
+    setImageFiles(prev => prev.filter((_, i) => i !== index));
+    setImagePreviews(prev => {
+      URL.revokeObjectURL(prev[index]);
+      return prev.filter((_, i) => i !== index);
     });
   };
 
@@ -523,19 +532,20 @@ function SubmitContent() {
                 Photos (Up to {maxImages})
               </label>
               <div className="flex flex-wrap gap-3">
-                {imageFiles.map((file, i) => (
+                {imagePreviews.map((preview, i) => (
                   <div key={i} className="relative w-24 h-24 rounded-lg overflow-hidden border border-[var(--border)] group">
                     <img
-                      src={URL.createObjectURL(file)}
+                      src={preview}
                       alt={`Upload ${i + 1}`}
                       className="w-full h-full object-cover"
                     />
                     <button
                       type="button"
-                      onClick={() => setImageFiles(prev => prev.filter((_, idx) => idx !== i))}
-                      className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
+                      onClick={() => removeImage(i)}
+                      className="absolute top-1 right-1 bg-red-500/90 hover:bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm shadow-md z-10"
+                      title="Remove image"
                     >
-                      ×
+                      <X size={14} strokeWidth={3} />
                     </button>
                   </div>
                 ))}
@@ -562,6 +572,7 @@ function SubmitContent() {
                         try {
                           const compressed = await Promise.all(toProcess.map(f => compressImageFile(f)));
                           setImageFiles(prev => [...prev, ...compressed]);
+                          setImagePreviews(prev => [...prev, ...compressed.map(f => URL.createObjectURL(f))]);
                           setError(null);
                         } catch (error: unknown) {
                           setError(getErrorMessage(error, 'Image processing failed'));

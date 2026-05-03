@@ -94,7 +94,7 @@ export async function POST(
 
     const { error: statusError } = await supabase
       .from('submissions')
-      .update({ status: 'approved' })
+      .update({ status: 'approved', post_id: newPost.id })
       .eq('id', submissionId);
 
     if (statusError) throw statusError;

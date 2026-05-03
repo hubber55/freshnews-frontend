@@ -11,6 +11,7 @@ export async function POST(req: Request) {
     process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
   );
   const user = await getCurrentUser();
+  const userName = await getCurrentUserName();
 
   if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -231,7 +232,7 @@ export async function POST(req: Request) {
     const adminWhatsappNumber = adminSettings?.value;
 
     if (adminWhatsappNumber) {
-        const adminMessage = `Pending ${type} from user ${user.name} with whatsapp number ${user.whatsapp_number}`;
+        const adminMessage = `Pending ${type} from user ${userName || 'User'} with whatsapp number ${user.whatsapp_number}`;
         await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/send-whatsapp`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
