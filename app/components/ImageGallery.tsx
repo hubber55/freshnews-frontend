@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef } from 'react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import LazyImage from './LazyImage';
 
 interface ImageGalleryProps {
@@ -14,8 +15,17 @@ export default function ImageGallery({ images, alt = 'Image' }: ImageGalleryProp
 
   const handleScroll = () => {
     if (scrollRef.current) {
-      const index = Math.round(scrollRef.current.scrollLeft / scrollRef.current.offsetWidth);
+      const index = Math.round(scrollRef.current.scrollLeft / (scrollRef.current.offsetWidth || 1));
       setCurrentIndex(index);
+    }
+  };
+
+  const scrollToImage = (index: number) => {
+    if (scrollRef.current) {
+      scrollRef.current.scrollTo({
+        left: index * scrollRef.current.offsetWidth,
+        behavior: 'smooth'
+      });
     }
   };
 
@@ -43,6 +53,25 @@ export default function ImageGallery({ images, alt = 'Image' }: ImageGalleryProp
 
       {images.length > 1 && (
         <>
+          {/* Desktop Navigation Arrows */}
+          <button
+            onClick={() => scrollToImage(currentIndex - 1)}
+            disabled={currentIndex === 0}
+            className={`absolute left-2 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/40 text-white backdrop-blur-sm border border-white/10 transition-all duration-300 opacity-0 group-hover:opacity-100 hidden md:flex hover:bg-black/60 disabled:hidden z-10`}
+            aria-label="Previous image"
+          >
+            <ChevronLeft size={20} />
+          </button>
+
+          <button
+            onClick={() => scrollToImage(currentIndex + 1)}
+            disabled={currentIndex === images.length - 1}
+            className={`absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/40 text-white backdrop-blur-sm border border-white/10 transition-all duration-300 opacity-0 group-hover:opacity-100 hidden md:flex hover:bg-black/60 disabled:hidden z-10`}
+            aria-label="Next image"
+          >
+            <ChevronRight size={20} />
+          </button>
+
           {/* Navigation Dots */}
           <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-2 z-10 pointer-events-none">
             {images.map((_, idx) => (
@@ -55,12 +84,10 @@ export default function ImageGallery({ images, alt = 'Image' }: ImageGalleryProp
             ))}
           </div>
           
-          {/* Index Indicator (Mobile) */}
+          {/* Index Indicator */}
           <div className="absolute top-4 right-4 bg-black/60 backdrop-blur-md text-white text-[11px] px-2.5 py-1 rounded-full font-bold uppercase tracking-wider z-10 border border-white/10">
             {currentIndex + 1} / {images.length}
           </div>
-
-          {/* Swipe Hint for First Visit (Optional, can be added later) */}
         </>
       )}
     </div>
