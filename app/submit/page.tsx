@@ -4,6 +4,7 @@
 import { useState, useEffect, useCallback, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
+import { X } from 'lucide-react';
 import Header from '../components/header';
 import keralaLocations from '../../data/kerala_locations.json';
 

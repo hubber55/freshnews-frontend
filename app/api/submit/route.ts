@@ -1,7 +1,7 @@
 
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { getCurrentUser } from '@/lib/auth';
+import { getCurrentUser, getCurrentUserName } from '@/lib/auth';
 
 const MAX_UPLOAD_BYTES = 3 * 1024 * 1024; // 3MB
 
