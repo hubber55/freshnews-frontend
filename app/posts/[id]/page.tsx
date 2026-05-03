@@ -16,6 +16,7 @@ import CommentsSection from '../../components/CommentsSection';
 import PostTracker from '../../components/PostTracker';
 import NetworkAd from '../../components/NetworkAd';
 import { createAdminClient } from '../../../lib/supabase-admin';
+import ImageGallery from '../../components/ImageGallery';
 
 type AdNetwork = {
   enabled?: boolean;
@@ -306,19 +307,15 @@ export default async function PostPage({ params }: PageProps) {
               <span>{Math.max(1, Math.ceil(stripHtml(post.summary).split(' ').length / 220))} minute read</span>
             </div>
 
-            {/* IMAGE */}
-            <div className="mb-8 w-full overflow-hidden rounded-xl space-y-4">
+            {/* IMAGE GALLERY */}
+            <div className="mb-8">
               {post.image_url ? (
-                (post.image_url.startsWith('["') ? JSON.parse(post.image_url) : [post.image_url]).map((url: string, idx: number) => (
-                  <img
-                    key={idx}
-                    src={url}
-                    alt={`${post.title} - Image ${idx + 1}`}
-                    className="w-full max-h-[500px] object-cover object-center rounded-lg"
-                  />
-                ))
+                <ImageGallery
+                  images={post.image_url.startsWith('["') ? JSON.parse(post.image_url) : [post.image_url]}
+                  alt={post.title}
+                />
               ) : (
-                <div className="flex h-48 w-full items-center justify-center bg-[#21262d] text-sm text-[var(--text-muted)]">
+                <div className="flex h-48 w-full items-center justify-center rounded-xl bg-[#21262d] text-sm text-[var(--text-muted)]">
                   No Image Available
                 </div>
               )}

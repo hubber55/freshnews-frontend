@@ -23,10 +23,7 @@ async function compressImageFile(file: File, maxBytes = MAX_UPLOAD_BYTES): Promi
     throw new Error('Only image files are allowed');
   }
 
-  if (file.size <= maxBytes) {
-    return file;
-  }
-
+  // Even if small, we process to ensure correct format/metadata stripping
   const dataUrl = await new Promise<string>((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => resolve(String(reader.result || ''));
@@ -44,7 +41,9 @@ async function compressImageFile(file: File, maxBytes = MAX_UPLOAD_BYTES): Promi
   const canvas = document.createElement('canvas');
   let width = img.width;
   let height = img.height;
-  const maxDimension = 800; // Resize to mobile view size
+  
+  // Use a more modern max dimension (1200px is good for high-res mobile & desktop)
+  const maxDimension = 1200; 
   if (Math.max(width, height) > maxDimension) {
     const ratio = maxDimension / Math.max(width, height);
     width = Math.max(1, Math.floor(width * ratio));
@@ -57,15 +56,24 @@ async function compressImageFile(file: File, maxBytes = MAX_UPLOAD_BYTES): Promi
   if (!ctx) {
     throw new Error('Failed to initialize image compressor');
   }
+  
+  // Use better interpolation if possible
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
   ctx.drawImage(img, 0, 0, width, height);
 
-  let quality = 0.9;
+  // We aim for a target size around 500KB - 800KB which is perfect for news
+  const targetBytes = 800 * 1024; 
+  let quality = 0.8; // Start with 0.8 quality (great balance)
   let compressedBlob: Blob | null = null;
-  while (quality >= 0.4) {
+  
+  while (quality >= 0.3) {
     compressedBlob = await new Promise<Blob | null>((resolve) =>
       canvas.toBlob((blob) => resolve(blob), 'image/jpeg', quality)
     );
-    if (compressedBlob && compressedBlob.size <= maxBytes) {
+    
+    // If we're under target bytes or at minimum quality, we stop
+    if (compressedBlob && (compressedBlob.size <= targetBytes || quality <= 0.3)) {
       break;
     }
     quality -= 0.1;
@@ -75,8 +83,9 @@ async function compressImageFile(file: File, maxBytes = MAX_UPLOAD_BYTES): Promi
     throw new Error('Image compression failed');
   }
 
+  // Final hard check against the absolute limit
   if (compressedBlob.size > maxBytes) {
-    throw new Error('Image is too large. Please choose an image smaller than 3MB.');
+    throw new Error('Image is still too large even after compression. Please use a smaller file.');
   }
 
   const baseName = file.name.replace(/\.[^.]+$/, '');

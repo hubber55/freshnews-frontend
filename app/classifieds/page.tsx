@@ -7,6 +7,7 @@ import Header from '../components/header';
 import Footer from '../components/footer';
 import LazyImage from '../components/LazyImage';
 import { createAdminClient } from '@/lib/supabase-admin';
+import ImageGallery from '../components/ImageGallery';
 
 export const revalidate = 120;
 
@@ -110,13 +111,10 @@ export default async function ClassifiedsPage() {
                 <article key={item.id} className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--bg-card)]">
                   <div className="grid gap-0 md:grid-cols-[280px_1fr]">
                     <div className="relative min-h-[240px] bg-black/20">
-                      {image ? (
-                        <LazyImage
-                          src={image}
+                      {item.image_url ? (
+                        <ImageGallery
+                          images={item.image_url.startsWith('[') ? JSON.parse(item.image_url) : [item.image_url]}
                           alt={item.title}
-                          eager={true}
-                          className="h-full w-full object-cover"
-                          imgStyle={{ aspectRatio: '4 / 3' }}
                         />
                       ) : (
                         <div className="flex h-full min-h-[240px] items-center justify-center text-sm text-[var(--text-muted)]">

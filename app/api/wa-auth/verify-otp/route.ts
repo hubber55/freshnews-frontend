@@ -24,7 +24,7 @@ export async function POST(req: Request) {
     const { whatsappNumber, otp, name } = (await req.json()) as { whatsappNumber?: string; otp?: string; name?: string };
     const digits = normalizeWhatsAppNumber(whatsappNumber || '');
     const otpStr = String(otp || '').trim();
-    if (!digits || otpStr.length < 4) {
+    if (!digits || otpStr.length !== 4) {
       return NextResponse.json({ ok: false, error: 'Invalid input' }, { status: 400 });
     }
 
