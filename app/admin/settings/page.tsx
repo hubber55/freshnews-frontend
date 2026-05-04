@@ -209,12 +209,6 @@ export default function AdminSettingsPage() {
       ]
     },
     {
-      title: 'Ad Networks',
-      fields: [
-        // Managed via the dedicated editor below.
-      ]
-    },
-    {
       title: 'System & Expiry Rules',
       fields: [
         { key: 'ad_expiry_days', label: 'Main Ad Expiry (Days)', placeholder: '30' },
@@ -343,8 +337,12 @@ export default function AdminSettingsPage() {
                 </select>
                 <button
                   type="button"
-                  onClick={() => {
-                    setHeaderInserts((current) => current.filter((x) => x.id !== ins.id));
+                  onClick={async () => {
+                    if (confirm(`Are you sure you want to delete ${ins.name || 'this insert'}?`)) {
+                      const updated = headerInserts.filter((x) => x.id !== ins.id);
+                      setHeaderInserts(updated);
+                      await updateSetting('header_inserts', JSON.stringify(updated, null, 2));
+                    }
                   }}
                   className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-1.5 text-xs font-bold text-red-400 hover:bg-red-500/20"
                 >
@@ -450,8 +448,13 @@ export default function AdminSettingsPage() {
                 </label>
                 <button
                   type="button"
-                  onClick={() => {
-                    setAdNetworks((current) => current.filter((x) => x.id !== net.id));
+                  onClick={async () => {
+                    if (confirm(`Are you sure you want to delete ${net.name || 'this network'}?`)) {
+                      const updated = adNetworks.filter((x) => x.id !== net.id);
+                      setAdNetworks(updated);
+                      // Auto-save the deletion
+                      await updateSetting('ad_networks', JSON.stringify(updated, null, 2));
+                    }
                   }}
                   className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-1.5 text-xs font-bold text-red-400 hover:bg-red-500/20"
                 >
