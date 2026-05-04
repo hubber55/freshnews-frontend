@@ -32,6 +32,10 @@ function safeParseAdNetworks(value: unknown): AdNetwork[] {
     return [];
   }
 }
+function pickAdCode(options: { adNetworksJson: unknown; randomEnabled: boolean; legacyAdsterra: string }) {
+  const networks = safeParseAdNetworks(options.adNetworksJson)
+    .filter((n) => (n?.enabled ?? true) && typeof n?.code === 'string' && n.code.trim())
+    .map((n) => n.code!.trim());
 
   if (networks.length === 0) return options.legacyAdsterra || '';
   if (!options.randomEnabled) return networks[0];
