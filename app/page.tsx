@@ -53,7 +53,7 @@ function pickAdCode(options: { adNetworksJson: unknown; randomEnabled: boolean; 
     .filter((n) => (n?.enabled ?? true) && typeof n?.code === 'string' && n.code.trim())
     .map((n) => n.code!.trim());
 
-  if (networks.length === 0) return options.legacyAdsterra;
+  if (networks.length === 0) return options.legacyAdsterra || '';
   if (!options.randomEnabled) return networks[0];
   return networks[Math.floor(Math.random() * networks.length)];
 }
@@ -76,20 +76,21 @@ function isMountTargetAd(code: string): boolean {
  * For other ad types (Adsterra etc.), uses the client-side NetworkAd iframe component.
  */
 function AdSlot({ code }: { code: string }) {
-  if (!code) return null;
+  const trimmed = code?.trim();
+  if (!trimmed) return null;
 
   return (
-    <div className="relative my-8 w-full rounded-lg overflow-hidden min-h-[250px]" style={{ border: '2px solid #ff00ff' }}>
+    <div className="relative my-8 w-full rounded-lg overflow-hidden flex items-center justify-center">
       <span
-        className="absolute top-1 right-2 z-10 text-[9px] font-semibold leading-none"
-        style={{ color: '#ff00ff', fontFamily: 'var(--font-en)' }}
+        className="absolute top-1 right-2 z-10 text-[9px] font-semibold leading-none text-[var(--text-muted)] opacity-50"
+        style={{ fontFamily: 'var(--font-en)' }}
       >
-        Ad
+        Advertisement
       </span>
-      {isMountTargetAd(code) ? (
-        <div className="w-full" dangerouslySetInnerHTML={{ __html: code }} />
+      {isMountTargetAd(trimmed) ? (
+        <div className="w-full" dangerouslySetInnerHTML={{ __html: trimmed }} />
       ) : (
-        <NetworkAd code={code} />
+        <NetworkAd code={trimmed} />
       )}
     </div>
   );
