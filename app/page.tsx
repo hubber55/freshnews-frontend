@@ -118,6 +118,7 @@ export default async function Home({ searchParams }: HomeProps) {
     .from('posts')
     .select('id, title, summary, image_url, source_name, published_at, tags, is_deleted')
     .eq('is_deleted', false)
+    .not('tags', 'cs', '{"Classifieds"}')
     .order('published_at', { ascending: false })
     .range(from, from + overfetch - 1);
 
