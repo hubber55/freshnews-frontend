@@ -105,6 +105,8 @@ function SubmitContent() {
   const [type, setType] = useState(typeParam || 'news'); // news, ad, event, classified
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
+  const [price, setPrice] = useState('');
+  const [contactPhone, setContactPhone] = useState('');
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState('');
   const [imageFiles, setImageFiles] = useState<File[]>([]);
@@ -255,8 +257,8 @@ function SubmitContent() {
     setError(null);
 
     // Validation
-    if (title.length > 70) {
-      setError('Title must be 70 characters or less');
+    if (title.length > 80) {
+      setError('Title must be 80 characters or less');
       setIsSubmitting(false);
       return;
     }
@@ -268,8 +270,8 @@ function SubmitContent() {
       return;
     }
     if (newsForAd) {
-      if (newsTitle.length > 70) {
-        setError('News title must be 70 characters or less');
+      if (newsTitle.length > 80) {
+        setError('News title must be 80 characters or less');
         setIsSubmitting(false);
         return;
       }
@@ -313,6 +315,8 @@ function SubmitContent() {
 
     if (type === 'ad' || type === 'classified') {
       formData.append('location', `Kerala, ${selectedDistrict}, ${selectedTown}`);
+      formData.append('price', price);
+      formData.append('contactPhone', contactPhone);
     }
 
     if (newsForAd) {
@@ -437,18 +441,41 @@ function SubmitContent() {
               </div>
             )}
 
-            <div>
+            {(type === 'ad' || type === 'classified') && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="mb-2 block text-sm font-bold text-[var(--text-secondary)]">Price (max 20 chars)</label>
+                  <input
+                    value={price}
+                    onChange={(e) => setPrice(e.target.value.slice(0, 20))}
+                    placeholder="e.g. ₹ 45 Lakhs"
+                    className="w-full rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-4 py-3 text-white focus:border-[#00cfff] focus:outline-none focus:ring-1 focus:ring-[#00cfff]"
+                  />
+                </div>
+                <div>
+                  <label className="mb-2 block text-sm font-bold text-[var(--text-secondary)]">Phone Number (max 15 chars)</label>
+                  <input
+                    value={contactPhone}
+                    onChange={(e) => setContactPhone(e.target.value.slice(0, 15))}
+                    placeholder="e.g. +91 9876543210"
+                    className="w-full rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-4 py-3 text-white focus:border-[#00cfff] focus:outline-none focus:ring-1 focus:ring-[#00cfff]"
+                  />
+                </div>
+              </div>
+            )}
+
+            <div className={((type === 'ad' || type === 'classified') && (!selectedCategory || !selectedSubcategory || !price || !contactPhone)) ? 'opacity-30 pointer-events-none' : ''}>
               <label className="mb-2 block text-sm font-bold text-[var(--text-secondary)]">
-                Title (English or Malayalam - max 70 chars)
+                Title (English or Malayalam - max 80 chars)
               </label>
               <input
                 value={title}
-                onChange={(e) => setTitle(e.target.value.slice(0, 70))}
+                onChange={(e) => setTitle(e.target.value.slice(0, 80))}
                 className="w-full rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-4 py-3 text-white focus:border-[#00cfff] focus:outline-none focus:ring-1 focus:ring-[#00cfff]"
               />
             </div>
 
-            <div>
+            <div className={((type === 'ad' || type === 'classified') && (!selectedCategory || !selectedSubcategory || !price || !contactPhone)) ? 'opacity-30 pointer-events-none' : ''}>
               <label className="mb-2 block text-sm font-bold text-[var(--text-secondary)]">
                 Content (English or Malayalam - Max 500 words)
               </label>

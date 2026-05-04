@@ -14,6 +14,8 @@ interface Submission {
   user_whatsapp: string | null;
   created_at: string;
   tags?: string[];
+  price?: string | null;
+  contact_phone?: string | null;
 }
 
 function getErrorMessage(err: unknown) {
@@ -25,6 +27,8 @@ export default function SubmissionReviewForm({ submission, id }: { submission: S
   const [saving, setSaving] = useState(false);
   const [title, setTitle] = useState(submission.title);
   const [content, setContent] = useState(submission.content);
+  const [price, setPrice] = useState(submission.price || '');
+  const [contactPhone, setContactPhone] = useState(submission.contact_phone || '');
 
   async function handleApprove(e: React.FormEvent) {
     e.preventDefault();
@@ -36,7 +40,13 @@ export default function SubmissionReviewForm({ submission, id }: { submission: S
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ title, content, tags: submission.tags || [] }),
+        body: JSON.stringify({ 
+          title, 
+          content, 
+          tags: submission.tags || [],
+          price: price || null,
+          contact_phone: contactPhone || null
+        }),
       });
 
       const payload = await response.json().catch(() => null);
@@ -74,6 +84,8 @@ export default function SubmissionReviewForm({ submission, id }: { submission: S
       const formData = new FormData();
       formData.set('title', title);
       formData.set('content', content);
+      formData.set('price', price);
+      formData.set('contactPhone', contactPhone);
       
       await updateSubmission(id, formData);
       alert('Changes saved successfully.');
@@ -113,9 +125,33 @@ export default function SubmissionReviewForm({ submission, id }: { submission: S
           submission.type === 'classified' ? 'bg-pink-500/20 text-pink-400' :
           'bg-blue-500/20 text-blue-400'
         }`}>
-          {submission.type.toUpperCase()}
         </span>
       </div>
+
+      {(submission.type === 'ad' || submission.type === 'classified') && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mx-2">
+          <div>
+            <label className="block text-sm font-bold mb-2">Price</label>
+            <input
+              type="text"
+              value={price}
+              onChange={(e) => setPrice(e.target.value)}
+              placeholder="e.g. ₹ 45 Lakhs"
+              className="w-full px-4 py-2 rounded-lg bg-[var(--bg-secondary)] border border-[var(--border)] text-white focus:border-[#00cfff] focus:outline-none"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-bold mb-2">Contact Phone</label>
+            <input
+              type="text"
+              value={contactPhone}
+              onChange={(e) => setContactPhone(e.target.value)}
+              placeholder="e.g. +91 9876543210"
+              className="w-full px-4 py-2 rounded-lg bg-[var(--bg-secondary)] border border-[var(--border)] text-white focus:border-[#00cfff] focus:outline-none"
+            />
+          </div>
+        </div>
+      )}
 
       <div className="mx-2">
         <label className="block text-sm font-bold mb-2">Title</label>

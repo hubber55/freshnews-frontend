@@ -73,7 +73,9 @@ export async function approveSubmission(submissionId: string, formData: FormData
       image_url: submission.image_url || null,
       tags: postTags,
       published_at: new Date().toISOString(),
-      is_deleted: false
+      is_deleted: false,
+      price: submission.price,
+      contact_phone: submission.contact_phone
     })
     .select()
     .single();
@@ -139,7 +141,9 @@ export async function updateSubmission(submissionId: string, formData: FormData)
     .update({
       title,
       content,
-      tags
+      tags,
+      price: formData.get('price') as string || null,
+      contact_phone: formData.get('contactPhone') as string || null
     })
     .eq('id', submissionId);
 

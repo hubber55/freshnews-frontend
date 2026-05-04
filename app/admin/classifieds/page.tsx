@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { format, differenceInDays } from 'date-fns';
 import { 
   ChevronLeft, Megaphone, Clock, CheckCircle, 
-  XCircle, Trash2, AlertCircle, RefreshCw 
+  XCircle, Trash2, AlertCircle, RefreshCw, Edit2
 } from 'lucide-react';
 
 export default function AdminClassifiedsPage() {
@@ -163,6 +163,23 @@ export default function AdminClassifiedsPage() {
                   </td>
                   <td className="px-6 py-4 text-right">
                     <div className="flex items-center justify-end gap-2">
+                       {item.post_id ? (
+                         <Link 
+                           href={`/admin/posts/${item.post_id}/edit`}
+                           className="p-1.5 rounded bg-blue-500/10 text-blue-500 hover:bg-blue-500 hover:text-white"
+                           title="Edit Post"
+                         >
+                           <Edit2 size={16} />
+                         </Link>
+                       ) : (
+                         <Link 
+                           href={`/admin/pending/${item.id}`}
+                           className="p-1.5 rounded bg-blue-500/10 text-blue-500 hover:bg-blue-500 hover:text-white"
+                           title="Edit Submission"
+                         >
+                           <Edit2 size={16} />
+                         </Link>
+                       )}
                       {item.status !== 'approved' && (
                         <button 
                           onClick={() => handleUpdateStatus(item.id, 'approved')}

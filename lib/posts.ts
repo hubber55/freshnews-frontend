@@ -9,6 +9,8 @@ export type PostRecord = {
   original_url?: string | null;
   is_deleted?: boolean;
   redirect_to?: string | null;
+  price?: string | null;
+  contact_phone?: string | null;
   faq?: Array<{ q: string; a: string }> | null;
 };
 

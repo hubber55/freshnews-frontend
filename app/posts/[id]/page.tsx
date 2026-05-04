@@ -354,6 +354,26 @@ export default async function PostPage({ params }: PageProps) {
               })}
             </div>
 
+            {/* PRICE & CONTACT */}
+            {(post.price || post.contact_phone) && (
+              <div className="mt-8 pt-6 border-t border-[var(--border)] flex flex-wrap gap-x-10 gap-y-6 items-center">
+                {post.price && (
+                  <div>
+                    <span className="text-[10px] uppercase font-bold text-[var(--text-muted)] block mb-1" style={{ fontFamily: 'var(--font-en)' }}>Price</span>
+                    <span className="text-[#00ffff] font-black text-2xl">{post.price}</span>
+                  </div>
+                )}
+                {post.contact_phone && (
+                  <div>
+                    <span className="text-[10px] uppercase font-bold text-[var(--text-muted)] block mb-1" style={{ fontFamily: 'var(--font-en)' }}>Contact</span>
+                    <a href={`tel:${post.contact_phone}`} className="text-[#ffd42a] font-black text-2xl hover:underline">
+                      {post.contact_phone}
+                    </a>
+                  </div>
+                )}
+              </div>
+            )}
+
             {/* TAGS – colorful */}
             <div className="mt-10 flex flex-wrap items-center gap-3 border-t border-[var(--border)] pt-8">
               <span className="text-[12px] font-bold text-white bg-gray-700 px-3 py-1.5 rounded-md" style={{ fontFamily: 'var(--font-en)' }}>Tags</span>

@@ -42,6 +42,8 @@ export async function POST(
     const title = String(body?.title ?? '').trim();
     const content = String(body?.content ?? '').trim();
     const tags = Array.isArray(body?.tags) ? body.tags.filter(Boolean) : [];
+    const price = body?.price || null;
+    const contactPhone = body?.contact_phone || null;
 
     if (!id) {
       return NextResponse.json({ error: 'ID is required' }, { status: 400 });
@@ -86,6 +88,8 @@ export async function POST(
         tags: submissionTags,
         published_at: new Date().toISOString(),
         is_deleted: false,
+        price: price || submission.price,
+        contact_phone: contactPhone || submission.contact_phone,
       })
       .select()
       .single();

@@ -43,9 +43,13 @@ export async function POST(req: Request) {
     if (!type || !title || !content) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
-    if (title.length > 70) {
-      return NextResponse.json({ error: 'Title exceeds 70 characters' }, { status: 400 });
+    if (title.length > 80) {
+      return NextResponse.json({ error: 'Title exceeds 80 characters' }, { status: 400 });
     }
+
+    const price = formData.get('price') as string || null;
+    const contactPhone = formData.get('contactPhone') as string || null;
+
     // 500 words max for content
     const contentWordCount = content.trim().split(/\s+/).length;
     if (contentWordCount > 500) {
@@ -156,6 +160,8 @@ export async function POST(req: Request) {
         is_premium: isPremium,
         status: 'pending',
         expires_at: expiresAt,
+        price: price,
+        contact_phone: contactPhone,
       })
       .select()
       .single();
