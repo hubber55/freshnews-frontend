@@ -1,7 +1,7 @@
 'use client'
 
 import { useActionState } from 'react'
-import { updatePost, deletePostWithRedirect } from '../../actions'
+import { updatePost, deletePostPermanently } from '../../actions'
 
 type Post = {
   id: string
