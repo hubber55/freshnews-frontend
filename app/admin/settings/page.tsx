@@ -133,9 +133,8 @@ export default function AdminSettingsPage() {
           const randomAdsValue = data.settings.find((s: { key: string; value: string }) => s.key === 'ad_networks_random')?.value;
           const legacyAdsterra = data.settings.find((s: { key: string; value: string }) => s.key === 'adsterra_code')?.value;
 
-          const parsedAdNetworks = safeParseAdNetworks(adNetworksValue);
-          if (parsedAdNetworks.length > 0) {
-            setAdNetworks(parsedAdNetworks);
+          if (typeof adNetworksValue === 'string') {
+            setAdNetworks(safeParseAdNetworks(adNetworksValue));
           } else if (typeof legacyAdsterra === 'string' && legacyAdsterra.trim()) {
             setAdNetworks([{
               id: crypto.randomUUID(),
@@ -500,7 +499,7 @@ export default function AdminSettingsPage() {
           </div>
         </div>
         <div className="px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[10px] font-mono text-[var(--text-muted)] uppercase tracking-widest">
-          Ver: 1.3.2
+          Ver: 1.4.0
         </div>
       </div>
 
