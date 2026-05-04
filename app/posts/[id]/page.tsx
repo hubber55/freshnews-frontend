@@ -48,19 +48,20 @@ function isMountTargetAd(code: string): boolean {
 }
 
 function AdSlot({ code }: { code: string }) {
-  if (!code || !code.trim()) return null;
+  const trimmed = code?.trim();
+  if (!trimmed) return null;
   return (
-    <div className="relative my-8 w-full rounded-lg overflow-hidden flex items-center justify-center">
+    <div className="relative my-8 w-full rounded-lg overflow-hidden flex items-center justify-center min-h-[50px]">
       <span
         className="absolute top-1 right-2 z-10 text-[9px] font-semibold leading-none text-[var(--text-muted)] opacity-50"
         style={{ fontFamily: 'var(--font-en)' }}
       >
         Advertisement
       </span>
-      {isMountTargetAd(code) ? (
-        <div className="w-full" dangerouslySetInnerHTML={{ __html: code }} />
+      {isMountTargetAd(trimmed) ? (
+        <div className="w-full" dangerouslySetInnerHTML={{ __html: trimmed }} />
       ) : (
-        <NetworkAd code={code} />
+        <NetworkAd code={trimmed} />
       )}
     </div>
   );
