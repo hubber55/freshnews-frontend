@@ -93,6 +93,8 @@ export default function AdminClassifiedsPage() {
               <th className="px-6 py-4">User</th>
               <th className="px-6 py-4">Status</th>
               <th className="px-6 py-4">Expiry</th>
+              <th className="px-6 py-4">Clicks</th>
+              <th className="px-6 py-4">Shares</th>
               <th className="px-6 py-4 text-right">Actions</th>
             </tr>
           </thead>
@@ -134,6 +136,26 @@ export default function AdminClassifiedsPage() {
                             ({daysLeft} days left)
                           </div>
                         )}
+                      </div>
+                    ) : (
+                      <span className="text-[var(--text-secondary)]">-</span>
+                    )}
+                  </td>
+                  <td className="px-6 py-4">
+                    {item.metrics ? (
+                      <span className={`font-bold ${item.metrics.clicks > 0 ? 'text-[#00cfff]' : 'text-white'}`}>
+                        {item.metrics.clicks}
+                      </span>
+                    ) : (
+                      <span className="text-[var(--text-secondary)]">-</span>
+                    )}
+                  </td>
+                  <td className="px-6 py-4 text-[11px] whitespace-nowrap" style={{ fontFamily: 'var(--font-en)' }}>
+                    {item.metrics ? (
+                      <div className="flex flex-col gap-1">
+                        <span className={item.metrics.fb > 0 ? 'text-[#00cfff] font-bold' : 'text-[var(--text-secondary)]'}>FB {item.metrics.fb}</span>
+                        <span className={item.metrics.tg > 0 ? 'text-[#ff0095] font-bold' : 'text-[var(--text-secondary)]'}>TG {item.metrics.tg}</span>
+                        <span className={item.metrics.wa > 0 ? 'text-[#ffd42a] font-bold' : 'text-[var(--text-secondary)]'}>WA {item.metrics.wa}</span>
                       </div>
                     ) : (
                       <span className="text-[var(--text-secondary)]">-</span>
