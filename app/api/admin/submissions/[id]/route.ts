@@ -115,3 +115,52 @@ export async function POST(
     return NextResponse.json({ error: getErrorMessage(error) }, { status: 500 });
   }
 }
+
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
+    if (!id) return NextResponse.json({ error: 'ID is required' }, { status: 400 });
+
+    const supabase = createAdminClient();
+
+    // Get submission to find images
+    const { data: submission } = await supabase
+      .from('submissions')
+      .select('image_url')
+      .eq('id', parseInt(id))
+      .single();
+
+    if (submission?.image_url) {
+      try {
+        const imageUrls: string[] = submission.image_url.startsWith('[') 
+          ? JSON.parse(submission.image_url) 
+          : [submission.image_url];
+        
+        const filePaths = imageUrls.map(url => {
+          const parts = url.split('/');
+          return parts[parts.length - 1];
+        });
+
+        if (filePaths.length > 0) {
+          await supabase.storage.from('submissions').remove(filePaths);
+        }
+      } catch (e) {
+        console.error('Error deleting images from storage:', e);
+      }
+    }
+
+    const { error } = await supabase
+      .from('submissions')
+      .delete()
+      .eq('id', parseInt(id));
+
+    if (error) throw error;
+
+    return NextResponse.json({ ok: true });
+  } catch (error: unknown) {
+    return NextResponse.json({ error: getErrorMessage(error) }, { status: 500 });
+  }
+}

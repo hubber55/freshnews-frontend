@@ -76,7 +76,11 @@ export default function AdminSettingsPage() {
     max_discount: '30',
     max_upload_images: '5',
     ad_limit_per_month: '5',
-    classified_limit_per_month: '2'
+    classified_limit_per_month: '2',
+    news_auto_delete_days: '10',
+    news_min_views: '10',
+    news_min_shares: '5',
+    user_post_final_delete_days: '90'
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<string | null>(null);
@@ -218,6 +222,15 @@ export default function AdminSettingsPage() {
         { key: 'max_upload_images', label: 'Max Images Per Submission', placeholder: '5' },
         { key: 'ad_limit_per_month', label: 'Ad Limit Per Month', placeholder: '5' },
         { key: 'classified_limit_per_month', label: 'Classified Limit Per Month', placeholder: '2' },
+      ]
+    },
+    {
+      title: 'Auto-Cleanup Rules (Database Maintenance)',
+      fields: [
+        { key: 'news_auto_delete_days', label: 'News Deletion After (Days)', placeholder: '10' },
+        { key: 'news_min_views', label: 'Min Views to Keep News', placeholder: '10' },
+        { key: 'news_min_shares', label: 'Min Shares to Keep News', placeholder: '5' },
+        { key: 'user_post_final_delete_days', label: 'Final Delete Classifieds After (Days)', placeholder: '90' },
       ]
     },
     {

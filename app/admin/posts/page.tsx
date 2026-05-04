@@ -6,20 +6,43 @@ import { createClient as createSupabaseAdmin } from '@supabase/supabase-js'
 // Opt out of caching for admin routes
 export const dynamic = 'force-dynamic'
 
-export default async function AdminPostsPage() {
+export default async function AdminPostsPage({
+  searchParams
+}: {
+  searchParams: Promise<{ page?: string; search?: string }>
+}) {
+  const { page: pageStr, search } = await searchParams;
+  const page = parseInt(pageStr || '1');
+  const pageSize = 100;
+  const offset = (page - 1) * pageSize;
+
   const supabase = await createClient()
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY || ''
   const supabaseAdmin = createSupabaseAdmin(supabaseUrl, serviceRoleKey || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '')
 
-  const { data: posts, error } = await supabase
+  let query = supabase
     .from('posts')
-    .select('id, title, source_name, published_at, is_deleted, image_url')
+    .select('id, title, source_name, published_at, is_deleted, image_url', { count: 'exact' });
+
+  if (search) {
+    const isId = !isNaN(Number(search));
+    if (isId) {
+      query = query.eq('id', Number(search));
+    } else {
+      query = query.ilike('title', `%${search}%`);
+    }
+  }
+
+  const { data: posts, count, error } = await query
     .order('published_at', { ascending: false })
+    .range(offset, offset + pageSize - 1);
 
   if (error) {
     return <div className="text-red-500">Error fetching posts: {error.message}</div>
   }
+
+  const totalPages = Math.ceil((count || 0) / pageSize);
 
   const postIds = (posts ?? []).map((p) => p.id)
   const metricsByPostId = new Map<number, { clicks: number; fb: number; x: number; telegram: number; whatsapp: number; native: number }>()
@@ -66,8 +89,24 @@ export default async function AdminPostsPage() {
 
   return (
     <div>
-      <div className="mb-6 flex items-center justify-between">
+      <div className="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
         <h1 className="text-2xl font-bold text-white">Manage Posts</h1>
+        
+        <div className="flex flex-1 max-w-md gap-2">
+          <form className="flex w-full gap-2">
+            <input 
+              type="text" 
+              name="search" 
+              defaultValue={search || ''} 
+              placeholder="Search by Title or ID..."
+              className="flex-1 rounded-lg bg-[#161b22] border border-[var(--border)] px-4 py-2 text-sm text-white focus:border-[#ffd42a] focus:outline-none"
+            />
+            <button type="submit" className="rounded-lg bg-[var(--border)] px-4 py-2 text-sm font-bold text-white hover:bg-gray-700">
+              Search
+            </button>
+          </form>
+        </div>
+
         <Link
           href="/admin/posts/new"
           className="rounded-lg bg-[#e91e63] px-4 py-2 text-sm font-bold text-white shadow-md transition-all hover:bg-[#c2185b] active:scale-95"
@@ -138,6 +177,33 @@ export default async function AdminPostsPage() {
           </tbody>
         </table>
       </div>
+
+      {/* PAGINATION */}
+      {totalPages > 1 && (
+        <div className="mt-8 flex items-center justify-center gap-2">
+          {page > 1 && (
+            <Link
+              href={`/admin/posts?page=${page - 1}${search ? `&search=${search}` : ''}`}
+              className="rounded-lg bg-[#161b22] border border-[var(--border)] px-4 py-2 text-sm font-medium text-white hover:bg-[#21262d]"
+            >
+              Previous
+            </Link>
+          )}
+          
+          <span className="text-sm text-[var(--text-muted)]">
+            Page {page} of {totalPages}
+          </span>
+
+          {page < totalPages && (
+            <Link
+              href={`/admin/posts?page=${page + 1}${search ? `&search=${search}` : ''}`}
+              className="rounded-lg bg-[#161b22] border border-[var(--border)] px-4 py-2 text-sm font-medium text-white hover:bg-[#21262d]"
+            >
+              Next
+            </Link>
+          )}
+        </div>
+      )}
     </div>
   )
 }

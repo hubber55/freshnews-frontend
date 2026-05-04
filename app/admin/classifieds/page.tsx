@@ -25,7 +25,16 @@ export default function AdminClassifiedsPage() {
   }, []);
 
   const handleUpdateStatus = async (id: number, status: string) => {
-    if (status === 'deleted' && !confirm('Are you sure you want to delete this classified?')) return;
+    if (status === 'deleted') {
+      if (!confirm('Are you sure you want to PERMANENTLY delete this classified and all its images?')) return;
+      try {
+        const res = await fetch(`/api/admin/submissions/${id}`, { method: 'DELETE' });
+        if (res.ok) fetchClassifieds();
+      } catch (err) {
+        alert('Error deleting submission');
+      }
+      return;
+    }
     
     try {
       const res = await fetch(`/api/admin/submissions/${id}`, {
