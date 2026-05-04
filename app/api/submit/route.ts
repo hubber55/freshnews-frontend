@@ -114,23 +114,17 @@ export async function POST(req: Request) {
       const expiryDays = parseInt(settings?.find(s => s.key === expiryKey)?.value || '30');
       const monthlyLimit = parseInt(settings?.find(s => s.key === limitKey)?.value || defaultLimit);
 
-      // 2. Check monthly limit
+      // 2. Check monthly limit using usage_tracking table (persistent even after deletion)
       const startOfMonth = new Date();
       startOfMonth.setDate(1);
       startOfMonth.setHours(0, 0, 0, 0);
 
-      let query = supabase
-        .from('submissions')
+      const { count: existingCount } = await supabase
+        .from('usage_tracking')
         .select('*', { count: 'exact', head: true })
         .eq('user_id', user.id)
         .eq('type', type)
         .gte('created_at', startOfMonth.toISOString());
-      
-      if (type === 'classified' && categoryId) {
-        query = query.eq('category_id', parseInt(categoryId));
-      }
-
-      const { count: existingCount } = await query;
 
       if ((existingCount || 0) >= monthlyLimit) {
         return NextResponse.json({ 
@@ -169,6 +163,12 @@ export async function POST(req: Request) {
     if (submissionError) {
       throw new Error(`Database insertion failed: ${submissionError.message}`);
     }
+
+    // --- Log Usage (for monthly limit tracking) ---
+    await supabase.from('usage_tracking').insert({
+        user_id: user.id,
+        type: type,
+    });
 
     // --- Handle News for Ad ---
     const newsForAd = formData.get('newsForAd') === 'true';

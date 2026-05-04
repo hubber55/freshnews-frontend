@@ -122,11 +122,7 @@ export default async function AdminPostsPage() {
                   )}
                 </td>
                 <td className="px-6 py-4">
-                  {post.is_deleted ? (
-                    <span className="rounded bg-red-500/20 px-2 py-1 text-xs font-bold text-red-500">Deleted (Redirected)</span>
-                  ) : (
-                    <span className="rounded bg-green-500/20 px-2 py-1 text-xs font-bold text-[#00b894]">Active</span>
-                  )}
+                  <span className="rounded bg-green-500/20 px-2 py-1 text-xs font-bold text-[#00b894]">Active</span>
                 </td>
                 <td className="px-6 py-4 text-right">
                   <Link

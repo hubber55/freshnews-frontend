@@ -37,35 +37,47 @@ export async function updatePost(postId: string, prevState: any, formData: FormD
   redirect('/admin/posts')
 }
 
-export async function deletePostWithRedirect(postId: string, prevState: any, formData: FormData) {
+export async function deletePostPermanently(postId: string, prevState: any) {
   const supabase = await createClient()
 
   // Verify auth
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error('Unauthorized')
 
-  let redirectTo: string | null = formData.get('redirect_to') as string
-  if (!redirectTo || redirectTo.trim() === '') {
-    redirectTo = null
-  } else {
-    // Basic validation, ensure it's a relative path starting with /posts/ or just a valid slug
-    if (!redirectTo.startsWith('/') && !redirectTo.startsWith('http')) {
-       // Assuming they provided an ID
-       redirectTo = `/posts/${redirectTo.trim()}`
-    }
-  }
-
   // Use service role key for delete to bypass RLS issues
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
   const supabaseAdmin = createSupabaseAdmin(supabaseUrl, serviceRoleKey)
 
+  // Get post to find images
+  const { data: post } = await supabaseAdmin
+    .from('posts')
+    .select('image_url')
+    .eq('id', postId)
+    .single()
+
+  if (post?.image_url) {
+    try {
+      const imageUrls: string[] = post.image_url.startsWith('[') 
+        ? JSON.parse(post.image_url) 
+        : [post.image_url];
+      
+      const filePaths = imageUrls.map(url => {
+        const parts = url.split('/');
+        return parts[parts.length - 1];
+      });
+
+      if (filePaths.length > 0) {
+        await supabaseAdmin.storage.from('submissions').remove(filePaths);
+      }
+    } catch (e) {
+      console.error('Error deleting images from storage:', e);
+    }
+  }
+
   const { error } = await supabaseAdmin
     .from('posts')
-    .update({
-      is_deleted: true,
-      redirect_to: redirectTo
-    })
+    .delete()
     .eq('id', postId)
 
   if (error) {

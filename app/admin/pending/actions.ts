@@ -157,6 +157,32 @@ export async function deleteSubmission(submissionId: string) {
   const { createClient: createSupabaseAdmin } = await import('@supabase/supabase-js');
   const supabaseAdmin = createSupabaseAdmin(supabaseUrl, serviceRoleKey);
   
+  // Get submission to find images
+  const { data: submission } = await supabaseAdmin
+    .from('submissions')
+    .select('image_url')
+    .eq('id', submissionId)
+    .single();
+
+  if (submission?.image_url) {
+    try {
+      const imageUrls: string[] = submission.image_url.startsWith('[') 
+        ? JSON.parse(submission.image_url) 
+        : [submission.image_url];
+      
+      const filePaths = imageUrls.map(url => {
+        const parts = url.split('/');
+        return parts[parts.length - 1];
+      });
+
+      if (filePaths.length > 0) {
+        await supabaseAdmin.storage.from('submissions').remove(filePaths);
+      }
+    } catch (e) {
+      console.error('Error deleting submission images from storage:', e);
+    }
+  }
+
   const { data, error } = await supabaseAdmin
     .from('submissions')
     .delete()

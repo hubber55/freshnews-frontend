@@ -151,14 +151,6 @@ export default async function PostPage({ params }: PageProps) {
     notFound();
   }
 
-  if (post.is_deleted) {
-    if (post.redirect_to) {
-      redirect(post.redirect_to);
-    } else {
-      redirect('/');
-    }
-  }
-
   const paragraphs = splitParagraphs(post.summary);
   const bodyItems = paragraphs.flatMap((paragraph) => {
     const creditPrefix = 'Photo and News Source:';
