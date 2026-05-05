@@ -128,30 +128,36 @@ export default function SubmissionReviewForm({ submission, id }: { submission: S
         </span>
       </div>
 
-      {(submission.type === 'ad' || submission.type === 'classified') && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mx-2">
-          <div>
-            <label className="block text-sm font-bold mb-2">Price</label>
-            <input
-              type="text"
-              value={price}
-              onChange={(e) => setPrice(e.target.value)}
-              placeholder="e.g. ₹ 45 Lakhs"
-              className="w-full px-4 py-2 rounded-lg bg-[var(--bg-secondary)] border border-[var(--border)] text-white focus:border-[#00cfff] focus:outline-none"
-            />
+      {(submission.type === 'ad' || submission.type === 'classified') && (() => {
+        const tags = submission.tags || [];
+        const isJob = tags.some(t => t.toLowerCase().includes('job') || t.toLowerCase().includes('തൊഴിൽ'));
+        const priceLabel = isJob ? 'Salary' : 'Price';
+        
+        return (
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 mx-2">
+            <div>
+              <label className="block text-sm font-bold mb-2">{priceLabel}</label>
+              <input
+                type="text"
+                value={price}
+                onChange={(e) => setPrice(e.target.value)}
+                placeholder={isJob ? "e.g. ₹ 25,000/month" : "e.g. ₹ 45 Lakhs"}
+                className="w-full px-4 py-2 rounded-lg bg-[var(--bg-secondary)] border border-[var(--border)] text-white focus:border-[#00cfff] focus:outline-none"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-bold mb-2">Contact Phone</label>
+              <input
+                type="text"
+                value={contactPhone}
+                onChange={(e) => setContactPhone(e.target.value)}
+                placeholder="e.g. +91 9876543210"
+                className="w-full px-4 py-2 rounded-lg bg-[var(--bg-secondary)] border border-[var(--border)] text-white focus:border-[#00cfff] focus:outline-none"
+              />
+            </div>
           </div>
-          <div>
-            <label className="block text-sm font-bold mb-2">Contact Phone</label>
-            <input
-              type="text"
-              value={contactPhone}
-              onChange={(e) => setContactPhone(e.target.value)}
-              placeholder="e.g. +91 9876543210"
-              className="w-full px-4 py-2 rounded-lg bg-[var(--bg-secondary)] border border-[var(--border)] text-white focus:border-[#00cfff] focus:outline-none"
-            />
-          </div>
-        </div>
-      )}
+        );
+      })()}
 
       <div className="mx-2">
         <label className="block text-sm font-bold mb-2">Title</label>

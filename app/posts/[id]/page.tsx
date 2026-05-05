@@ -354,25 +354,48 @@ export default async function PostPage({ params }: PageProps) {
               })}
             </div>
 
-            {/* PRICE & CONTACT */}
-            {(post.price || post.contact_phone) && (
-              <div className="mt-8 pt-6 border-t border-[var(--border)] flex flex-wrap gap-x-10 gap-y-6 items-center">
-                {post.price && (
-                  <div>
-                    <span className="text-[10px] uppercase font-bold text-[var(--text-muted)] block mb-1" style={{ fontFamily: 'var(--font-en)' }}>Price</span>
-                    <span className="text-[#00ffff] font-black text-2xl">{post.price}</span>
-                  </div>
-                )}
-                {post.contact_phone && (
-                  <div>
-                    <span className="text-[10px] uppercase font-bold text-[var(--text-muted)] block mb-1" style={{ fontFamily: 'var(--font-en)' }}>Contact</span>
-                    <a href={`tel:${post.contact_phone}`} className="text-[#ffd42a] font-black text-2xl hover:underline">
-                      {post.contact_phone}
-                    </a>
-                  </div>
-                )}
-              </div>
-            )}
+            {/* PRICE & CONTACT - Side by Side and Dynamic Labels */}
+            {(() => {
+              const tags = post.tags || [];
+              const tagList = tags.map(t => t.toLowerCase());
+              
+              // Only show for specific categories
+              const isRelevant = tagList.some(t => 
+                ['real estate', 'rental', 'jobs', 'job', 'property', 'classifieds', 'classified'].includes(t)
+              );
+              
+              if (!isRelevant || (!post.price && !post.contact_phone)) return null;
+              
+              const priceLabel = (tagList.includes('jobs') || tagList.includes('job')) ? 'Salary' : 'Price';
+              
+              return (
+                <div className="mt-8 pt-6 border-t border-[var(--border)] grid grid-cols-2 gap-4 sm:flex sm:flex-wrap sm:gap-10 items-center">
+                  {post.price && (
+                    <div className="flex flex-col">
+                      <span className="text-[10px] uppercase font-bold text-[var(--text-muted)] mb-1" style={{ fontFamily: 'var(--font-en)' }}>
+                        {priceLabel}
+                      </span>
+                      <span className="text-[#00ffff] font-black text-lg sm:text-2xl break-words leading-tight">
+                        {post.price}
+                      </span>
+                    </div>
+                  )}
+                  {post.contact_phone && (
+                    <div className="flex flex-col">
+                      <span className="text-[10px] uppercase font-bold text-[var(--text-muted)] mb-1" style={{ fontFamily: 'var(--font-en)' }}>
+                        Contact
+                      </span>
+                      <a 
+                        href={`tel:${post.contact_phone}`} 
+                        className="text-[#ffd42a] font-black text-lg sm:text-2xl hover:underline break-words leading-tight"
+                      >
+                        {post.contact_phone}
+                      </a>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
 
             {/* TAGS – colorful */}
             <div className="mt-10 flex flex-wrap items-center gap-3 border-t border-[var(--border)] pt-8">

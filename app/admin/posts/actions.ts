@@ -85,6 +85,12 @@ export async function deletePostPermanently(postId: string, prevState: any) {
     return { error: error.message }
   }
 
+  // Also delete associated submission if any
+  await supabaseAdmin
+    .from('submissions')
+    .delete()
+    .eq('post_id', postId);
+
   redirect('/admin/posts')
 }
 

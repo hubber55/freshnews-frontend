@@ -441,28 +441,34 @@ function SubmitContent() {
               </div>
             )}
 
-            {(type === 'ad' || type === 'classified') && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div>
-                  <label className="mb-2 block text-sm font-bold text-[var(--text-secondary)]">Price (max 20 chars)</label>
-                  <input
-                    value={price}
-                    onChange={(e) => setPrice(e.target.value.slice(0, 20))}
-                    placeholder="e.g. ₹ 45 Lakhs"
-                    className="w-full rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-4 py-3 text-white focus:border-[#00cfff] focus:outline-none focus:ring-1 focus:ring-[#00cfff]"
-                  />
+            {(type === 'ad' || type === 'classified') && (() => {
+              const subcatName = filteredSubcategories.find(s => s.id === parseInt(selectedSubcategory, 10))?.name || '';
+              const isJob = subcatName.toLowerCase().includes('job') || subcatName.toLowerCase().includes('തൊഴിൽ');
+              const priceLabel = isJob ? 'Salary' : 'Price';
+              
+              return (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="mb-2 block text-sm font-bold text-[var(--text-secondary)]">{priceLabel} (max 20 chars)</label>
+                    <input
+                      value={price}
+                      onChange={(e) => setPrice(e.target.value.slice(0, 20))}
+                      placeholder={isJob ? "e.g. ₹ 25,000/month" : "e.g. ₹ 45 Lakhs"}
+                      className="w-full rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-4 py-3 text-white focus:border-[#00cfff] focus:outline-none focus:ring-1 focus:ring-[#00cfff]"
+                    />
+                  </div>
+                  <div>
+                    <label className="mb-2 block text-sm font-bold text-[var(--text-secondary)]">Phone Number (max 15 chars)</label>
+                    <input
+                      value={contactPhone}
+                      onChange={(e) => setContactPhone(e.target.value.slice(0, 15))}
+                      placeholder="e.g. +91 9876543210"
+                      className="w-full rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-4 py-3 text-white focus:border-[#00cfff] focus:outline-none focus:ring-1 focus:ring-[#00cfff]"
+                    />
+                  </div>
                 </div>
-                <div>
-                  <label className="mb-2 block text-sm font-bold text-[var(--text-secondary)]">Phone Number (max 15 chars)</label>
-                  <input
-                    value={contactPhone}
-                    onChange={(e) => setContactPhone(e.target.value.slice(0, 15))}
-                    placeholder="e.g. +91 9876543210"
-                    className="w-full rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-4 py-3 text-white focus:border-[#00cfff] focus:outline-none focus:ring-1 focus:ring-[#00cfff]"
-                  />
-                </div>
-              </div>
-            )}
+              );
+            })()}
 
             <div className={((type === 'ad' || type === 'classified') && (!selectedCategory || !selectedSubcategory || !price || !contactPhone)) ? 'opacity-30 pointer-events-none' : ''}>
               <label className="mb-2 block text-sm font-bold text-[var(--text-secondary)]">

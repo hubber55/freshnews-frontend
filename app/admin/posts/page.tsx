@@ -2,6 +2,8 @@ import { createClient } from '@/app/utils/supabase/server'
 import Link from 'next/link'
 import { format } from 'date-fns'
 import { createClient as createSupabaseAdmin } from '@supabase/supabase-js'
+import DeletePostButton from './DeletePostButton'
+import { Trash2 } from 'lucide-react'
 
 // Opt out of caching for admin routes
 export const dynamic = 'force-dynamic'
@@ -160,16 +162,24 @@ export default async function AdminPostsPage({
                     <span className="rounded bg-red-500/20 px-2 py-1 text-xs font-bold text-red-500">No</span>
                   )}
                 </td>
+
                 <td className="px-6 py-4">
-                  <span className="rounded bg-green-500/20 px-2 py-1 text-xs font-bold text-[#00b894]">Active</span>
+                  {post.is_deleted ? (
+                    <span className="rounded bg-red-500/20 px-2 py-1 text-xs font-bold text-red-500">Deleted</span>
+                  ) : (
+                    <span className="rounded bg-green-500/20 px-2 py-1 text-xs font-bold text-[#00b894]">Active</span>
+                  )}
                 </td>
-                <td className="px-6 py-4 text-right">
-                  <Link
-                    href={`/admin/posts/${post.id}/edit`}
-                    className="mr-3 font-semibold text-[#ffd42a] hover:underline"
-                  >
-                    Edit
-                  </Link>
+                <td className="px-6 py-4 text-right whitespace-nowrap">
+                  <div className="flex items-center justify-end gap-3">
+                    <Link
+                      href={`/admin/posts/${post.id}/edit`}
+                      className="font-semibold text-[#ffd42a] hover:underline"
+                    >
+                      Edit
+                    </Link>
+                    <DeletePostButton postId={post.id} />
+                  </div>
                 </td>
               </tr>
               )

@@ -130,29 +130,40 @@ export async function DELETE(
 
     const supabase = createAdminClient();
 
-    // Get submission to find images
+    // Get submission to find images and associated post
     const { data: submission } = await supabase
       .from('submissions')
-      .select('image_url')
+      .select('image_url, post_id')
       .eq('id', parseInt(id))
       .single();
 
-    if (submission?.image_url) {
-      try {
-        const imageUrls: string[] = submission.image_url.startsWith('[') 
-          ? JSON.parse(submission.image_url) 
-          : [submission.image_url];
-        
-        const filePaths = imageUrls.map(url => {
-          const parts = url.split('/');
-          return parts[parts.length - 1];
-        });
+    if (submission) {
+      // 1. Delete associated post if it exists
+      if (submission.post_id) {
+        await supabase
+          .from('posts')
+          .delete()
+          .eq('id', submission.post_id);
+      }
 
-        if (filePaths.length > 0) {
-          await supabase.storage.from('submissions').remove(filePaths);
+      // 2. Delete images from storage
+      if (submission.image_url) {
+        try {
+          const imageUrls: string[] = submission.image_url.startsWith('[') 
+            ? JSON.parse(submission.image_url) 
+            : [submission.image_url];
+          
+          const filePaths = imageUrls.map(url => {
+            const parts = url.split('/');
+            return parts[parts.length - 1];
+          });
+
+          if (filePaths.length > 0) {
+            await supabase.storage.from('submissions').remove(filePaths);
+          }
+        } catch (e) {
+          console.error('Error deleting images from storage:', e);
         }
-      } catch (e) {
-        console.error('Error deleting images from storage:', e);
       }
     }
 
