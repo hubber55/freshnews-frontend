@@ -4,7 +4,6 @@
 import { useState, useEffect, useCallback, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
-import { X } from 'lucide-react';
 import Header from '../components/header';
 import keralaLocations from '../../data/kerala_locations.json';
 
@@ -24,7 +23,10 @@ async function compressImageFile(file: File, maxBytes = MAX_UPLOAD_BYTES): Promi
     throw new Error('Only image files are allowed');
   }
 
-  // Even if small, we process to ensure correct format/metadata stripping
+  if (file.size <= maxBytes) {
+    return file;
+  }
+
   const dataUrl = await new Promise<string>((resolve, reject) => {
     const reader = new FileReader();
     reader.onload = () => resolve(String(reader.result || ''));
@@ -42,9 +44,7 @@ async function compressImageFile(file: File, maxBytes = MAX_UPLOAD_BYTES): Promi
   const canvas = document.createElement('canvas');
   let width = img.width;
   let height = img.height;
-  
-  // Use a more modern max dimension (1200px is good for high-res mobile & desktop)
-  const maxDimension = 1200; 
+  const maxDimension = 800; // Resize to mobile view size
   if (Math.max(width, height) > maxDimension) {
     const ratio = maxDimension / Math.max(width, height);
     width = Math.max(1, Math.floor(width * ratio));
@@ -57,24 +57,15 @@ async function compressImageFile(file: File, maxBytes = MAX_UPLOAD_BYTES): Promi
   if (!ctx) {
     throw new Error('Failed to initialize image compressor');
   }
-  
-  // Use better interpolation if possible
-  ctx.imageSmoothingEnabled = true;
-  ctx.imageSmoothingQuality = 'high';
   ctx.drawImage(img, 0, 0, width, height);
 
-  // We aim for a target size around 500KB - 800KB which is perfect for news
-  const targetBytes = 800 * 1024; 
-  let quality = 0.8; // Start with 0.8 quality (great balance)
+  let quality = 0.9;
   let compressedBlob: Blob | null = null;
-  
-  while (quality >= 0.3) {
+  while (quality >= 0.4) {
     compressedBlob = await new Promise<Blob | null>((resolve) =>
       canvas.toBlob((blob) => resolve(blob), 'image/jpeg', quality)
     );
-    
-    // If we're under target bytes or at minimum quality, we stop
-    if (compressedBlob && (compressedBlob.size <= targetBytes || quality <= 0.3)) {
+    if (compressedBlob && compressedBlob.size <= maxBytes) {
       break;
     }
     quality -= 0.1;
@@ -84,9 +75,8 @@ async function compressImageFile(file: File, maxBytes = MAX_UPLOAD_BYTES): Promi
     throw new Error('Image compression failed');
   }
 
-  // Final hard check against the absolute limit
   if (compressedBlob.size > maxBytes) {
-    throw new Error('Image is still too large even after compression. Please use a smaller file.');
+    throw new Error('Image is too large. Please choose an image smaller than 3MB.');
   }
 
   const baseName = file.name.replace(/\.[^.]+$/, '');
@@ -102,17 +92,12 @@ function SubmitContent() {
   
   // Get type from query param or default to 'news'
   const typeParam = searchParams.get('type');
-  const editId = searchParams.get('editId');
-
   const [type, setType] = useState(typeParam || 'news'); // news, ad, event, classified
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
-  const [price, setPrice] = useState('');
-  const [contactPhone, setContactPhone] = useState('');
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState('');
   const [imageFiles, setImageFiles] = useState<File[]>([]);
-  const [imagePreviews, setImagePreviews] = useState<string[]>([]);
   const [maxImages, setMaxImages] = useState(5); // Default to 5, can be overridden by admin settings
   const [externalUrl, setExternalUrl] = useState('');
   const [hyperlinkText, setHyperlinkText] = useState('Visit us');
@@ -126,7 +111,6 @@ function SubmitContent() {
   const [selectedCategory, setSelectedCategory] = useState('');
   const [selectedSubcategory, setSelectedSubcategory] = useState('');
   const [filteredSubcategories, setFilteredSubcategories] = useState<Subcategory[]>([]);
-  const [existingImages, setExistingImages] = useState<string[]>([]);
   
   // Location States
   const [selectedDistrict, setSelectedDistrict] = useState('');
@@ -145,85 +129,45 @@ function SubmitContent() {
     fetchSettings();
   }, [supabase]);
 
-  // Check auth status and fetch edit data if needed
+  // Check auth status using same API as header
   useEffect(() => {
-    async function checkAuthAndLoad() {
+    async function checkAuth() {
       try {
         const res = await fetch('/api/auth/me');
         const data = await res.json();
         if (!data.name) {
           router.push('/login');
-          return;
+        } else {
+          setUser({ name: data.name });
         }
-        setUser({ name: data.name });
-
-        // If editing, load submission data
-        if (editId) {
-          const subRes = await fetch(`/api/submissions/${editId}`);
-          if (subRes.ok) {
-            const sub = await subRes.json();
-            setTitle(sub.title || '');
-            setContent(sub.content || '');
-            setPrice(sub.price || '');
-            setContactPhone(sub.contact_phone || '');
-            setType(sub.type || 'news');
-            setExternalUrl(sub.external_url || '');
-            setHyperlinkText(sub.hyperlink_text || 'Visit us');
-            
-            // Handle Tags
-            const subTags = sub.tags || [];
-            setTags(subTags.filter((t: string) => t.toLowerCase() !== 'classifieds'));
-            
-            // Handle Location
-            if (sub.location) {
-              const parts = sub.location.split(',').map((s: string) => s.trim());
-              if (parts.length >= 3) {
-                setSelectedDistrict(parts[1]);
-                setSelectedTown(parts[2]);
-              }
-            }
-
-            // Handle Category/Subcategory
-            if (sub.category_id) setSelectedCategory(sub.category_id.toString());
-            if (sub.subcategory_id) setSelectedSubcategory(sub.subcategory_id.toString());
-
-            // Handle Images
-            if (sub.image_url) {
-              const imgs = sub.image_url.startsWith('[') ? JSON.parse(sub.image_url) : [sub.image_url];
-              setExistingImages(imgs);
-              setImagePreviews(imgs);
-            }
-          }
-        }
-      } catch (err) {
-        console.error('Error loading submission for edit:', err);
+      } catch {
         router.push('/login');
       } finally {
         setLoading(false);
       }
     }
-    checkAuthAndLoad();
-  }, [router, editId]);
+    checkAuth();
+  }, [router]);
 
   // Update type when query param changes
   useEffect(() => {
-    if (typeParam && !editId) {
+    if (typeParam) {
       setType(typeParam);
     }
-  }, [typeParam, editId]);
+  }, [typeParam]);
 
   // Auto-select Classifieds category
   useEffect(() => {
-    if (type === 'classified' && categories.length > 0 && !editId) {
+    if (type === 'classified' && categories.length > 0) {
       const classifiedCat = categories.find(c => c.name.toLowerCase() === 'classified' || c.name.toLowerCase() === 'classifieds');
       if (classifiedCat) {
         setSelectedCategory(classifiedCat.id.toString());
       }
-    } else if (type === 'ad' && !editId) {
+    } else if (type === 'ad') {
       setSelectedCategory('');
       setSelectedSubcategory('');
     }
-  }, [type, categories, editId]);
+  }, [type, categories]);
 
   const fetchCategoriesAndSubcategories = useCallback(async () => {
     const { data: cats, error: catError } = await supabase.from('ad_categories').select('*').order('name');
@@ -247,6 +191,7 @@ function SubmitContent() {
     } else {
       setFilteredSubcategories([]);
     }
+    setSelectedSubcategory('');
   }, [selectedCategory, subcategories]);
 
   const handleDetectLocation = () => {
@@ -285,31 +230,14 @@ function SubmitContent() {
     });
   };
 
-  const removeImage = (index: number) => {
-    // If it's an existing image, we just remove it from preview/files if it was added
-    // If it's a new file
-    if (index >= existingImages.length || imageFiles.length > 0) {
-       // logic here is a bit tricky since we combined previews
-       // For simplicity, if they touch images, they should re-upload or we clear new files
-    }
-
-    setImageFiles(prev => prev.filter((_, i) => i !== index));
-    setImagePreviews(prev => {
-      if (prev[index].startsWith('blob:')) {
-        URL.revokeObjectURL(prev[index]);
-      }
-      return prev.filter((_, i) => i !== index);
-    });
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSubmitting(true);
     setError(null);
 
     // Validation
-    if (title.length > 80) {
-      setError('Title must be 80 characters or less');
+    if (title.length > 70) {
+      setError('Title must be 70 characters or less');
       setIsSubmitting(false);
       return;
     }
@@ -320,6 +248,19 @@ function SubmitContent() {
       setIsSubmitting(false);
       return;
     }
+    if (newsForAd) {
+      if (newsTitle.length > 70) {
+        setError('News title must be 70 characters or less');
+        setIsSubmitting(false);
+        return;
+      }
+      const newsWordCount = newsContent.trim().split(/\s+/).length;
+      if (newsWordCount > 500) {
+        setError('News content must be 500 words or less');
+        setIsSubmitting(false);
+        return;
+      }
+    }
 
     if ((type === 'ad' || type === 'classified') && (!selectedDistrict || !selectedTown)) {
       setError('Please select a district and town for your listing.');
@@ -327,7 +268,7 @@ function SubmitContent() {
       return;
     }
 
-    if (!editId && imageFiles.length === 0) {
+    if (imageFiles.length === 0) {
       setError('Please upload at least one image.');
       setIsSubmitting(false);
       return;
@@ -353,8 +294,6 @@ function SubmitContent() {
 
     if (type === 'ad' || type === 'classified') {
       formData.append('location', `Kerala, ${selectedDistrict}, ${selectedTown}`);
-      formData.append('price', price);
-      formData.append('contactPhone', contactPhone);
     }
 
     if (newsForAd) {
@@ -365,11 +304,8 @@ function SubmitContent() {
     }
 
     try {
-      const url = editId ? `/api/submissions/${editId}` : '/api/submit';
-      const method = editId ? 'PUT' : 'POST';
-
-      const res = await fetch(url, {
-        method: method,
+      const res = await fetch('/api/submit', {
+        method: 'POST',
         body: formData,
       });
 
@@ -379,17 +315,11 @@ function SubmitContent() {
         throw new Error(json.error || 'Submission failed');
       }
 
-      if (editId) {
-        alert(`You had edited your Ad "${title}" - It will be Live again after Admin Approval. Avoid unnecessary editing of Ad, to avoid Live disruptions`);
-      } else {
-        alert('Will Publish after Approval');
-      }
-      router.push('/profile');
+      alert('Will Publish after Approval');
+      router.push('/');
 
     } catch (error: unknown) {
-      const msg = getErrorMessage(error, 'Submission failed');
-      setError(msg);
-      alert('Error: ' + msg);
+      setError(getErrorMessage(error, 'Submission failed'));
     } finally {
       setIsSubmitting(false);
     }
@@ -486,47 +416,19 @@ function SubmitContent() {
               </div>
             )}
 
-            {(type === 'ad' || type === 'classified') && (() => {
-              const subcatName = filteredSubcategories.find(s => s.id === parseInt(selectedSubcategory, 10))?.name || '';
-              const isJob = subcatName.toLowerCase().includes('job') || subcatName.toLowerCase().includes('തൊഴിൽ');
-              const priceLabel = isJob ? 'Salary' : 'Price';
-              
-              return (
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <label className="mb-2 block text-sm font-bold text-[var(--text-secondary)]">{priceLabel} (max 20 chars)</label>
-                    <input
-                      value={price}
-                      onChange={(e) => setPrice(e.target.value.slice(0, 20))}
-                      placeholder={isJob ? "e.g. ₹ 25,000/month" : "e.g. ₹ 45 Lakhs"}
-                      className="w-full rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-4 py-3 text-white focus:border-[#00cfff] focus:outline-none focus:ring-1 focus:ring-[#00cfff]"
-                    />
-                  </div>
-                  <div>
-                    <label className="mb-2 block text-sm font-bold text-[var(--text-secondary)]">Phone Number (max 15 chars)</label>
-                    <input
-                      value={contactPhone}
-                      onChange={(e) => setContactPhone(e.target.value.slice(0, 15))}
-                      placeholder="e.g. +91 9876543210"
-                      className="w-full rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-4 py-3 text-white focus:border-[#00cfff] focus:outline-none focus:ring-1 focus:ring-[#00cfff]"
-                    />
-                  </div>
-                </div>
-              );
-            })()}
-
-            <div className={((type === 'ad' || type === 'classified') && (!selectedCategory || !selectedSubcategory || !price || !contactPhone)) ? 'opacity-30 pointer-events-none' : ''}>
+            <div>
               <label className="mb-2 block text-sm font-bold text-[var(--text-secondary)]">
-                Title (English or Malayalam - max 80 chars)
+                Title (English or Malayalam - max 70 chars)
               </label>
               <input
                 value={title}
-                onChange={(e) => setTitle(e.target.value.slice(0, 80))}
+                onChange={(e) => setTitle(e.target.value.slice(0, 70))}
+                maxLength={70}
                 className="w-full rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-4 py-3 text-white focus:border-[#00cfff] focus:outline-none focus:ring-1 focus:ring-[#00cfff]"
               />
             </div>
 
-            <div className={((type === 'ad' || type === 'classified') && (!selectedCategory || !selectedSubcategory || !price || !contactPhone)) ? 'opacity-30 pointer-events-none' : ''}>
+            <div>
               <label className="mb-2 block text-sm font-bold text-[var(--text-secondary)]">
                 Content (English or Malayalam - Max 500 words)
               </label>
@@ -592,17 +494,15 @@ function SubmitContent() {
                     className="w-full rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-4 py-3 text-white focus:border-[#00cfff] focus:outline-none focus:ring-1 focus:ring-[#00cfff]"
                   />
                 </div>
-                {externalUrl.trim() && (
-                  <div>
-                    <label className="mb-2 block text-sm font-bold text-[var(--text-secondary)]">Link Text</label>
-                    <input
-                      value={hyperlinkText}
-                      onChange={(e) => setHyperlinkText(e.target.value)}
-                      placeholder="Visit us"
-                      className="w-full rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-4 py-3 text-white focus:border-[#00cfff] focus:outline-none focus:ring-1 focus:ring-[#00cfff]"
-                    />
-                  </div>
-                )}
+                <div>
+                  <label className="mb-2 block text-sm font-bold text-[var(--text-secondary)]">Link Text</label>
+                  <input
+                    value={hyperlinkText}
+                    onChange={(e) => setHyperlinkText(e.target.value)}
+                    placeholder="Visit us"
+                    className="w-full rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-4 py-3 text-white focus:border-[#00cfff] focus:outline-none focus:ring-1 focus:ring-[#00cfff]"
+                  />
+                </div>
               </div>
             )}
 
@@ -611,20 +511,19 @@ function SubmitContent() {
                 Photos (Up to {maxImages})
               </label>
               <div className="flex flex-wrap gap-3">
-                {imagePreviews.map((preview, i) => (
+                {imageFiles.map((file, i) => (
                   <div key={i} className="relative w-24 h-24 rounded-lg overflow-hidden border border-[var(--border)] group">
                     <img
-                      src={preview}
+                      src={URL.createObjectURL(file)}
                       alt={`Upload ${i + 1}`}
                       className="w-full h-full object-cover"
                     />
                     <button
                       type="button"
-                      onClick={() => removeImage(i)}
-                      className="absolute top-1 right-1 bg-red-500/90 hover:bg-red-600 text-white rounded-full w-6 h-6 flex items-center justify-center text-sm shadow-md z-10"
-                      title="Remove image"
+                      onClick={() => setImageFiles(prev => prev.filter((_, idx) => idx !== i))}
+                      className="absolute top-1 right-1 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs opacity-0 group-hover:opacity-100 transition-opacity"
                     >
-                      <X size={14} strokeWidth={3} />
+                      ×
                     </button>
                   </div>
                 ))}
@@ -643,15 +542,11 @@ function SubmitContent() {
                         if (picked.length === 0) return;
                         
                         const remaining = maxImages - imageFiles.length;
-                        if (picked.length > remaining) {
-                          alert(`Only ${maxImages} images allowed. Slicing selection to fit.`);
-                        }
                         const toProcess = picked.slice(0, remaining);
                         
                         try {
                           const compressed = await Promise.all(toProcess.map(f => compressImageFile(f)));
                           setImageFiles(prev => [...prev, ...compressed]);
-                          setImagePreviews(prev => [...prev, ...compressed.map(f => URL.createObjectURL(f))]);
                           setError(null);
                         } catch (error: unknown) {
                           setError(getErrorMessage(error, 'Image processing failed'));
@@ -745,7 +640,7 @@ function SubmitContent() {
             <button
               type="submit"
               disabled={isSubmitting || loading}
-              className="w-full rounded-xl bg-[#00ffff] px-4 py-3 font-extrabold text-[#0d1117] shadow-md hover:brightness-110 disabled:opacity-60"
+              className="w-full rounded-xl border border-[#00cfff] bg-transparent px-4 py-3 font-extrabold text-[#00cfff] shadow-none transition-colors hover:bg-[#00cfff]/10 disabled:opacity-60"
             >
               {isSubmitting ? 'Submitting...' : 'Submit'}
             </button>

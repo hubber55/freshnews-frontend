@@ -2,52 +2,26 @@ import { createClient } from '@/app/utils/supabase/server'
 import Link from 'next/link'
 import { format } from 'date-fns'
 import { createClient as createSupabaseAdmin } from '@supabase/supabase-js'
-import DeletePostButton from './DeletePostButton'
-import { Trash2 } from 'lucide-react'
 
 // Opt out of caching for admin routes
 export const dynamic = 'force-dynamic'
 
-export default async function AdminPostsPage({
-  searchParams
-}: {
-  searchParams: Promise<{ page?: string; search?: string }>
-}) {
-  const { page: pageStr, search } = await searchParams;
-  const page = parseInt(pageStr || '1');
-  const pageSize = 100;
-  const offset = (page - 1) * pageSize;
-
+export default async function AdminPostsPage() {
   const supabase = await createClient()
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY || ''
   const supabaseAdmin = createSupabaseAdmin(supabaseUrl, serviceRoleKey || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '')
 
-  let query = supabase
+  const { data: posts, error } = await supabase
     .from('posts')
-    .select('id, title, source_name, published_at, is_deleted, image_url', { count: 'exact' })
-    .eq('is_deleted', false);
-
-  if (search) {
-    const isId = !isNaN(Number(search));
-    if (isId) {
-      query = query.eq('id', Number(search));
-    } else {
-      query = query.ilike('title', `%${search}%`);
-    }
-  }
-
-  const { data: posts, count, error } = await query
+    .select('id, title, source_name, published_at, is_deleted, image_url')
     .order('published_at', { ascending: false })
-    .range(offset, offset + pageSize - 1);
 
   if (error) {
     return <div className="text-red-500">Error fetching posts: {error.message}</div>
   }
 
-  const totalPages = Math.ceil((count || 0) / pageSize);
-
-  const postIds = (posts ?? []).map((p) => p.id)
+  const postIds = (posts ?? []).map((p: any) => p.id)
   const metricsByPostId = new Map<number, { clicks: number; fb: number; x: number; telegram: number; whatsapp: number; native: number }>()
   for (const id of postIds) {
     metricsByPostId.set(id, { clicks: 0, fb: 0, x: 0, telegram: 0, whatsapp: 0, native: 0 })
@@ -92,24 +66,8 @@ export default async function AdminPostsPage({
 
   return (
     <div>
-      <div className="mb-6 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="mb-6 flex items-center justify-between">
         <h1 className="text-2xl font-bold text-white">Manage Posts</h1>
-        
-        <div className="flex flex-1 max-w-md gap-2">
-          <form className="flex w-full gap-2">
-            <input 
-              type="text" 
-              name="search" 
-              defaultValue={search || ''} 
-              placeholder="Search by Title or ID..."
-              className="flex-1 rounded-lg bg-[#161b22] border border-[var(--border)] px-4 py-2 text-sm text-white focus:border-[#ffd42a] focus:outline-none"
-            />
-            <button type="submit" className="rounded-lg bg-[var(--border)] px-4 py-2 text-sm font-bold text-white hover:bg-gray-700">
-              Search
-            </button>
-          </form>
-        </div>
-
         <Link
           href="/admin/posts/new"
           className="rounded-lg bg-[#e91e63] px-4 py-2 text-sm font-bold text-white shadow-md transition-all hover:bg-[#c2185b] active:scale-95"
@@ -133,7 +91,7 @@ export default async function AdminPostsPage({
             </tr>
           </thead>
           <tbody>
-            {posts?.map((post) => {
+            {posts?.map((post: any) => {
               const m = metricsByPostId.get(post.id) ?? { clicks: 0, fb: 0, x: 0, telegram: 0, whatsapp: 0, native: 0 }
               return (
               <tr key={post.id} className="border-b border-[var(--border)] last:border-0 hover:bg-[#21262d]/50">
@@ -163,24 +121,20 @@ export default async function AdminPostsPage({
                     <span className="rounded bg-red-500/20 px-2 py-1 text-xs font-bold text-red-500">No</span>
                   )}
                 </td>
-
                 <td className="px-6 py-4">
                   {post.is_deleted ? (
-                    <span className="rounded bg-red-500/20 px-2 py-1 text-xs font-bold text-red-500">Deleted</span>
+                    <span className="rounded bg-red-500/20 px-2 py-1 text-xs font-bold text-red-500">Deleted (Redirected)</span>
                   ) : (
                     <span className="rounded bg-green-500/20 px-2 py-1 text-xs font-bold text-[#00b894]">Active</span>
                   )}
                 </td>
-                <td className="px-6 py-4 text-right whitespace-nowrap">
-                  <div className="flex items-center justify-end gap-3">
-                    <Link
-                      href={`/admin/posts/${post.id}/edit`}
-                      className="font-semibold text-[#ffd42a] hover:underline"
-                    >
-                      Edit
-                    </Link>
-                    <DeletePostButton postId={post.id} />
-                  </div>
+                <td className="px-6 py-4 text-right">
+                  <Link
+                    href={`/admin/posts/${post.id}/edit`}
+                    className="mr-3 font-semibold text-[#ffd42a] hover:underline"
+                  >
+                    Edit
+                  </Link>
                 </td>
               </tr>
               )
@@ -188,33 +142,6 @@ export default async function AdminPostsPage({
           </tbody>
         </table>
       </div>
-
-      {/* PAGINATION */}
-      {totalPages > 1 && (
-        <div className="mt-8 flex items-center justify-center gap-2">
-          {page > 1 && (
-            <Link
-              href={`/admin/posts?page=${page - 1}${search ? `&search=${search}` : ''}`}
-              className="rounded-lg bg-[#161b22] border border-[var(--border)] px-4 py-2 text-sm font-medium text-white hover:bg-[#21262d]"
-            >
-              Previous
-            </Link>
-          )}
-          
-          <span className="text-sm text-[var(--text-muted)]">
-            Page {page} of {totalPages}
-          </span>
-
-          {page < totalPages && (
-            <Link
-              href={`/admin/posts?page=${page + 1}${search ? `&search=${search}` : ''}`}
-              className="rounded-lg bg-[#161b22] border border-[var(--border)] px-4 py-2 text-sm font-medium text-white hover:bg-[#21262d]"
-            >
-              Next
-            </Link>
-          )}
-        </div>
-      )}
     </div>
   )
 }

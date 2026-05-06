@@ -82,14 +82,11 @@ export default function ProfilePage() {
       .then(res => res.json())
       .then(data => {
         if (data.submissions) {
-          // Filter out rejected submissions if you want, but user might want to see them
-          // User said "Deleted Ads to be removed from User table as well"
-          // So I'll filter out anything that is NOT pending or published if desired, 
-          // but for now I'll just filter out 'rejected' if that's what "Deleted" means here.
-          setSubmissions(data.submissions.filter((s: any) => s.status !== 'rejected'));
+          setSubmissions(data.submissions);
         }
       })
       .catch(() => {
+        // Submissions API might not exist yet
         setSubmissions([]);
       });
   }, []);
@@ -256,7 +253,7 @@ export default function ProfilePage() {
     <div className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)]">
       <Header />
       
-      <main className="px-4 pt-2 pb-10">
+      <main className="px-4 pt-8 pb-10">
         <div className="mx-auto w-full max-w-[800px] px-2">
           {/* Profile Header */}
           <div className="rounded-3xl border border-[var(--border)] bg-[var(--bg-card)] p-8 shadow-2xl mb-6">
@@ -291,62 +288,51 @@ export default function ProfilePage() {
               {/* Name */}
               <div className="flex items-center justify-between py-3 border-b border-[var(--border)]">
                 <span className="text-[var(--text-secondary)]">Name</span>
-                <span className="font-semibold text-[#00cfff]">{profile.name}</span>
+                <span className="font-semibold text-white">{profile.name}</span>
               </div>
 
-              {/* Nickname & WhatsApp Group */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 border-b border-[var(--border)] py-4">
-                {/* Nickname - Editable */}
-                <div className="flex flex-col gap-2">
-                  <span className="text-[var(--text-secondary)]">Nickname</span>
-                  {isEditingNickname ? (
-                    <div className="flex items-center gap-2 w-full">
-                      <input
-                        type="text"
-                        value={newNickname}
-                        onChange={(e) => setNewNickname(e.target.value)}
-                        maxLength={20}
-                        className="flex-1 min-w-0 rounded-lg border border-[var(--border)] bg-[var(--bg-primary)] px-3 py-1.5 text-white text-sm focus:border-[#ffd42a] focus:outline-none"
-                        placeholder="Public display name"
-                      />
-                      <div className="flex items-center gap-2 shrink-0 pr-1">
-                        <button
-                          onClick={handleUpdateNickname}
-                          className="text-sm text-[#90ee90] hover:text-[#b5f5b5] font-bold"
-                        >
-                          Save
-                        </button>
-                        <button
-                          onClick={() => {
-                            setIsEditingNickname(false);
-                            setNewNickname(profile.nickname || '');
-                          }}
-                          className="text-sm text-[var(--text-muted)] hover:text-white"
-                        >
-                          Cancel
-                        </button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-2">
-                      <span className="font-semibold text-white">{profile.nickname || 'Not set'}</span>
+              {/* Nickname - Editable */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between py-4 border-b border-[var(--border)] gap-2">
+                <span className="text-[var(--text-secondary)]">Nickname</span>
+                {isEditingNickname ? (
+                  <div className="flex items-center gap-2 w-full sm:w-auto sm:max-w-md">
+                    <input
+                      type="text"
+                      value={newNickname}
+                      onChange={(e) => setNewNickname(e.target.value)}
+                      maxLength={20}
+                      className="flex-1 min-w-0 rounded-lg border border-[var(--border)] bg-[var(--bg-primary)] px-3 py-1.5 text-white text-sm focus:border-[#ffd42a] focus:outline-none"
+                      placeholder="Public display name"
+                    />
+                    <div className="flex items-center gap-2 shrink-0 pr-1">
                       <button
-                        onClick={handleStartEditNickname}
-                        className="text-[var(--text-muted)] hover:text-[#ffd42a]"
+                        onClick={handleUpdateNickname}
+                        className="text-sm text-[#90ee90] hover:text-[#b5f5b5] font-bold"
                       >
-                        <Edit size={16} />
+                        Save
+                      </button>
+                      <button
+                        onClick={() => {
+                          setIsEditingNickname(false);
+                          setNewNickname(profile.nickname || '');
+                        }}
+                        className="text-sm text-[var(--text-muted)] hover:text-white"
+                      >
+                        Cancel
                       </button>
                     </div>
-                  )}
-                </div>
-
-                {/* WhatsApp */}
-                <div className="flex flex-col gap-2 md:border-l md:border-[var(--border)] md:pl-6">
-                  <span className="text-[var(--text-secondary)]">WhatsApp</span>
-                  <span className="font-semibold text-[#ffd42a]">
-                    {profile.whatsappNumber ? `+${profile.whatsappNumber.replace(/^\+/, '')}` : 'Not set'}
-                  </span>
-                </div>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <span className="font-semibold text-white">{profile.nickname || 'Not set'}</span>
+                    <button
+                      onClick={handleStartEditNickname}
+                      className="text-[var(--text-muted)] hover:text-[#ffd42a]"
+                    >
+                      <Edit size={16} />
+                    </button>
+                  </div>
+                )}
               </div>
 
               {/* Email - Editable */}
@@ -390,6 +376,14 @@ export default function ProfilePage() {
                     </button>
                   </div>
                 )}
+              </div>
+
+              {/* WhatsApp */}
+              <div className="flex items-center justify-between py-3">
+                <span className="text-[var(--text-secondary)]">WhatsApp</span>
+                <span className="font-semibold text-white">
+                  {profile.whatsappNumber ? `+${profile.whatsappNumber.replace(/^\+/, '')}` : 'Not set'}
+                </span>
               </div>
             </div>
           </div>
@@ -489,15 +483,6 @@ export default function ProfilePage() {
                           {getStatusText(submission.status)}
                         </span>
                       </div>
-                      
-                      <Link
-                        href={`/submit?type=${submission.type}&editId=${submission.id}`}
-                        className="p-2 rounded-lg bg-[var(--bg-card)] text-[#ffd42a] hover:bg-[#ffd42a] hover:text-black transition-all"
-                        title="Edit Submission"
-                      >
-                        <Edit size={16} />
-                      </Link>
-
                       <button
                         onClick={async () => {
                           if (!confirm('Are you sure you want to delete this submission?')) return;

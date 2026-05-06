@@ -19,29 +19,6 @@ export async function PATCH(
 
     const supabase = createAdminClient();
     
-    // If status is being set to rejected, we should delete the associated post if it exists
-    if (status === 'rejected') {
-      const { data: submission } = await supabase
-        .from('submissions')
-        .select('post_id')
-        .eq('id', parseInt(id))
-        .single();
-      
-      if (submission?.post_id) {
-        // Hard delete the post
-        await supabase
-          .from('posts')
-          .delete()
-          .eq('id', submission.post_id);
-        
-        // Also update the submission to clear the post_id
-        await supabase
-          .from('submissions')
-          .update({ post_id: null })
-          .eq('id', parseInt(id));
-      }
-    }
-
     const { error } = await supabase
       .from('submissions')
       .update({ status })
@@ -65,8 +42,6 @@ export async function POST(
     const title = String(body?.title ?? '').trim();
     const content = String(body?.content ?? '').trim();
     const tags = Array.isArray(body?.tags) ? body.tags.filter(Boolean) : [];
-    const price = body?.price || null;
-    const contactPhone = body?.contact_phone || null;
 
     if (!id) {
       return NextResponse.json({ error: 'ID is required' }, { status: 400 });
@@ -111,8 +86,6 @@ export async function POST(
         tags: submissionTags,
         published_at: new Date().toISOString(),
         is_deleted: false,
-        price: price || submission.price,
-        contact_phone: contactPhone || submission.contact_phone,
       })
       .select()
       .single();
@@ -121,87 +94,23 @@ export async function POST(
 
     const { error: statusError } = await supabase
       .from('submissions')
-      .update({ status: 'approved', post_id: newPost.id })
+      .update({ status: 'approved' })
       .eq('id', submissionId);
 
     if (statusError) throw statusError;
 
     if (user?.whatsapp_number) {
       const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://freshnews.top';
-      const message = `Your Ad is now Live: "${title}"\n\nView it here: ${baseUrl}/posts/${newPost.id}`;
+      const message = `Your ${submission.type} "${title}" has been approved! View it here: ${baseUrl}/posts/${newPost.id}`;
 
-      console.log('Sending approval WhatsApp to:', user.whatsapp_number);
-      
       await fetch(`${baseUrl}/api/send-whatsapp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ to: user.whatsapp_number, message }),
       }).catch((error) => console.error('Failed to send whatsapp:', error));
-    } else {
-      console.log('No WhatsApp number found for user ID:', submission.user_id);
     }
 
     return NextResponse.json({ ok: true, postId: newPost.id });
-  } catch (error: unknown) {
-    return NextResponse.json({ error: getErrorMessage(error) }, { status: 500 });
-  }
-}
-
-export async function DELETE(
-  req: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    const { id } = await params;
-    if (!id) return NextResponse.json({ error: 'ID is required' }, { status: 400 });
-
-    const supabase = createAdminClient();
-
-    // Get submission to find images and associated post
-    const { data: submission } = await supabase
-      .from('submissions')
-      .select('image_url, post_id')
-      .eq('id', parseInt(id))
-      .single();
-
-    if (submission) {
-      // 1. Delete associated post if it exists
-      if (submission.post_id) {
-        await supabase
-          .from('posts')
-          .delete()
-          .eq('id', submission.post_id);
-      }
-
-      // 2. Delete images from storage
-      if (submission.image_url) {
-        try {
-          const imageUrls: string[] = submission.image_url.startsWith('[') 
-            ? JSON.parse(submission.image_url) 
-            : [submission.image_url];
-          
-          const filePaths = imageUrls.map(url => {
-            const parts = url.split('/');
-            return parts[parts.length - 1];
-          });
-
-          if (filePaths.length > 0) {
-            await supabase.storage.from('submissions').remove(filePaths);
-          }
-        } catch (e) {
-          console.error('Error deleting images from storage:', e);
-        }
-      }
-    }
-
-    const { error } = await supabase
-      .from('submissions')
-      .delete()
-      .eq('id', parseInt(id));
-
-    if (error) throw error;
-
-    return NextResponse.json({ ok: true });
   } catch (error: unknown) {
     return NextResponse.json({ error: getErrorMessage(error) }, { status: 500 });
   }

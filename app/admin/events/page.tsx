@@ -22,35 +22,6 @@ export default async function AdminEventsPage() {
     return <div className="p-8 text-red-500">Error: {error.message}</div>
   }
 
-  // Fetch metrics for items with post_id
-  const postIds = (events || [])
-    .map(e => e.post_id)
-    .filter((id): id is number => id !== null);
-
-  const metricsMap: Record<number, any> = {};
-
-  if (postIds.length > 0) {
-    const { data: metricsData } = await supabase
-      .from('post_events')
-      .select('post_id, event_type, network')
-      .in('post_id', postIds);
-
-    metricsData?.forEach((m: any) => {
-      const pid = m.post_id;
-      if (!metricsMap[pid]) {
-        metricsMap[pid] = { clicks: 0, fb: 0, tg: 0, wa: 0, native: 0 };
-      }
-      if (m.event_type === 'click') {
-        metricsMap[pid].clicks++;
-      } else if (m.event_type === 'share') {
-        if (m.network === 'facebook') metricsMap[pid].fb++;
-        else if (m.network === 'telegram') metricsMap[pid].tg++;
-        else if (m.network === 'whatsapp') metricsMap[pid].wa++;
-        else if (m.network === 'native') metricsMap[pid].native++;
-      }
-    });
-  }
-
   return (
     <div className="p-8 max-w-7xl mx-auto">
       <div className="flex items-center gap-4 mb-8">
@@ -77,8 +48,6 @@ export default async function AdminEventsPage() {
               <th className="px-6 py-4">Title</th>
               <th className="px-6 py-4">Submitted By</th>
               <th className="px-6 py-4">Status</th>
-              <th className="px-6 py-4">Clicks</th>
-              <th className="px-6 py-4">Shares</th>
               <th className="px-6 py-4 text-right">Action</th>
             </tr>
           </thead>
@@ -106,26 +75,6 @@ export default async function AdminEventsPage() {
                      <XCircle size={12} />}
                     {item.status}
                   </span>
-                </td>
-                <td className="px-6 py-4">
-                  {item.post_id && metricsMap[item.post_id] ? (
-                    <span className={`font-bold ${metricsMap[item.post_id].clicks > 0 ? 'text-[#00cfff]' : 'text-white'}`}>
-                      {metricsMap[item.post_id].clicks}
-                    </span>
-                  ) : (
-                    <span className="text-[var(--text-secondary)]">-</span>
-                  )}
-                </td>
-                <td className="px-6 py-4 text-[11px] whitespace-nowrap" style={{ fontFamily: 'var(--font-en)' }}>
-                  {item.post_id && metricsMap[item.post_id] ? (
-                    <div className="flex flex-col gap-1">
-                      <span className={metricsMap[item.post_id].fb > 0 ? 'text-[#00cfff] font-bold' : 'text-[var(--text-secondary)]'}>FB {metricsMap[item.post_id].fb}</span>
-                      <span className={metricsMap[item.post_id].tg > 0 ? 'text-[#ff0095] font-bold' : 'text-[var(--text-secondary)]'}>TG {metricsMap[item.post_id].tg}</span>
-                      <span className={metricsMap[item.post_id].wa > 0 ? 'text-[#ffd42a] font-bold' : 'text-[var(--text-secondary)]'}>WA {metricsMap[item.post_id].wa}</span>
-                    </div>
-                  ) : (
-                    <span className="text-[var(--text-secondary)]">-</span>
-                  )}
                 </td>
                 <td className="px-6 py-4 text-right">
                   <Link 

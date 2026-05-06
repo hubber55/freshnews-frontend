@@ -17,10 +17,10 @@ export async function DELETE(
   const { id } = await params;
   const postId = parseInt(id);
   
-  // Verify the post belongs to the user and get image URLs
+  // Verify the post belongs to the user
   const { data: post, error: fetchError } = await supabase
     .from('posts')
-    .select('id, image_url')
+    .select('id')
     .eq('id', postId)
     .eq('user_id', user.id)
     .single();
@@ -28,30 +28,8 @@ export async function DELETE(
   if (fetchError || !post) {
     return NextResponse.json({ error: 'Post not found or not authorized' }, { status: 404 });
   }
-
-  // Delete images from storage if they exist
-  if (post.image_url) {
-    try {
-      const imageUrls: string[] = post.image_url.startsWith('[') 
-        ? JSON.parse(post.image_url) 
-        : [post.image_url];
-      
-      const filePaths = imageUrls.map(url => {
-        // Extract filename from public URL
-        const parts = url.split('/');
-        return parts[parts.length - 1];
-      });
-
-      if (filePaths.length > 0) {
-        await supabase.storage.from('submissions').remove(filePaths);
-      }
-    } catch (e) {
-      console.error('Error deleting images from storage:', e);
-      // Continue with post deletion even if image deletion fails
-    }
-  }
   
-  // Delete the post record (hard delete)
+  // Delete the post
   const { error: deleteError } = await supabase
     .from('posts')
     .delete()

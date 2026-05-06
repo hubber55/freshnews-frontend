@@ -16,8 +16,6 @@ import CommentsSection from '../../components/CommentsSection';
 import PostTracker from '../../components/PostTracker';
 import NetworkAd from '../../components/NetworkAd';
 import { createAdminClient } from '../../../lib/supabase-admin';
-import ImageGallery from '../../components/ImageGallery';
-import SwipeRedirect from './SwipeRedirect';
 
 type AdNetwork = {
   enabled?: boolean;
@@ -33,12 +31,13 @@ function safeParseAdNetworks(value: unknown): AdNetwork[] {
     return [];
   }
 }
+
 function pickAdCode(options: { adNetworksJson: unknown; randomEnabled: boolean; legacyAdsterra: string }) {
   const networks = safeParseAdNetworks(options.adNetworksJson)
     .filter((n) => (n?.enabled ?? true) && typeof n?.code === 'string' && n.code.trim())
     .map((n) => n.code!.trim());
 
-  if (networks.length === 0) return options.legacyAdsterra || '';
+  if (networks.length === 0) return options.legacyAdsterra;
   if (!options.randomEnabled) return networks[0];
   return networks[Math.floor(Math.random() * networks.length)];
 }
@@ -49,20 +48,19 @@ function isMountTargetAd(code: string): boolean {
 }
 
 function AdSlot({ code }: { code: string }) {
-  const trimmed = code?.trim();
-  if (!trimmed) return null;
+  if (!code) return null;
   return (
-    <div className="relative my-8 w-full rounded-lg overflow-hidden flex items-center justify-center min-h-[50px]">
+    <div className="relative my-8 w-full rounded-lg overflow-hidden min-h-[250px]" style={{ border: '2px solid #ff00ff' }}>
       <span
-        className="absolute top-1 right-2 z-10 text-[9px] font-semibold leading-none text-[var(--text-muted)] opacity-50"
-        style={{ fontFamily: 'var(--font-en)' }}
+        className="absolute top-1 right-2 z-10 text-[9px] font-semibold leading-none"
+        style={{ color: '#ff00ff', fontFamily: 'var(--font-en)' }}
       >
-        Advertisement
+        Ad
       </span>
-      {isMountTargetAd(trimmed) ? (
-        <div className="w-full" dangerouslySetInnerHTML={{ __html: trimmed }} />
+      {isMountTargetAd(code) ? (
+        <div className="w-full" dangerouslySetInnerHTML={{ __html: code }} />
       ) : (
-        <NetworkAd code={trimmed} />
+        <NetworkAd code={code} />
       )}
     </div>
   );
@@ -150,6 +148,14 @@ export default async function PostPage({ params }: PageProps) {
 
   if (!post) {
     notFound();
+  }
+
+  if (post.is_deleted) {
+    if (post.redirect_to) {
+      redirect(post.redirect_to);
+    } else {
+      redirect('/');
+    }
   }
 
   const paragraphs = splitParagraphs(post.summary);
@@ -256,59 +262,8 @@ export default async function PostPage({ params }: PageProps) {
     })),
   } : null;
 
-    const isClassified = post.tags?.some(t => t.toLowerCase().includes('classified'));
-    const categoryName = post.tags?.find(t => !t.toLowerCase().includes('classified')) || '';
-
-    // PRICE & CONTACT INFO BLOCK
-    const ContactInfoBlock = (() => {
-        const tags = post.tags || [];
-        const tagList = tags.map(t => t.toLowerCase());
-        
-        // Only show for specific categories
-        const isRelevant = tagList.some(t => 
-            ['real estate', 'rental', 'jobs', 'job', 'property', 'classifieds', 'classified'].includes(t)
-        );
-        
-        if (!isRelevant || (!post.price && !post.contact_phone)) return null;
-        
-        const priceLabel = (tagList.includes('jobs') || tagList.includes('job')) ? 'Salary' : 'Price';
-        
-        return (
-            <div className="my-8 p-5 rounded-2xl bg-[var(--bg-primary)] border border-[#00ffff]/20 grid grid-cols-2 gap-4 sm:flex sm:flex-wrap sm:gap-10 items-center shadow-lg">
-                {post.price && (
-                    <div className="flex flex-col">
-                        <span className="text-[10px] uppercase font-bold text-[var(--text-muted)] mb-1" style={{ fontFamily: 'var(--font-en)' }}>
-                            {priceLabel}
-                        </span>
-                        <span 
-                            className="font-black text-lg sm:text-2xl break-words leading-tight"
-                            style={{ color: '#00ffff' }}
-                        >
-                            {post.price}
-                        </span>
-                    </div>
-                )}
-                {post.contact_phone && (
-                    <div className="flex flex-col">
-                        <span className="text-[10px] uppercase font-bold text-[var(--text-muted)] mb-1" style={{ fontFamily: 'var(--font-en)' }}>
-                            Contact
-                        </span>
-                        <a 
-                            href={`tel:${post.contact_phone}`} 
-                            className="font-black text-lg sm:text-2xl hover:underline break-words leading-tight"
-                            style={{ color: '#ffd42a' }}
-                        >
-                            {post.contact_phone}
-                        </a>
-                    </div>
-                )}
-            </div>
-        );
-    })();
-
   return (
     <div className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)]">
-      {isClassified && <SwipeRedirect category={categoryName} />}
       {/* JSON-LD Structured Data */}
       <script
         type="application/ld+json"
@@ -326,22 +281,13 @@ export default async function PostPage({ params }: PageProps) {
       <main className="pb-8">
         <article className="mx-auto mt-6 w-full max-w-[850px] px-3 sm:px-4">
           <div className="rounded-3xl bg-[var(--bg-card)] border border-[var(--border)] px-2.5 py-6 sm:px-5 sm:py-8 break-words">
+            {/* BREADCRUMB */}
             <div className="mb-5 flex flex-wrap items-center gap-2 text-[12.5px] text-[var(--text-muted)]" style={{ fontFamily: 'var(--font-en)' }}>
               <Link href="/" className="text-[var(--text-secondary)] hover:text-[#ffd42a]">
-                Home
+                ഹോം
               </Link>
-              <span>-</span>
-              {isClassified ? (
-                <>
-                  <Link href="/classifieds" className="text-[var(--text-secondary)] hover:text-[#00fbff]">
-                    Classifieds
-                  </Link>
-                  <span>-</span>
-                  <span className="capitalize text-[var(--accent)] font-bold">{categoryName?.replace(/-/g, ' ') || 'RealEstate'}</span>
-                </>
-              ) : (
-                <span className="text-[var(--text-primary)]">News</span>
-              )}
+              <span>›</span>
+              <span>{post.source_name}</span>
             </div>
 
             {/* TITLE */}
@@ -360,18 +306,19 @@ export default async function PostPage({ params }: PageProps) {
               <span>{Math.max(1, Math.ceil(stripHtml(post.summary).split(' ').length / 220))} minute read</span>
             </div>
 
-            {/* IMAGE GALLERY */}
-            <div className="mb-8">
-              {/* PRICE & CONTACT - Top */}
-              {ContactInfoBlock}
-
+            {/* IMAGE */}
+            <div className="mb-8 w-full overflow-hidden rounded-xl space-y-4">
               {post.image_url ? (
-                <ImageGallery
-                  images={post.image_url.startsWith('["') ? JSON.parse(post.image_url) : [post.image_url]}
-                  alt={post.title}
-                />
+                (post.image_url.startsWith('["') ? JSON.parse(post.image_url) : [post.image_url]).map((url: string, idx: number) => (
+                  <img
+                    key={idx}
+                    src={url}
+                    alt={`${post.title} - Image ${idx + 1}`}
+                    className="w-full max-h-[500px] object-cover object-center rounded-lg"
+                  />
+                ))
               ) : (
-                <div className="flex h-48 w-full items-center justify-center rounded-xl bg-[#21262d] text-sm text-[var(--text-muted)]">
+                <div className="flex h-48 w-full items-center justify-center bg-[#21262d] text-sm text-[var(--text-muted)]">
                   No Image Available
                 </div>
               )}
@@ -417,10 +364,6 @@ export default async function PostPage({ params }: PageProps) {
                 );
               })}
             </div>
-
-            {/* PRICE & CONTACT - Bottom */}
-            {ContactInfoBlock}
-
 
             {/* TAGS – colorful */}
             <div className="mt-10 flex flex-wrap items-center gap-3 border-t border-[var(--border)] pt-8">

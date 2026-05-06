@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { format, differenceInDays } from 'date-fns';
 import { 
   ChevronLeft, Megaphone, Clock, CheckCircle, 
-  XCircle, Trash2, AlertCircle, RefreshCw, Edit2
+  XCircle, Trash2, AlertCircle, RefreshCw 
 } from 'lucide-react';
 
 export default function AdminClassifiedsPage() {
@@ -25,16 +25,7 @@ export default function AdminClassifiedsPage() {
   }, []);
 
   const handleUpdateStatus = async (id: number, status: string) => {
-    if (status === 'deleted') {
-      if (!confirm('Are you sure you want to PERMANENTLY delete this classified and all its images?')) return;
-      try {
-        const res = await fetch(`/api/admin/submissions/${id}`, { method: 'DELETE' });
-        if (res.ok) fetchClassifieds();
-      } catch (err) {
-        alert('Error deleting submission');
-      }
-      return;
-    }
+    if (status === 'deleted' && !confirm('Are you sure you want to delete this classified?')) return;
     
     try {
       const res = await fetch(`/api/admin/submissions/${id}`, {
@@ -93,8 +84,6 @@ export default function AdminClassifiedsPage() {
               <th className="px-6 py-4">User</th>
               <th className="px-6 py-4">Status</th>
               <th className="px-6 py-4">Expiry</th>
-              <th className="px-6 py-4">Clicks</th>
-              <th className="px-6 py-4">Shares</th>
               <th className="px-6 py-4 text-right">Actions</th>
             </tr>
           </thead>
@@ -141,45 +130,8 @@ export default function AdminClassifiedsPage() {
                       <span className="text-[var(--text-secondary)]">-</span>
                     )}
                   </td>
-                  <td className="px-6 py-4">
-                    {item.metrics ? (
-                      <span className={`font-bold ${item.metrics.clicks > 0 ? 'text-[#00cfff]' : 'text-white'}`}>
-                        {item.metrics.clicks}
-                      </span>
-                    ) : (
-                      <span className="text-[var(--text-secondary)]">-</span>
-                    )}
-                  </td>
-                  <td className="px-6 py-4 text-[11px] whitespace-nowrap" style={{ fontFamily: 'var(--font-en)' }}>
-                    {item.metrics ? (
-                      <div className="flex flex-col gap-1">
-                        <span className={item.metrics.fb > 0 ? 'text-[#00cfff] font-bold' : 'text-[var(--text-secondary)]'}>FB {item.metrics.fb}</span>
-                        <span className={item.metrics.tg > 0 ? 'text-[#ff0095] font-bold' : 'text-[var(--text-secondary)]'}>TG {item.metrics.tg}</span>
-                        <span className={item.metrics.wa > 0 ? 'text-[#ffd42a] font-bold' : 'text-[var(--text-secondary)]'}>WA {item.metrics.wa}</span>
-                      </div>
-                    ) : (
-                      <span className="text-[var(--text-secondary)]">-</span>
-                    )}
-                  </td>
                   <td className="px-6 py-4 text-right">
                     <div className="flex items-center justify-end gap-2">
-                       {item.post_id ? (
-                         <Link 
-                           href={`/admin/posts/${item.post_id}/edit`}
-                           className="p-1.5 rounded bg-blue-500/10 text-blue-500 hover:bg-blue-500 hover:text-white"
-                           title="Edit Post"
-                         >
-                           <Edit2 size={16} />
-                         </Link>
-                       ) : (
-                         <Link 
-                           href={`/admin/pending/${item.id}`}
-                           className="p-1.5 rounded bg-blue-500/10 text-blue-500 hover:bg-blue-500 hover:text-white"
-                           title="Edit Submission"
-                         >
-                           <Edit2 size={16} />
-                         </Link>
-                       )}
                       {item.status !== 'approved' && (
                         <button 
                           onClick={() => handleUpdateStatus(item.id, 'approved')}

@@ -1,7 +1,7 @@
 
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { getCurrentUser, getCurrentUserName } from '@/lib/auth';
+import { getCurrentUser } from '@/lib/auth';
 
 const MAX_UPLOAD_BYTES = 3 * 1024 * 1024; // 3MB
 
@@ -11,7 +11,6 @@ export async function POST(req: Request) {
     process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
   );
   const user = await getCurrentUser();
-  const userName = await getCurrentUserName();
 
   if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -43,13 +42,9 @@ export async function POST(req: Request) {
     if (!type || !title || !content) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
-    if (title.length > 80) {
-      return NextResponse.json({ error: 'Title exceeds 80 characters' }, { status: 400 });
+    if (title.length > 70) {
+      return NextResponse.json({ error: 'Title exceeds 70 characters' }, { status: 400 });
     }
-
-    const price = formData.get('price') as string || null;
-    const contactPhone = formData.get('contactPhone') as string || null;
-
     // 500 words max for content
     const contentWordCount = content.trim().split(/\s+/).length;
     if (contentWordCount > 500) {
@@ -103,37 +98,35 @@ export async function POST(req: Request) {
 
     // --- Expiry and Limits for Classifieds ---
     let expiresAt: string | null = null;
-    if (type === 'classified' || type === 'ad') {
+    if (type === 'classified') {
       // 1. Fetch parameters from admin_settings
       const { data: settings } = await supabase
         .from('admin_settings')
         .select('key, value')
-        .in('key', ['classified_expiry_days', 'classified_limit_per_month', 'ad_expiry_days', 'ad_limit_per_month']);
+        .in('key', ['classified_expiry_days', 'classified_limit_per_month']);
       
-      const isAd = type === 'ad';
-      const expiryKey = isAd ? 'ad_expiry_days' : 'classified_expiry_days';
-      const limitKey = isAd ? 'ad_limit_per_month' : 'classified_limit_per_month';
-      const defaultLimit = isAd ? '5' : '2';
+      const expiryDays = parseInt(settings?.find(s => s.key === 'classified_expiry_days')?.value || '30');
+      const monthlyLimit = parseInt(settings?.find(s => s.key === 'classified_limit_per_month')?.value || '2');
 
-      const expiryDays = parseInt(settings?.find(s => s.key === expiryKey)?.value || '30');
-      const monthlyLimit = parseInt(settings?.find(s => s.key === limitKey)?.value || defaultLimit);
+      // 2. Check monthly limit for this category
+      if (categoryId) {
+        const startOfMonth = new Date();
+        startOfMonth.setDate(1);
+        startOfMonth.setHours(0, 0, 0, 0);
 
-      // 2. Check monthly limit using usage_tracking table (persistent even after deletion)
-      const startOfMonth = new Date();
-      startOfMonth.setDate(1);
-      startOfMonth.setHours(0, 0, 0, 0);
+        const { count: existingAds } = await supabase
+          .from('submissions')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', user.id)
+          .eq('type', 'classified')
+          .eq('category_id', parseInt(categoryId))
+          .gte('created_at', startOfMonth.toISOString());
 
-      const { count: existingCount } = await supabase
-        .from('usage_tracking')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', user.id)
-        .eq('type', type)
-        .gte('created_at', startOfMonth.toISOString());
-
-      if ((existingCount || 0) >= monthlyLimit) {
-        return NextResponse.json({ 
-          error: `You have reached the monthly limit of ${monthlyLimit} ${type}s.` 
-        }, { status: 429 });
+        if ((existingAds || 0) >= monthlyLimit) {
+          return NextResponse.json({ 
+            error: `You have reached the monthly limit of ${monthlyLimit} ads for this category.` 
+          }, { status: 429 });
+        }
       }
 
       // 3. Set expiry date
@@ -160,8 +153,6 @@ export async function POST(req: Request) {
         is_premium: isPremium,
         status: 'pending',
         expires_at: expiresAt,
-        price: price,
-        contact_phone: contactPhone,
       })
       .select()
       .single();
@@ -169,12 +160,6 @@ export async function POST(req: Request) {
     if (submissionError) {
       throw new Error(`Database insertion failed: ${submissionError.message}`);
     }
-
-    // --- Log Usage (for monthly limit tracking) ---
-    await supabase.from('usage_tracking').insert({
-        user_id: user.id,
-        type: type,
-    });
 
     // --- Handle News for Ad ---
     const newsForAd = formData.get('newsForAd') === 'true';
@@ -238,7 +223,7 @@ export async function POST(req: Request) {
     const adminWhatsappNumber = adminSettings?.value;
 
     if (adminWhatsappNumber) {
-        const adminMessage = `Pending ${type} from user ${userName || 'User'} with whatsapp number ${user.whatsapp_number}`;
+        const adminMessage = `Pending ${type} from user ${user.name} with whatsapp number ${user.whatsapp_number}`;
         await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/send-whatsapp`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },

@@ -13,10 +13,10 @@ export async function DELETE(
     const { id } = await params;
     const supabase = await createClient();
 
-    // Verify ownership and get image URLs
+    // Verify ownership before delete
     const { data: submission } = await supabase
       .from('submissions')
-      .select('user_id, image_url')
+      .select('user_id')
       .eq('id', parseInt(id))
       .single();
 
@@ -24,27 +24,6 @@ export async function DELETE(
       return NextResponse.json({ error: 'Unauthorized or not found' }, { status: 401 });
     }
 
-    // Delete images from storage if they exist
-    if (submission.image_url) {
-      try {
-        const imageUrls: string[] = submission.image_url.startsWith('[') 
-          ? JSON.parse(submission.image_url) 
-          : [submission.image_url];
-        
-        const filePaths = imageUrls.map(url => {
-          const parts = url.split('/');
-          return parts[parts.length - 1];
-        });
-
-        if (filePaths.length > 0) {
-          await supabase.storage.from('submissions').remove(filePaths);
-        }
-      } catch (e) {
-        console.error('Error deleting submission images:', e);
-      }
-    }
-
-    // Hard delete the submission record
     const { error } = await supabase
       .from('submissions')
       .delete()

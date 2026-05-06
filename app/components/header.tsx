@@ -8,23 +8,23 @@ import { usePWAInstall } from '../hooks/usePWAInstall';
 const GUEST_LINKS = [
   { href: '/', label: 'Home' },
   { href: '/login', label: 'Login / Sign Up' },
-  { href: '/submit', label: 'Submit Ads/News/Events', color: '#00ffff', requiresAuth: true },
-  { href: '/submit?type=classified', label: 'Submit Classifieds', color: '#00ffff', requiresAuth: true },
-  { href: '/classifieds', label: 'View Classifieds', color: '#00ffff' },
+  { href: '/submit', label: 'Submit Ads/News/Events', color: '#ffd42a', requiresAuth: true },
+  { href: '/submit?type=classified', label: 'Submit Classifieds', color: '#ff69b4', requiresAuth: true },
+  { href: '/classifieds', label: 'View Classifieds', color: '#00cfff' },
   { href: '/faq', label: 'FAQ' },
   { href: '/contact', label: 'Contact Us' },
-  { href: '/install-app', label: 'Install As App', color: '#00ffff', requiresAuth: false, isInstallLink: true },
+  { href: '/install-app', label: 'Install As App', color: '#00cfff', requiresAuth: false, isInstallLink: true },
 ];
 
 const USER_MENU_ITEMS = [
   { href: '/', label: 'Home' },
-  { href: '/submit', label: 'Submit Ads/News/Events', color: '#00ffff' },
-  { href: '/submit?type=classified', label: 'Submit Classifieds', color: '#00ffff' },
-  { href: '/classifieds', label: 'View Classifieds', color: '#00ffff' },
+  { href: '/submit', label: 'Submit Ads/News/Events', color: '#ffd42a' },
+  { href: '/submit?type=classified', label: 'Submit Classifieds', color: '#ff69b4' },
+  { href: '/classifieds', label: 'View Classifieds', color: '#00cfff' },
   { href: '/profile', label: 'Profile', color: '#ffd42a' },
   { href: '/faq', label: 'FAQ' },
   { href: '/contact', label: 'Contact Us' },
-  { href: '/install-app', label: 'Install As App', color: '#00ffff', isInstallLink: true },
+  { href: '/install-app', label: 'Install As App', color: '#00cfff', isInstallLink: true },
 ];
 
 // Type for menu items with optional color
@@ -270,7 +270,6 @@ export default function Header() {
                     style={{ 
                       color: isDimmed ? 'var(--text-muted)' : (link.color || 'var(--text-primary)'),
                       opacity: isDimmed ? 0.6 : 1,
-                      fontWeight: (link.label === 'Submit Classifieds') ? '900' : undefined
                     }}
                     onMouseEnter={(e) => {
                       if (isDimmed) return;

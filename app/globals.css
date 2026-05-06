@@ -7,15 +7,10 @@
   --text-primary: #e6edf3;
   --text-secondary: #8b949e;
   --text-muted: #6e7681;
-  --accent: #00ffff;
+  --accent: #e63946;
   --border: #30363d;
   --font-ml: 'Noto Sans Malayalam', sans-serif;
   --font-en: 'Inter', sans-serif;
-}
-
-:focus-visible {
-  outline: 2px solid #00ffff;
-  outline-offset: 2px;
 }
 
 * {
@@ -254,14 +249,14 @@ a {
   width: 48px;
   height: 48px;
   border-radius: 12px;
-  border: 2px solid #00ffff;
+  border: 2px solid #ffc400;
   background: #0e0e0e;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 5px;
-  box-shadow: 0 0 10px rgba(0,255,255,.5);
+  box-shadow: 0 0 10px rgba(255,196,0,.5);
   cursor: pointer;
   position: relative;
   z-index: 2;
@@ -271,7 +266,7 @@ a {
 .menu-btn span {
   width: 22px;
   height: 2px;
-  background: #00ffff;
+  background: #ffc400;
   border-radius: 2px;
 }
 
@@ -326,12 +321,3 @@ a {
   50% { box-shadow: 0 0 30px rgba(0,255,255,0.9), 0 0 50px rgba(0,255,255,0.4), inset 0 0 20px rgba(0,255,255,0.3); }
 }
 
-
-/* ===== UTILITIES ===== */
-.scrollbar-hide::-webkit-scrollbar {
-  display: none;
-}
-.scrollbar-hide {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-}

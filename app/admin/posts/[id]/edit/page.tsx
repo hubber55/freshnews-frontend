@@ -21,19 +21,22 @@ export default async function EditPostPage({
     notFound()
   }
 
-  const isClassified = post.tags?.some((t: string) => t.toLowerCase().includes('classified'));
-  const backUrl = isClassified ? '/admin/classifieds' : '/admin/posts';
-
   return (
     <div className="mx-auto max-w-5xl">
       <div className="mb-6 flex items-center justify-between">
         <h1 className="text-2xl font-bold text-white">Edit Article</h1>
-        <Link href={backUrl} className="text-sm font-semibold text-[var(--text-secondary)] hover:text-white">
-          ← {isClassified ? 'Back to Classifieds' : 'Back to Posts'}
+        <Link href="/admin/posts" className="text-sm font-semibold text-[var(--text-secondary)] hover:text-white">
+          ← Back to Posts
         </Link>
       </div>
 
-      <EditPostForm post={post} backUrl={backUrl} />
+      {post.is_deleted && (
+        <div className="mb-6 rounded-lg bg-red-500/10 border border-red-500/20 p-4 text-sm font-medium text-red-500">
+          This post is currently marked as DELETED and redirects to: <strong>{post.redirect_to || 'Homepage'}</strong>
+        </div>
+      )}
+
+      <EditPostForm post={post} />
     </div>
   )
 }

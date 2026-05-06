@@ -73,9 +73,7 @@ export async function approveSubmission(submissionId: string, formData: FormData
       image_url: submission.image_url || null,
       tags: postTags,
       published_at: new Date().toISOString(),
-      is_deleted: false,
-      price: submission.price,
-      contact_phone: submission.contact_phone
+      is_deleted: false
     })
     .select()
     .single();
@@ -89,10 +87,7 @@ export async function approveSubmission(submissionId: string, formData: FormData
   try {
     await supabase
       .from('submissions')
-      .update({ 
-        status: 'approved',
-        post_id: newPost.id 
-      })
+      .update({ status: 'approved' })
       .eq('id', submissionId);
   } catch (err) {
     console.error('Failed to update submission status:', err);
@@ -101,7 +96,7 @@ export async function approveSubmission(submissionId: string, formData: FormData
   // Send WhatsApp message to User
   if (user?.whatsapp_number) {
     const url = `${process.env.NEXT_PUBLIC_BASE_URL || 'https://freshnews.top'}/posts/${newPost.id}`;
-    const userMsg = `Your Ad "${title}" is now Live! View it here: ${url}`;
+    const userMsg = `Your ${submission.type} "${title}" has been approved! View it here: ${url}`;
     await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'https://freshnews.top'}/api/send-whatsapp`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -144,9 +139,7 @@ export async function updateSubmission(submissionId: string, formData: FormData)
     .update({
       title,
       content,
-      tags,
-      price: formData.get('price') as string || null,
-      contact_phone: formData.get('contactPhone') as string || null
+      tags
     })
     .eq('id', submissionId);
 
@@ -164,32 +157,6 @@ export async function deleteSubmission(submissionId: string) {
   const { createClient: createSupabaseAdmin } = await import('@supabase/supabase-js');
   const supabaseAdmin = createSupabaseAdmin(supabaseUrl, serviceRoleKey);
   
-  // Get submission to find images
-  const { data: submission } = await supabaseAdmin
-    .from('submissions')
-    .select('image_url')
-    .eq('id', submissionId)
-    .single();
-
-  if (submission?.image_url) {
-    try {
-      const imageUrls: string[] = submission.image_url.startsWith('[') 
-        ? JSON.parse(submission.image_url) 
-        : [submission.image_url];
-      
-      const filePaths = imageUrls.map(url => {
-        const parts = url.split('/');
-        return parts[parts.length - 1];
-      });
-
-      if (filePaths.length > 0) {
-        await supabaseAdmin.storage.from('submissions').remove(filePaths);
-      }
-    } catch (e) {
-      console.error('Error deleting submission images from storage:', e);
-    }
-  }
-
   const { data, error } = await supabaseAdmin
     .from('submissions')
     .delete()

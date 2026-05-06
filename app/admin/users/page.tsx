@@ -88,8 +88,8 @@ export default function AdminUsersPage() {
     })
     .then(res => res.json())
     .then(data => {
-      if (data.ok) alert('Message sent successfully!');
-      else alert('Failed to send: ' + (data.error || 'Unknown error'));
+      if (data.success) alert('Message sent successfully!');
+      else alert('Failed to send: ' + data.error);
     });
   };
 

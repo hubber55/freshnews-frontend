@@ -17,20 +17,15 @@ export async function updatePost(postId: string, prevState: any, formData: FormD
   const title = formData.get('title') as string
   const summary = formData.get('summary') as string
   const tagsString = formData.get('tags') as string
-  const price = formData.get('price') as string
-  const contact_phone = formData.get('contact_phone') as string
+  
   const tags = tagsString.split(',').map(t => t.trim()).filter(Boolean)
-  const redirectTo = (formData.get('redirectTo') as string) || '/admin/posts'
 
   const { error } = await supabase
     .from('posts')
     .update({
       title,
       summary,
-      tags,
-      price: price || null,
-      contact_phone: contact_phone || null,
-      is_deleted: false
+      tags
     })
     .eq('id', postId)
 
@@ -39,62 +34,44 @@ export async function updatePost(postId: string, prevState: any, formData: FormD
     return { error: error.message }
   }
 
-  redirect(redirectTo)
+  redirect('/admin/posts')
 }
 
-export async function deletePostPermanently(postId: string, prevState: any) {
+export async function deletePostWithRedirect(postId: string, prevState: any, formData: FormData) {
   const supabase = await createClient()
 
   // Verify auth
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error('Unauthorized')
 
+  let redirectTo: string | null = formData.get('redirect_to') as string
+  if (!redirectTo || redirectTo.trim() === '') {
+    redirectTo = null
+  } else {
+    // Basic validation, ensure it's a relative path starting with /posts/ or just a valid slug
+    if (!redirectTo.startsWith('/') && !redirectTo.startsWith('http')) {
+       // Assuming they provided an ID
+       redirectTo = `/posts/${redirectTo.trim()}`
+    }
+  }
+
   // Use service role key for delete to bypass RLS issues
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
   const supabaseAdmin = createSupabaseAdmin(supabaseUrl, serviceRoleKey)
 
-  // Get post to find images
-  const { data: post } = await supabaseAdmin
-    .from('posts')
-    .select('image_url')
-    .eq('id', postId)
-    .single()
-
-  if (post?.image_url) {
-    try {
-      const imageUrls: string[] = post.image_url.startsWith('[') 
-        ? JSON.parse(post.image_url) 
-        : [post.image_url];
-      
-      const filePaths = imageUrls.map(url => {
-        const parts = url.split('/');
-        return parts[parts.length - 1];
-      });
-
-      if (filePaths.length > 0) {
-        await supabaseAdmin.storage.from('submissions').remove(filePaths);
-      }
-    } catch (e) {
-      console.error('Error deleting images from storage:', e);
-    }
-  }
-
   const { error } = await supabaseAdmin
     .from('posts')
-    .delete()
+    .update({
+      is_deleted: true,
+      redirect_to: redirectTo
+    })
     .eq('id', postId)
 
   if (error) {
     console.error('Error deleting post', error)
     return { error: error.message }
   }
-
-  // Also delete associated submission if any
-  await supabaseAdmin
-    .from('submissions')
-    .delete()
-    .eq('post_id', postId);
 
   redirect('/admin/posts')
 }

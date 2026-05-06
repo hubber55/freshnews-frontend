@@ -74,13 +74,7 @@ export default function AdminSettingsPage() {
     min_days_required: '2',
     discount_per_5_days: '5',
     max_discount: '30',
-    max_upload_images: '5',
-    ad_limit_per_month: '5',
-    classified_limit_per_month: '2',
-    news_auto_delete_days: '10',
-    news_min_views: '10',
-    news_min_shares: '5',
-    user_post_final_delete_days: '90'
+    max_upload_images: '5'
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<string | null>(null);
@@ -133,8 +127,9 @@ export default function AdminSettingsPage() {
           const randomAdsValue = data.settings.find((s: { key: string; value: string }) => s.key === 'ad_networks_random')?.value;
           const legacyAdsterra = data.settings.find((s: { key: string; value: string }) => s.key === 'adsterra_code')?.value;
 
-          if (typeof adNetworksValue === 'string') {
-            setAdNetworks(safeParseAdNetworks(adNetworksValue));
+          const parsedAdNetworks = safeParseAdNetworks(adNetworksValue);
+          if (parsedAdNetworks.length > 0) {
+            setAdNetworks(parsedAdNetworks);
           } else if (typeof legacyAdsterra === 'string' && legacyAdsterra.trim()) {
             setAdNetworks([{
               id: crypto.randomUUID(),
@@ -208,22 +203,17 @@ export default function AdminSettingsPage() {
       ]
     },
     {
+      title: 'Ad Networks',
+      fields: [
+        // Managed via the dedicated editor below.
+      ]
+    },
+    {
       title: 'System & Expiry Rules',
       fields: [
         { key: 'ad_expiry_days', label: 'Main Ad Expiry (Days)', placeholder: '30' },
         { key: 'classified_expiry_days', label: 'Classified Expiry (Days)', placeholder: '30' },
         { key: 'max_upload_images', label: 'Max Images Per Submission', placeholder: '5' },
-        { key: 'ad_limit_per_month', label: 'Ad Limit Per Month', placeholder: '5' },
-        { key: 'classified_limit_per_month', label: 'Classified Limit Per Month', placeholder: '2' },
-      ]
-    },
-    {
-      title: 'Auto-Cleanup Rules (Database Maintenance)',
-      fields: [
-        { key: 'news_auto_delete_days', label: 'News Deletion After (Days)', placeholder: '10' },
-        { key: 'news_min_views', label: 'Min Views to Keep News', placeholder: '10' },
-        { key: 'news_min_shares', label: 'Min Shares to Keep News', placeholder: '5' },
-        { key: 'user_post_final_delete_days', label: 'Final Delete Classifieds After (Days)', placeholder: '90' },
       ]
     },
     {
@@ -336,12 +326,8 @@ export default function AdminSettingsPage() {
                 </select>
                 <button
                   type="button"
-                  onClick={async () => {
-                    if (confirm(`Are you sure you want to delete ${ins.name || 'this insert'}?`)) {
-                      const updated = headerInserts.filter((x) => x.id !== ins.id);
-                      setHeaderInserts(updated);
-                      await updateSetting('header_inserts', JSON.stringify(updated, null, 2));
-                    }
+                  onClick={() => {
+                    setHeaderInserts((current) => current.filter((x) => x.id !== ins.id));
                   }}
                   className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-1.5 text-xs font-bold text-red-400 hover:bg-red-500/20"
                 >
@@ -447,13 +433,8 @@ export default function AdminSettingsPage() {
                 </label>
                 <button
                   type="button"
-                  onClick={async () => {
-                    if (confirm(`Are you sure you want to delete ${net.name || 'this network'}?`)) {
-                      const updated = adNetworks.filter((x) => x.id !== net.id);
-                      setAdNetworks(updated);
-                      // Auto-save the deletion
-                      await updateSetting('ad_networks', JSON.stringify(updated, null, 2));
-                    }
+                  onClick={() => {
+                    setAdNetworks((current) => current.filter((x) => x.id !== net.id));
                   }}
                   className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-1.5 text-xs font-bold text-red-400 hover:bg-red-500/20"
                 >
@@ -499,7 +480,7 @@ export default function AdminSettingsPage() {
           </div>
         </div>
         <div className="px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[10px] font-mono text-[var(--text-muted)] uppercase tracking-widest">
-          Ver: 1.4.0
+          Ver: 1.3.2
         </div>
       </div>
 
