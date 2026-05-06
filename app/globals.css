@@ -7,10 +7,15 @@
   --text-primary: #e6edf3;
   --text-secondary: #8b949e;
   --text-muted: #6e7681;
-  --accent: #e63946;
+  --accent: #00ffff;
   --border: #30363d;
   --font-ml: 'Noto Sans Malayalam', sans-serif;
   --font-en: 'Inter', sans-serif;
+}
+
+:focus-visible {
+  outline: 2px solid #00ffff;
+  outline-offset: 2px;
 }
 
 * {
@@ -249,14 +254,14 @@ a {
   width: 48px;
   height: 48px;
   border-radius: 12px;
-  border: 2px solid #ffc400;
+  border: 2px solid #00ffff;
   background: #0e0e0e;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 5px;
-  box-shadow: 0 0 10px rgba(255,196,0,.5);
+  box-shadow: 0 0 10px rgba(0,255,255,.5);
   cursor: pointer;
   position: relative;
   z-index: 2;
@@ -266,7 +271,7 @@ a {
 .menu-btn span {
   width: 22px;
   height: 2px;
-  background: #ffc400;
+  background: #00ffff;
   border-radius: 2px;
 }
 
