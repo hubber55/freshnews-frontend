@@ -10,7 +10,7 @@ async function sendMessage(receiver: string, message: string) {
   }
 
   // Add human-like behavior: typing indicator
-  await fetch(`http://${ip}:8080/chat/setPresence/${VercelBot2}`, {
+  await fetch(`http://${ip}:8080/chat/setPresence/VercelBot2`, {
     method: 'POST',
     headers: { 'apikey': apiKey, 'Content-Type': 'application/json' },
     body: JSON.stringify({ number: receiver, presence: 'composing' })
