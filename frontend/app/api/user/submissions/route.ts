@@ -19,7 +19,7 @@ export async function GET() {
 
     if (error) throw error;
 
-    const formattedSubmissions = submissions.map(s => ({
+    const formattedSubmissions = (submissions || []).map((s: any) => ({
       id: s.id,
       title: s.title,
       type: s.type,
