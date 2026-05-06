@@ -40,9 +40,9 @@ function getPrimaryImage(imageUrl: string | null) {
   return trimmed;
 }
 
-export default async function ClassifiedDetailPage({ params }: { params: { id: string } }) {
+export default async function ClassifiedDetailPage({ params }: { params: Promise<{ id: string }> }) {
   await connection();
-  const { id } = params;
+  const { id } = await params;
   const numericId = Number(id);
 
   if (!Number.isFinite(numericId)) {
