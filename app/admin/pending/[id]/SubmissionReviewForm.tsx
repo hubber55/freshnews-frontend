@@ -140,6 +140,16 @@ export default function SubmissionReviewForm({ submission, id }: { submission: S
         />
       </div>
 
+      <div className="mx-2">
+        <label className="block text-sm font-bold mb-2">Content (Max 800 words)</label>
+        <textarea
+          value={content}
+          onChange={(e) => setContent(e.target.value)}
+          rows={12}
+          className="w-full px-4 py-2 rounded-lg bg-[var(--bg-secondary)] border border-[var(--border)] text-white focus:border-[#00cfff] focus:outline-none"
+          required
+        />
+        <p className="text-sm text-gray-400 mt-1">
           {content.trim().split(/\s+/).length} words
         </p>
       </div>
