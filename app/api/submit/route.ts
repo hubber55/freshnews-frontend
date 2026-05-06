@@ -216,23 +216,32 @@ export async function POST(req: Request) {
     }
 
     // --- WhatsApp Notifications ---
+    // Fetch user name for notifications
+    const { data: waUser } = await supabase
+      .from('wa_users')
+      .select('name')
+      .eq('id', user.id)
+      .single();
+    const userName = waUser?.name || 'User';
+
     const userMessage = `Your ${type} submission "${title}" has been received and will be published after Admin Approval.`;
     await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/send-whatsapp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ to: user.whatsapp_number, message: userMessage }),
-    });
+    }).catch(() => {});
 
     const { data: adminSettings } = await supabase.from('admin_settings').select('value').eq('key', 'admin_whatsapp_number').single();
     const adminWhatsappNumber = adminSettings?.value;
 
     if (adminWhatsappNumber) {
-        const adminMessage = `Pending ${type} from user ${user.name} with whatsapp number ${user.whatsapp_number}`;
+        const typeLabel = type.charAt(0).toUpperCase() + type.slice(1);
+        const adminMessage = `📢 Pending ${typeLabel} from *${userName}* (${user.whatsapp_number}):\n"${title}"\nPlease review: ${process.env.NEXT_PUBLIC_BASE_URL}/admin/classifieds`;
         await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/send-whatsapp`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ to: adminWhatsappNumber, message: adminMessage }),
-        });
+        }).catch(() => {});
     }
 
     return NextResponse.json({ ok: true, submissionId: submissionData.id });

@@ -11,21 +11,85 @@ export async function PATCH(
 ) {
   try {
     const { id } = await params;
-    const { status } = await req.json();
+    const body = await req.json();
+    const { status, title, content, tags, price, contact_phone } = body;
 
-    if (!id || !status) {
-      return NextResponse.json({ error: 'ID and Status are required' }, { status: 400 });
+    if (!id) {
+      return NextResponse.json({ error: 'ID is required' }, { status: 400 });
     }
 
+    const supabase = createAdminClient();
+    const numericId = parseInt(id);
+
+    // Build update object
+    const updateData: Record<string, unknown> = {};
+    if (status !== undefined) updateData.status = status;
+    if (title !== undefined) updateData.title = title;
+    if (content !== undefined) updateData.content = content;
+    if (tags !== undefined) updateData.tags = tags;
+    if (price !== undefined) updateData.price = price;
+    if (contact_phone !== undefined) updateData.contact_phone = contact_phone;
+    
+    const { error } = await supabase
+      .from('submissions')
+      .update(updateData)
+      .eq('id', numericId);
+
+    if (error) throw error;
+
+    // If approving, send WhatsApp to user
+    if (status === 'approved') {
+      const { data: submission } = await supabase
+        .from('submissions')
+        .select('type, title, user_id')
+        .eq('id', numericId)
+        .single();
+
+      if (submission) {
+        const { data: waUser } = await supabase
+          .from('wa_users')
+          .select('whatsapp_number')
+          .eq('id', submission.user_id)
+          .single();
+
+        if (waUser?.whatsapp_number) {
+          const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://freshnews.top';
+          const type = submission.type;
+          let liveMsg = '';
+          if (type === 'classified') liveMsg = `✅ Your Classified is Live Now!\n"${submission.title}"\nView: ${baseUrl}/classifieds`;
+          else if (type === 'ad') liveMsg = `✅ Your Ad is Live Now!\n"${submission.title}"\nView: ${baseUrl}/classifieds`;
+          else if (type === 'news') liveMsg = `✅ Your News is Live Now!\n"${submission.title}"\nView: ${baseUrl}`;
+          else if (type === 'event') liveMsg = `✅ Your Event is Live Now!\n"${submission.title}"\nView: ${baseUrl}`;
+
+          await fetch(`${baseUrl}/api/send-whatsapp`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ to: waUser.whatsapp_number, message: liveMsg }),
+          }).catch(() => {});
+        }
+      }
+    }
+
+    return NextResponse.json({ ok: true });
+  } catch (error: unknown) {
+    return NextResponse.json({ error: getErrorMessage(error) }, { status: 500 });
+  }
+}
+
+export async function DELETE(
+  req: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id } = await params;
     const supabase = createAdminClient();
     
     const { error } = await supabase
       .from('submissions')
-      .update({ status })
+      .delete()
       .eq('id', parseInt(id));
 
     if (error) throw error;
-
     return NextResponse.json({ ok: true });
   } catch (error: unknown) {
     return NextResponse.json({ error: getErrorMessage(error) }, { status: 500 });
