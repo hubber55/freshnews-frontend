@@ -6,8 +6,12 @@ export async function GET() {
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
   const supabase = createClient(supabaseUrl, key);
 
-  const { data, error } = await supabase.from('whatsapp_marketing').select('status');
-  if (error) return NextResponse.json({ stats: { pending: 0, messaged: 0, replied: 0 }, templates: [] });
+  const { data, error } = await supabase
+    .from('whatsapp_marketing')
+    .select('id, phone_number, status, category')
+    .order('created_at', { ascending: false });
+
+  if (error) return NextResponse.json({ stats: { pending: 0, messaged: 0, replied: 0 }, numbers: [], templates: [] });
 
   const stats = {
     pending: data.filter(d => d.status === 'pending').length,
@@ -17,7 +21,7 @@ export async function GET() {
 
   const { data: templates } = await supabase.from('whatsapp_templates').select('*').order('created_at', { ascending: false });
 
-  return NextResponse.json({ stats, templates: templates || [] });
+  return NextResponse.json({ stats, numbers: data, templates: templates || [] });
 }
 
 export async function POST(req: Request) {
