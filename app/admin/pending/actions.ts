@@ -139,7 +139,9 @@ export async function updateSubmission(submissionId: string, formData: FormData)
     .update({
       title,
       content,
-      tags
+      tags,
+      price: formData.get('price') as string || null,
+      contact_phone: formData.get('contact_phone') as string || null
     })
     .eq('id', submissionId);
 

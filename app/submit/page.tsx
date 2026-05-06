@@ -115,6 +115,8 @@ function SubmitContent() {
   // Location States
   const [selectedDistrict, setSelectedDistrict] = useState('');
   const [selectedTown, setSelectedTown] = useState('');
+  const [price, setPrice] = useState('');
+  const [contactPhone, setContactPhone] = useState('');
   const [isLocating, setIsLocating] = useState(false);
 
   const [error, setError] = useState<string | null>(null);
@@ -281,6 +283,8 @@ function SubmitContent() {
     formData.append('tags', tags.join(','));
     formData.append('categoryId', selectedCategory);
     formData.append('subcategoryId', selectedSubcategory);
+    formData.append('price', price);
+    formData.append('contactPhone', contactPhone);
     
     // Append all images
     imageFiles.forEach((file, index) => {
@@ -439,6 +443,29 @@ function SubmitContent() {
                 className="w-full rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-4 py-3 text-white focus:border-[#00cfff] focus:outline-none focus:ring-1 focus:ring-[#00cfff]"
               />
             </div>
+
+            {type === 'classified' && (
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="mb-2 block text-sm font-bold text-[var(--text-secondary)]">Price (optional)</label>
+                  <input
+                    value={price}
+                    onChange={(e) => setPrice(e.target.value)}
+                    placeholder="e.g. ₹ 5,000 or Negotiable"
+                    className="w-full rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-4 py-3 text-white focus:border-[#00cfff] focus:outline-none focus:ring-1 focus:ring-[#00cfff]"
+                  />
+                </div>
+                <div>
+                  <label className="mb-2 block text-sm font-bold text-[var(--text-secondary)]">Contact Phone (optional)</label>
+                  <input
+                    value={contactPhone}
+                    onChange={(e) => setContactPhone(e.target.value)}
+                    placeholder="e.g. 9876543210"
+                    className="w-full rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-4 py-3 text-white focus:border-[#00cfff] focus:outline-none focus:ring-1 focus:ring-[#00cfff]"
+                  />
+                </div>
+              </div>
+            )}
 
             <div>
               <label className="mb-2 block text-sm font-bold text-[var(--text-secondary)]">

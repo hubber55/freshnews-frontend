@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { connection } from 'next/server';
-import { CalendarDays, Clock, MapPin, Megaphone } from 'lucide-react';
+import { CalendarDays, Clock, MapPin, Megaphone, Phone, Banknote } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 
 import Header from '../../components/header';
@@ -21,6 +21,8 @@ type ClassifiedSubmission = {
   wa_users?: { name?: string | null } | null;
   ad_categories?: { name?: string | null } | null;
   ad_subcategories?: { name?: string | null } | null;
+  price?: string | null;
+  contact_phone?: string | null;
 };
 
 function getPrimaryImage(imageUrl: string | null) {
@@ -63,7 +65,9 @@ export default async function ClassifiedDetailPage({ params }: { params: Promise
       expires_at,
       wa_users (name),
       ad_categories (name),
-      ad_subcategories (name)
+      ad_subcategories (name),
+      price,
+      contact_phone
     `)
     .eq('id', numericId)
     .eq('type', 'classified')
@@ -133,6 +137,18 @@ export default async function ClassifiedDetailPage({ params }: { params: Promise
                   <span className="flex items-center gap-1">
                     <CalendarDays size={13} />
                     Expires {formatDistanceToNow(new Date(item.expires_at), { addSuffix: true })}
+                  </span>
+                ) : null}
+                {item.price ? (
+                  <span className="flex items-center gap-1 font-bold text-[#ffd42a]">
+                    <Banknote size={13} />
+                    Price: {item.price}
+                  </span>
+                ) : null}
+                {item.contact_phone ? (
+                  <span className="flex items-center gap-1 font-bold text-[#00cfff]">
+                    <Phone size={13} />
+                    Contact: {item.contact_phone}
                   </span>
                 ) : null}
               </div>

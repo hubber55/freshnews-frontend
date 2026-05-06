@@ -30,6 +30,8 @@ export async function POST(req: Request) {
     const externalUrl = formData.get('externalUrl') as string;
     const hyperlinkText = formData.get('hyperlinkText') as string;
     const location = formData.get('location') as string;
+    const price = formData.get('price') as string || null;
+    const contactPhone = formData.get('contactPhone') as string || null;
     const isPremium = type === 'ad' ? true : formData.get('isPremium') === 'true';
     const submissionTags = Array.from(new Set([
       ...tags,
@@ -153,6 +155,8 @@ export async function POST(req: Request) {
         is_premium: isPremium,
         status: 'pending',
         expires_at: expiresAt,
+        price,
+        contact_phone: contactPhone,
       })
       .select()
       .single();
