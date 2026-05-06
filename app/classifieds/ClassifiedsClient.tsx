@@ -166,7 +166,7 @@ export default function ClassifiedsClient({
                   </div>
 
                   <div className="mt-4 pt-4 border-t border-white/5 flex justify-between items-center">
-                    <span className="text-[11px] font-bold text-[#ffd42a] hover:underline flex items-center gap-1 uppercase tracking-wider">
+                    <span className="text-[11px] font-bold text-[#00ffff] hover:underline flex items-center gap-1 uppercase tracking-wider">
                       {item.post_id ? 'View Full Post →' : (isLong ? 'Read More →' : '')}
                     </span>
                   </div>
