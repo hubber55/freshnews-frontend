@@ -1,0 +1,3 @@
+{
+  "/api/wa-auth/logout/route": "app/api/wa-auth/logout/route.js"
+}

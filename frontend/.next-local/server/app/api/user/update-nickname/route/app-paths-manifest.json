@@ -1,0 +1,3 @@
+{
+  "/api/user/update-nickname/route": "app/api/user/update-nickname/route.js"
+}

@@ -1,0 +1,3 @@
+{
+  "/api/cron/expiry-notifications/route": "app/api/cron/expiry-notifications/route.js"
+}

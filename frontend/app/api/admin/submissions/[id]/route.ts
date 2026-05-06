@@ -42,6 +42,8 @@ export async function POST(
     const title = String(body?.title ?? '').trim();
     const content = String(body?.content ?? '').trim();
     const tags = Array.isArray(body?.tags) ? body.tags.filter(Boolean) : [];
+    const price = body?.price || null;
+    const contact_phone = body?.contact_phone || null;
 
     if (!id) {
       return NextResponse.json({ error: 'ID is required' }, { status: 400 });
@@ -94,7 +96,11 @@ export async function POST(
 
     const { error: statusError } = await supabase
       .from('submissions')
-      .update({ status: 'approved' })
+      .update({ 
+        status: 'approved',
+        price,
+        contact_phone
+      })
       .eq('id', submissionId);
 
     if (statusError) throw statusError;
