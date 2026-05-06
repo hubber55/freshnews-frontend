@@ -6,7 +6,7 @@ import { formatDistanceToNow } from 'date-fns';
 
 import Header from '../../components/header';
 import Footer from '../../components/footer';
-import LazyImage from '../../components/LazyImage';
+import ImageGallery from '../../components/ImageGallery';
 import { createAdminClient } from '@/lib/supabase-admin';
 
 type ClassifiedSubmission = {
@@ -18,11 +18,10 @@ type ClassifiedSubmission = {
   status: string;
   created_at: string;
   expires_at: string | null;
-  wa_users?: { name?: string | null } | null;
-  ad_categories?: { name?: string | null } | null;
   ad_subcategories?: { name?: string | null } | null;
   price?: string | null;
   contact_phone?: string | null;
+  tags?: string[] | null;
 };
 
 function getPrimaryImage(imageUrl: string | null) {
@@ -67,7 +66,8 @@ export default async function ClassifiedDetailPage({ params }: { params: Promise
       ad_categories (name),
       ad_subcategories (name),
       price,
-      contact_phone
+      contact_phone,
+      tags
     `)
     .eq('id', numericId)
     .eq('type', 'classified')
@@ -94,14 +94,11 @@ export default async function ClassifiedDetailPage({ params }: { params: Promise
 
         <article className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--bg-card)]">
           <div className="grid gap-0 md:grid-cols-[320px_1fr]">
-            <div className="relative min-h-[280px] bg-black/20">
-              {image ? (
-                <LazyImage
-                  src={image}
+            <div className="relative bg-black/20 md:border-r border-[var(--border)] min-h-[280px]">
+              {item.image_url ? (
+                <ImageGallery
+                  images={item.image_url.startsWith('[') ? JSON.parse(item.image_url) : [item.image_url]}
                   alt={item.title}
-                  eager={true}
-                  className="h-full w-full object-cover"
-                  imgStyle={{ aspectRatio: '4 / 3' }}
                 />
               ) : (
                 <div className="flex h-full min-h-[280px] items-center justify-center text-sm text-[var(--text-muted)]">
@@ -154,10 +151,21 @@ export default async function ClassifiedDetailPage({ params }: { params: Promise
               </div>
 
               {item.content ? (
-                <p className="mt-5 whitespace-pre-line text-[15px] leading-7 text-[var(--text-secondary)]">
+                <p className="mt-5 whitespace-pre-line text-[16px] leading-7 text-white font-medium">
                   {item.content}
                 </p>
               ) : null}
+
+              {/* TAGS */}
+              {item.tags && item.tags.length > 0 && (
+                <div className="mt-6 flex flex-wrap gap-2 pt-6 border-t border-white/5">
+                  {item.tags.map((tag, idx) => (
+                    <span key={idx} className="text-[11px] font-bold text-[#00ffff] bg-[#00ffff]/5 px-3 py-1 rounded-full border border-[#00ffff]/10 uppercase tracking-wide">
+                      #{tag}
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         </article>
