@@ -133,7 +133,7 @@ function SubmitContent() {
         .eq('status', 'approved');
       
       const tagSet = new Set<string>();
-      data?.forEach(item => {
+      (data as any[])?.forEach((item: { tags: string[] | null }) => {
         if (Array.isArray(item.tags)) {
           item.tags.forEach((t: string) => {
             const formatted = t.charAt(0).toUpperCase() + t.slice(1).toLowerCase();
