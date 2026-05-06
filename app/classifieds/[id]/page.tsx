@@ -18,6 +18,8 @@ type ClassifiedSubmission = {
   status: string;
   created_at: string;
   expires_at: string | null;
+  wa_users?: { name?: string | null } | null;
+  ad_categories?: { name?: string | null } | null;
   ad_subcategories?: { name?: string | null } | null;
   price?: string | null;
   contact_phone?: string | null;
