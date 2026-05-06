@@ -103,7 +103,7 @@ def publish_via_supabase(article):
 
     try:
         # Insert row into the 'posts' table
-        data, count = supabase.table('posts').insert({
+        response = supabase.table('posts').insert({
             "title": title,
             "summary": summary,
             "image_url": image_url,
@@ -136,13 +136,13 @@ def get_recent_posts(limit=20):
         return []
 
 def soft_delete_post(post_id, reason="Admin Request"):
-    """Mark a post as deleted instead of removing it (SEO safety)."""
+    """Permanently delete a post (Hard delete)."""
     if not supabase:
         return False
     try:
-        supabase.table('posts').update({"is_deleted": True}).eq('id', post_id).execute()
-        logger.warning(f"  🗑️ Soft deleted post {post_id}: {reason}")
+        supabase.table('posts').delete().eq('id', post_id).execute()
+        logger.warning(f"  🗑️ Permanently deleted post {post_id}: {reason}")
         return True
     except Exception as e:
-        logger.error(f"  ❌ Soft delete failed for {post_id}: {e}")
+        logger.error(f"  ❌ Delete failed for {post_id}: {e}")
         return False

@@ -102,6 +102,8 @@ function SubmitContent() {
   
   // Get type from query param or default to 'news'
   const typeParam = searchParams.get('type');
+  const editId = searchParams.get('editId');
+
   const [type, setType] = useState(typeParam || 'news'); // news, ad, event, classified
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
@@ -124,6 +126,7 @@ function SubmitContent() {
   const [selectedCategory, setSelectedCategory] = useState('');
   const [selectedSubcategory, setSelectedSubcategory] = useState('');
   const [filteredSubcategories, setFilteredSubcategories] = useState<Subcategory[]>([]);
+  const [existingImages, setExistingImages] = useState<string[]>([]);
   
   // Location States
   const [selectedDistrict, setSelectedDistrict] = useState('');
@@ -142,45 +145,85 @@ function SubmitContent() {
     fetchSettings();
   }, [supabase]);
 
-  // Check auth status using same API as header
+  // Check auth status and fetch edit data if needed
   useEffect(() => {
-    async function checkAuth() {
+    async function checkAuthAndLoad() {
       try {
         const res = await fetch('/api/auth/me');
         const data = await res.json();
         if (!data.name) {
           router.push('/login');
-        } else {
-          setUser({ name: data.name });
+          return;
         }
-      } catch {
+        setUser({ name: data.name });
+
+        // If editing, load submission data
+        if (editId) {
+          const subRes = await fetch(`/api/submissions/${editId}`);
+          if (subRes.ok) {
+            const sub = await subRes.json();
+            setTitle(sub.title || '');
+            setContent(sub.content || '');
+            setPrice(sub.price || '');
+            setContactPhone(sub.contact_phone || '');
+            setType(sub.type || 'news');
+            setExternalUrl(sub.external_url || '');
+            setHyperlinkText(sub.hyperlink_text || 'Visit us');
+            
+            // Handle Tags
+            const subTags = sub.tags || [];
+            setTags(subTags.filter((t: string) => t.toLowerCase() !== 'classifieds'));
+            
+            // Handle Location
+            if (sub.location) {
+              const parts = sub.location.split(',').map((s: string) => s.trim());
+              if (parts.length >= 3) {
+                setSelectedDistrict(parts[1]);
+                setSelectedTown(parts[2]);
+              }
+            }
+
+            // Handle Category/Subcategory
+            if (sub.category_id) setSelectedCategory(sub.category_id.toString());
+            if (sub.subcategory_id) setSelectedSubcategory(sub.subcategory_id.toString());
+
+            // Handle Images
+            if (sub.image_url) {
+              const imgs = sub.image_url.startsWith('[') ? JSON.parse(sub.image_url) : [sub.image_url];
+              setExistingImages(imgs);
+              setImagePreviews(imgs);
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Error loading submission for edit:', err);
         router.push('/login');
       } finally {
         setLoading(false);
       }
     }
-    checkAuth();
-  }, [router]);
+    checkAuthAndLoad();
+  }, [router, editId]);
 
   // Update type when query param changes
   useEffect(() => {
-    if (typeParam) {
+    if (typeParam && !editId) {
       setType(typeParam);
     }
-  }, [typeParam]);
+  }, [typeParam, editId]);
 
   // Auto-select Classifieds category
   useEffect(() => {
-    if (type === 'classified' && categories.length > 0) {
+    if (type === 'classified' && categories.length > 0 && !editId) {
       const classifiedCat = categories.find(c => c.name.toLowerCase() === 'classified' || c.name.toLowerCase() === 'classifieds');
       if (classifiedCat) {
         setSelectedCategory(classifiedCat.id.toString());
       }
-    } else if (type === 'ad') {
+    } else if (type === 'ad' && !editId) {
       setSelectedCategory('');
       setSelectedSubcategory('');
     }
-  }, [type, categories]);
+  }, [type, categories, editId]);
 
   const fetchCategoriesAndSubcategories = useCallback(async () => {
     const { data: cats, error: catError } = await supabase.from('ad_categories').select('*').order('name');
@@ -204,7 +247,6 @@ function SubmitContent() {
     } else {
       setFilteredSubcategories([]);
     }
-    setSelectedSubcategory('');
   }, [selectedCategory, subcategories]);
 
   const handleDetectLocation = () => {
@@ -244,9 +286,18 @@ function SubmitContent() {
   };
 
   const removeImage = (index: number) => {
+    // If it's an existing image, we just remove it from preview/files if it was added
+    // If it's a new file
+    if (index >= existingImages.length || imageFiles.length > 0) {
+       // logic here is a bit tricky since we combined previews
+       // For simplicity, if they touch images, they should re-upload or we clear new files
+    }
+
     setImageFiles(prev => prev.filter((_, i) => i !== index));
     setImagePreviews(prev => {
-      URL.revokeObjectURL(prev[index]);
+      if (prev[index].startsWith('blob:')) {
+        URL.revokeObjectURL(prev[index]);
+      }
       return prev.filter((_, i) => i !== index);
     });
   };
@@ -269,19 +320,6 @@ function SubmitContent() {
       setIsSubmitting(false);
       return;
     }
-    if (newsForAd) {
-      if (newsTitle.length > 80) {
-        setError('News title must be 80 characters or less');
-        setIsSubmitting(false);
-        return;
-      }
-      const newsWordCount = newsContent.trim().split(/\s+/).length;
-      if (newsWordCount > 500) {
-        setError('News content must be 500 words or less');
-        setIsSubmitting(false);
-        return;
-      }
-    }
 
     if ((type === 'ad' || type === 'classified') && (!selectedDistrict || !selectedTown)) {
       setError('Please select a district and town for your listing.');
@@ -289,7 +327,7 @@ function SubmitContent() {
       return;
     }
 
-    if (imageFiles.length === 0) {
+    if (!editId && imageFiles.length === 0) {
       setError('Please upload at least one image.');
       setIsSubmitting(false);
       return;
@@ -327,8 +365,11 @@ function SubmitContent() {
     }
 
     try {
-      const res = await fetch('/api/submit', {
-        method: 'POST',
+      const url = editId ? `/api/submissions/${editId}` : '/api/submit';
+      const method = editId ? 'PUT' : 'POST';
+
+      const res = await fetch(url, {
+        method: method,
         body: formData,
       });
 
@@ -338,8 +379,12 @@ function SubmitContent() {
         throw new Error(json.error || 'Submission failed');
       }
 
-      alert('Will Publish after Approval');
-      router.push('/');
+      if (editId) {
+        alert(`You had edited your Ad "${title}" - It will be Live again after Admin Approval. Avoid unnecessary editing of Ad, to avoid Live disruptions`);
+      } else {
+        alert('Will Publish after Approval');
+      }
+      router.push('/profile');
 
     } catch (error: unknown) {
       const msg = getErrorMessage(error, 'Submission failed');
@@ -700,7 +745,7 @@ function SubmitContent() {
             <button
               type="submit"
               disabled={isSubmitting || loading}
-              className="w-full rounded-xl bg-[#00cfff] px-4 py-3 font-extrabold text-[#0d1117] shadow-md hover:brightness-110 disabled:opacity-60"
+              className="w-full rounded-xl bg-[#00ffff] px-4 py-3 font-extrabold text-[#0d1117] shadow-md hover:brightness-110 disabled:opacity-60"
             >
               {isSubmitting ? 'Submitting...' : 'Submit'}
             </button>

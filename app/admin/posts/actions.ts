@@ -17,15 +17,20 @@ export async function updatePost(postId: string, prevState: any, formData: FormD
   const title = formData.get('title') as string
   const summary = formData.get('summary') as string
   const tagsString = formData.get('tags') as string
-  
+  const price = formData.get('price') as string
+  const contact_phone = formData.get('contact_phone') as string
   const tags = tagsString.split(',').map(t => t.trim()).filter(Boolean)
+  const redirectTo = (formData.get('redirectTo') as string) || '/admin/posts'
 
   const { error } = await supabase
     .from('posts')
     .update({
       title,
       summary,
-      tags
+      tags,
+      price: price || null,
+      contact_phone: contact_phone || null,
+      is_deleted: false
     })
     .eq('id', postId)
 
@@ -34,7 +39,7 @@ export async function updatePost(postId: string, prevState: any, formData: FormD
     return { error: error.message }
   }
 
-  redirect('/admin/posts')
+  redirect(redirectTo)
 }
 
 export async function deletePostPermanently(postId: string, prevState: any) {

@@ -19,6 +19,29 @@ export async function PATCH(
 
     const supabase = createAdminClient();
     
+    // If status is being set to rejected, we should delete the associated post if it exists
+    if (status === 'rejected') {
+      const { data: submission } = await supabase
+        .from('submissions')
+        .select('post_id')
+        .eq('id', parseInt(id))
+        .single();
+      
+      if (submission?.post_id) {
+        // Hard delete the post
+        await supabase
+          .from('posts')
+          .delete()
+          .eq('id', submission.post_id);
+        
+        // Also update the submission to clear the post_id
+        await supabase
+          .from('submissions')
+          .update({ post_id: null })
+          .eq('id', parseInt(id));
+      }
+    }
+
     const { error } = await supabase
       .from('submissions')
       .update({ status })
@@ -105,13 +128,17 @@ export async function POST(
 
     if (user?.whatsapp_number) {
       const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://freshnews.top';
-      const message = `Your ${submission.type} "${title}" has been approved! View it here: ${baseUrl}/posts/${newPost.id}`;
+      const message = `Your Ad is now Live: "${title}"\n\nView it here: ${baseUrl}/posts/${newPost.id}`;
 
+      console.log('Sending approval WhatsApp to:', user.whatsapp_number);
+      
       await fetch(`${baseUrl}/api/send-whatsapp`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ to: user.whatsapp_number, message }),
       }).catch((error) => console.error('Failed to send whatsapp:', error));
+    } else {
+      console.log('No WhatsApp number found for user ID:', submission.user_id);
     }
 
     return NextResponse.json({ ok: true, postId: newPost.id });

@@ -17,6 +17,7 @@ import PostTracker from '../../components/PostTracker';
 import NetworkAd from '../../components/NetworkAd';
 import { createAdminClient } from '../../../lib/supabase-admin';
 import ImageGallery from '../../components/ImageGallery';
+import SwipeRedirect from './SwipeRedirect';
 
 type AdNetwork = {
   enabled?: boolean;
@@ -255,8 +256,59 @@ export default async function PostPage({ params }: PageProps) {
     })),
   } : null;
 
+    const isClassified = post.tags?.some(t => t.toLowerCase().includes('classified'));
+    const categoryName = post.tags?.find(t => !t.toLowerCase().includes('classified')) || '';
+
+    // PRICE & CONTACT INFO BLOCK
+    const ContactInfoBlock = (() => {
+        const tags = post.tags || [];
+        const tagList = tags.map(t => t.toLowerCase());
+        
+        // Only show for specific categories
+        const isRelevant = tagList.some(t => 
+            ['real estate', 'rental', 'jobs', 'job', 'property', 'classifieds', 'classified'].includes(t)
+        );
+        
+        if (!isRelevant || (!post.price && !post.contact_phone)) return null;
+        
+        const priceLabel = (tagList.includes('jobs') || tagList.includes('job')) ? 'Salary' : 'Price';
+        
+        return (
+            <div className="my-8 p-5 rounded-2xl bg-[var(--bg-primary)] border border-[#00ffff]/20 grid grid-cols-2 gap-4 sm:flex sm:flex-wrap sm:gap-10 items-center shadow-lg">
+                {post.price && (
+                    <div className="flex flex-col">
+                        <span className="text-[10px] uppercase font-bold text-[var(--text-muted)] mb-1" style={{ fontFamily: 'var(--font-en)' }}>
+                            {priceLabel}
+                        </span>
+                        <span 
+                            className="font-black text-lg sm:text-2xl break-words leading-tight"
+                            style={{ color: '#00ffff' }}
+                        >
+                            {post.price}
+                        </span>
+                    </div>
+                )}
+                {post.contact_phone && (
+                    <div className="flex flex-col">
+                        <span className="text-[10px] uppercase font-bold text-[var(--text-muted)] mb-1" style={{ fontFamily: 'var(--font-en)' }}>
+                            Contact
+                        </span>
+                        <a 
+                            href={`tel:${post.contact_phone}`} 
+                            className="font-black text-lg sm:text-2xl hover:underline break-words leading-tight"
+                            style={{ color: '#ffd42a' }}
+                        >
+                            {post.contact_phone}
+                        </a>
+                    </div>
+                )}
+            </div>
+        );
+    })();
+
   return (
     <div className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)]">
+      {isClassified && <SwipeRedirect category={categoryName} />}
       {/* JSON-LD Structured Data */}
       <script
         type="application/ld+json"
@@ -274,13 +326,22 @@ export default async function PostPage({ params }: PageProps) {
       <main className="pb-8">
         <article className="mx-auto mt-6 w-full max-w-[850px] px-3 sm:px-4">
           <div className="rounded-3xl bg-[var(--bg-card)] border border-[var(--border)] px-2.5 py-6 sm:px-5 sm:py-8 break-words">
-            {/* BREADCRUMB */}
             <div className="mb-5 flex flex-wrap items-center gap-2 text-[12.5px] text-[var(--text-muted)]" style={{ fontFamily: 'var(--font-en)' }}>
               <Link href="/" className="text-[var(--text-secondary)] hover:text-[#ffd42a]">
-                ഹോം
+                Home
               </Link>
-              <span>›</span>
-              <span>{post.source_name}</span>
+              <span>-</span>
+              {isClassified ? (
+                <>
+                  <Link href="/classifieds" className="text-[var(--text-secondary)] hover:text-[#00fbff]">
+                    Classifieds
+                  </Link>
+                  <span>-</span>
+                  <span className="capitalize text-[var(--accent)] font-bold">{categoryName?.replace(/-/g, ' ') || 'RealEstate'}</span>
+                </>
+              ) : (
+                <span className="text-[var(--text-primary)]">News</span>
+              )}
             </div>
 
             {/* TITLE */}
@@ -301,6 +362,9 @@ export default async function PostPage({ params }: PageProps) {
 
             {/* IMAGE GALLERY */}
             <div className="mb-8">
+              {/* PRICE & CONTACT - Top */}
+              {ContactInfoBlock}
+
               {post.image_url ? (
                 <ImageGallery
                   images={post.image_url.startsWith('["') ? JSON.parse(post.image_url) : [post.image_url]}
@@ -354,48 +418,9 @@ export default async function PostPage({ params }: PageProps) {
               })}
             </div>
 
-            {/* PRICE & CONTACT - Side by Side and Dynamic Labels */}
-            {(() => {
-              const tags = post.tags || [];
-              const tagList = tags.map(t => t.toLowerCase());
-              
-              // Only show for specific categories
-              const isRelevant = tagList.some(t => 
-                ['real estate', 'rental', 'jobs', 'job', 'property', 'classifieds', 'classified'].includes(t)
-              );
-              
-              if (!isRelevant || (!post.price && !post.contact_phone)) return null;
-              
-              const priceLabel = (tagList.includes('jobs') || tagList.includes('job')) ? 'Salary' : 'Price';
-              
-              return (
-                <div className="mt-8 pt-6 border-t border-[var(--border)] grid grid-cols-2 gap-4 sm:flex sm:flex-wrap sm:gap-10 items-center">
-                  {post.price && (
-                    <div className="flex flex-col">
-                      <span className="text-[10px] uppercase font-bold text-[var(--text-muted)] mb-1" style={{ fontFamily: 'var(--font-en)' }}>
-                        {priceLabel}
-                      </span>
-                      <span className="text-[#00ffff] font-black text-lg sm:text-2xl break-words leading-tight">
-                        {post.price}
-                      </span>
-                    </div>
-                  )}
-                  {post.contact_phone && (
-                    <div className="flex flex-col">
-                      <span className="text-[10px] uppercase font-bold text-[var(--text-muted)] mb-1" style={{ fontFamily: 'var(--font-en)' }}>
-                        Contact
-                      </span>
-                      <a 
-                        href={`tel:${post.contact_phone}`} 
-                        className="text-[#ffd42a] font-black text-lg sm:text-2xl hover:underline break-words leading-tight"
-                      >
-                        {post.contact_phone}
-                      </a>
-                    </div>
-                  )}
-                </div>
-              );
-            })()}
+            {/* PRICE & CONTACT - Bottom */}
+            {ContactInfoBlock}
+
 
             {/* TAGS – colorful */}
             <div className="mt-10 flex flex-wrap items-center gap-3 border-t border-[var(--border)] pt-8">

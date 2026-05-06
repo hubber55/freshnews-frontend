@@ -19,16 +19,18 @@ from config import GROQ_API_KEY, GROQ_MODEL, MISTRAL_API_KEY, MISTRAL_MODEL
 logger = logging.getLogger(__name__)
 
 SUMMARIZE_PROMPT = """You are an expert Malayalam News Editor.
-Your task is to REWRITE and SUMMARIZE the following news article. 
+Your task is to REWRITE the following news article while ensuring ABSOLUTE accuracy and maintaining the original message perfectly.
 
 Instructions:
-1. REWRITE THE TITLE: Create a NEW, catchy, and SHORT title in Malayalam. It MUST be under 10 words. Summarize the core news into a concise headline.
-2. REWRITE THE CONTENT: Rephrase the article COMPLETELY in your own words in Malayalam. Do not copy sentences. Target 250 to 450 words. Write a professional newspaper article.
-3. LANGUAGE RULES: Use Malayalam script. English is ONLY allowed for proper nouns (names, places) or technical terms with no Malayalam equivalent.
-4. STRUCTURE: Use well-structured paragraphs. Start a new paragraph every 60-80 words.
-5. NO PREFIXES: Do not include "Summary:", "സമ്മറി:", etc.
-6. KEYWORDS: Extract 3 relevant English keywords (strictly English).
-7. FAQ: Generate 3 FAQ items (q and a) in Malayalam based on the news.
+1. SUMMARIZE THE TITLE: Create a concise title in Malayalam that preserves the EXACT meaning of the original. IT MUST BE UNDER 10 WORDS. Do not rewrite or creatively change the title; simply ensure it fits the word limit without losing any core information. Simple truncation or literal translation is preferred.
+2. REWRITE THE CONTENT: Rephrase the article professionally in Malayalam. Target 250 to 500 words based on the original length. Ensure the Malayalam is natural and fluent.
+3. ACCURACY & MEANING: DO NOT change the original meaning. If a sentence or concept is complex, do not take risks with rephrasing that could distort or reverse the intended meaning. Preservation of truth is the top priority.
+4. QUOTES: Any text enclosed in double quotes " " or single quotes ' ' (representing direct quotes or official statements) MUST be kept mostly as-is or translated with zero change in essence.
+5. LANGUAGE RULES: Use Malayalam script. English is ONLY allowed for proper nouns or technical terms with no Malayalam equivalent.
+6. STRUCTURE: Use well-structured paragraphs. Start a new paragraph every 60-80 words.
+7. NO PREFIXES: Do not include "Summary:", "സമ്മറി:", etc.
+8. KEYWORDS: Extract 3 relevant English keywords (strictly English).
+9. FAQ: Generate 3 FAQ items (q and a) in Malayalam based on the news.
 
 You must reply with a valid JSON object in EXACTLY this format:
 {{
@@ -46,7 +48,15 @@ Original Title: {title}
 Original Content: {description}
 """
 
-# ─── Provider Definitions ───
+def truncate_title(title, max_words=10):
+    """Truncate title to max_words without cutting words in half."""
+    if not title:
+        return ""
+    words = title.split()
+    if len(words) <= max_words:
+        return title
+    return " ".join(words[:max_words]) + "......"
+
 
 def _call_mistral(prompt):
     """Call Mistral AI API (PRIMARY provider)."""
@@ -124,8 +134,11 @@ def summarize_article(article):
         if content:
             try:
                 parsed = json.loads(content)
-                new_title = str(parsed.get("title", title)).strip()
                 summary = str(parsed.get("summary", "")).strip()
+                
+                # Use the original title truncated to 10 words instead of AI rewritten title
+                new_title = truncate_title(title, 10)
+                
                 tags = [str(t).strip() for t in parsed.get("keywords", []) if str(t).strip()]
                 tags = [t for t in tags if len(t) < 20][:4]
                 
@@ -158,7 +171,8 @@ def summarize_batch(articles, delay_seconds=15):
 
         result = summarize_article(article)
         if result:
-            summary, tags, faq = result
+            new_title, summary, tags, faq = result
+            article["title"] = new_title
             article["summary"] = summary
             article["tags"] = tags
             article["faq"] = faq

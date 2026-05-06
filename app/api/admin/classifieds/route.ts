@@ -14,6 +14,8 @@ export async function GET() {
         ad_subcategories (name)
       `)
       .eq('type', 'classified')
+      .neq('status', 'deleted')
+      .neq('status', 'rejected')
       .order('created_at', { ascending: false });
 
     if (error) throw error;

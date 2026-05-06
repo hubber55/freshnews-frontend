@@ -25,7 +25,8 @@ export default async function AdminPostsPage({
 
   let query = supabase
     .from('posts')
-    .select('id, title, source_name, published_at, is_deleted, image_url', { count: 'exact' });
+    .select('id, title, source_name, published_at, is_deleted, image_url', { count: 'exact' })
+    .eq('is_deleted', false);
 
   if (search) {
     const isId = !isNaN(Number(search));

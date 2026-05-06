@@ -12,9 +12,11 @@ type Post = {
   redirect_to?: string | null
   source_name?: string | null
   image_url?: string | null
+  price?: string | null
+  contact_phone?: string | null
 }
 
-export default function EditPostForm({ post }: { post: Post }) {
+export default function EditPostForm({ post, backUrl }: { post: Post, backUrl?: string }) {
   // We use useActionState to handle the potential error return from server actions
   const [updateState, updateAction, isUpdatePending] = useActionState(updatePost.bind(null, post.id), null)
   const [deleteState, deleteAction, isDeletePending] = useActionState(deletePostPermanently.bind(null, post.id), null)
@@ -31,6 +33,7 @@ export default function EditPostForm({ post }: { post: Post }) {
         )}
         
         <form action={updateAction} className="space-y-5">
+          <input type="hidden" name="redirectTo" defaultValue={backUrl || '/admin/posts'} />
           <div>
             <label className="mb-2 block text-sm font-semibold text-[var(--text-secondary)]">Title</label>
             <input
@@ -40,6 +43,27 @@ export default function EditPostForm({ post }: { post: Post }) {
               required
               className="w-full rounded-lg bg-[var(--bg-primary)] border border-[var(--border)] px-4 py-2.5 text-[var(--text-primary)] focus:border-[#ffd42a] focus:outline-none focus:ring-1 focus:ring-[#ffd42a]"
             />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="mb-2 block text-sm font-semibold text-[var(--text-secondary)]">Price / Salary</label>
+              <input
+                type="text"
+                name="price"
+                defaultValue={post.price || ''}
+                className="w-full rounded-lg bg-[var(--bg-primary)] border border-[var(--border)] px-4 py-2.5 text-[var(--text-primary)] focus:border-[#ffd42a] focus:outline-none focus:ring-1 focus:ring-[#ffd42a]"
+              />
+            </div>
+            <div>
+              <label className="mb-2 block text-sm font-semibold text-[var(--text-secondary)]">Contact Phone</label>
+              <input
+                type="text"
+                name="contact_phone"
+                defaultValue={post.contact_phone || ''}
+                className="w-full rounded-lg bg-[var(--bg-primary)] border border-[var(--border)] px-4 py-2.5 text-[var(--text-primary)] focus:border-[#ffd42a] focus:outline-none focus:ring-1 focus:ring-[#ffd42a]"
+              />
+            </div>
           </div>
 
           <div>

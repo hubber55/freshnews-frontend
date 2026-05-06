@@ -70,10 +70,10 @@ export default function BottomNav() {
               href={item.href}
               className={`flex flex-col items-center justify-center w-16 h-full transition-all active:scale-90 relative pt-1`}
             >
-              <div className={`${item.active ? 'text-[#ffd42a]' : 'text-[var(--text-secondary)]'}`}>
+              <div className={`${item.active ? 'text-[#ffd42a]' : 'text-[#00cfff]'}`}>
                 <Icon size={20} strokeWidth={item.active ? 2.5 : 2} />
               </div>
-              <span className={`text-[9px] font-bold mt-0.5 ${item.active ? 'text-[#ffd42a]' : 'text-[var(--text-secondary)]'}`}>
+              <span className={`text-[9px] font-bold mt-0.5 ${item.active ? 'text-[#ffd42a]' : 'text-[#00cfff]'}`}>
                 {item.label}
               </span>
               {item.active && (

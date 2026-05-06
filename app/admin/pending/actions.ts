@@ -89,7 +89,10 @@ export async function approveSubmission(submissionId: string, formData: FormData
   try {
     await supabase
       .from('submissions')
-      .update({ status: 'approved' })
+      .update({ 
+        status: 'approved',
+        post_id: newPost.id 
+      })
       .eq('id', submissionId);
   } catch (err) {
     console.error('Failed to update submission status:', err);
@@ -98,7 +101,7 @@ export async function approveSubmission(submissionId: string, formData: FormData
   // Send WhatsApp message to User
   if (user?.whatsapp_number) {
     const url = `${process.env.NEXT_PUBLIC_BASE_URL || 'https://freshnews.top'}/posts/${newPost.id}`;
-    const userMsg = `Your ${submission.type} "${title}" has been approved! View it here: ${url}`;
+    const userMsg = `Your Ad "${title}" is now Live! View it here: ${url}`;
     await fetch(`${process.env.NEXT_PUBLIC_BASE_URL || 'https://freshnews.top'}/api/send-whatsapp`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
