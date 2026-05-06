@@ -2,12 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Megaphone, Trash2, CheckCircle, Clock, AlertCircle, ChevronDown, ChevronUp, MessageSquareCheck } from 'lucide-react';
+import { ArrowLeft, Megaphone, Trash2, CheckCircle, Clock, AlertCircle, ChevronDown, ChevronUp, MessageSquareCheck, XCircle } from 'lucide-react';
 
 type MarketingNumber = { id: number; phone_number: string; status: string; category: string };
 
 export default function MarketingAdminPage() {
-  const [stats, setStats] = useState({ pending: 0, messaged: 0, replied: 0 });
+  const [stats, setStats] = useState({ pending: 0, messaged: 0, replied: 0, invalid: 0 });
   const [allNumbers, setAllNumbers] = useState<MarketingNumber[]>([]);
   const [loading, setLoading] = useState(true);
   const [numbersInput, setNumbersInput] = useState('');
@@ -125,6 +125,7 @@ export default function MarketingAdminPage() {
     { key: 'pending', label: 'Pending Queue', icon: Clock, color: '#ffd42a', count: stats.pending },
     { key: 'messaged', label: 'Messaged', icon: MessageSquareCheck, color: '#00ffff', count: stats.messaged },
     { key: 'replied', label: 'Replied', icon: AlertCircle, color: '#25D366', count: stats.replied },
+    { key: 'invalid', label: 'No WhatsApp', icon: XCircle, color: '#ef4444', count: stats.invalid },
   ];
 
   return (

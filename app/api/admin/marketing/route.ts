@@ -17,6 +17,7 @@ export async function GET() {
     pending: data.filter(d => d.status === 'pending').length,
     messaged: data.filter(d => d.status === 'messaged').length,
     replied: data.filter(d => d.status === 'replied').length,
+    invalid: data.filter(d => d.status === 'invalid').length,
   };
 
   const { data: templates } = await supabase.from('whatsapp_templates').select('*').order('created_at', { ascending: false });

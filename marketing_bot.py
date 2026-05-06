@@ -26,11 +26,13 @@ def get_ist_time():
     ist_now = utc_now + timedelta(hours=5, minutes=30)
     return ist_now
 
-def send_whatsapp(phone_number: str, message_text: str) -> bool:
+def send_whatsapp(phone_number: str, message_text: str) -> tuple[bool, bool]:
     """
     Send a WhatsApp message via Evolution API.
-    Returns True on success, False on failure.
-    Tries both payload formats for compatibility.
+    Returns (success: bool, is_invalid: bool)
+    - (True, False)  = message sent OK
+    - (False, True)  = number has no WhatsApp account (mark as invalid)
+    - (False, False) = API error, will retry
     """
     headers = {
         "Content-Type": "application/json",
@@ -45,10 +47,21 @@ def send_whatsapp(phone_number: str, message_text: str) -> bool:
 
     try:
         resp = requests.post(WA_ENDPOINT, headers=headers, json=payload, timeout=15)
-        print(f"   API Response ({resp.status_code}): {resp.text[:200]}")
+        print(f"   API Response ({resp.status_code}): {resp.text[:300]}")
 
         if resp.status_code in [200, 201]:
-            return True
+            return True, False
+
+        # Check for "not on WhatsApp" error
+        try:
+            resp_json = resp.json()
+            response_data = resp_json.get('response', {})
+            messages = response_data.get('message', [])
+            if isinstance(messages, list) and any(m.get('exists') is False for m in messages):
+                print(f"⚠️  Number {phone_number} is NOT on WhatsApp. Marking as invalid.")
+                return False, True
+        except Exception:
+            pass
 
         # Fallback: try v1 format with textMessage wrapper
         payload_v1 = {
@@ -57,18 +70,30 @@ def send_whatsapp(phone_number: str, message_text: str) -> bool:
         }
         resp2 = requests.post(WA_ENDPOINT, headers=headers, json=payload_v1, timeout=15)
         print(f"   Fallback API Response ({resp2.status_code}): {resp2.text[:200]}")
-        return resp2.status_code in [200, 201]
+
+        if resp2.status_code in [200, 201]:
+            return True, False
+
+        # Check again for invalid in fallback response
+        try:
+            resp2_json = resp2.json()
+            messages2 = resp2_json.get('response', {}).get('message', [])
+            if isinstance(messages2, list) and any(m.get('exists') is False for m in messages2):
+                return False, True
+        except Exception:
+            pass
+
+        return False, False
 
     except requests.exceptions.ConnectionError:
         print(f"❌ CONNECTION ERROR: Cannot reach Evolution API at {WA_ENDPOINT}")
-        print(f"   Check: Is the EC2 instance running? Is port 8080 open?")
-        return False
+        return False, False
     except requests.exceptions.Timeout:
         print(f"❌ TIMEOUT: Evolution API did not respond in 15 seconds")
-        return False
+        return False, False
     except Exception as e:
         print(f"❌ Unexpected error: {e}")
-        return False
+        return False, False
 
 def run_marketing_bot():
     print("========================================")
@@ -123,18 +148,27 @@ def run_marketing_bot():
             print(f"   Message: '{message_text}'")
 
             # 4. Send via Evolution API
-            success = send_whatsapp(phone_number, message_text)
+            success, is_invalid = send_whatsapp(phone_number, message_text)
 
             if success:
                 print(f"✅ Sent to {phone_number}! Marking as 'messaged'.")
                 supabase.table('whatsapp_marketing').update({'status': 'messaged'}).eq('id', number_id).execute()
-            else:
-                print(f"❌ Failed to send to {phone_number}. Will retry next loop.")
+                # Normal drip delay only after successful sends
+                sleep_mins = random.randint(10, 15)
+                print(f"⏳ Sleeping {sleep_mins} minutes to prevent spam detection...\n")
+                time.sleep(sleep_mins * 60)
 
-            # 5. Drip Feed Delay: 10-15 minutes
-            sleep_mins = random.randint(10, 15)
-            print(f"⏳ Sleeping {sleep_mins} minutes to prevent spam detection...\n")
-            time.sleep(sleep_mins * 60)
+            elif is_invalid:
+                # Number not on WhatsApp — mark as invalid and move on immediately (no sleep)
+                print(f"🚫 {phone_number} has no WhatsApp. Marking as 'invalid' and skipping.")
+                supabase.table('whatsapp_marketing').update({'status': 'invalid'}).eq('id', number_id).execute()
+                # Short pause just to avoid hammering the API
+                time.sleep(5)
+
+            else:
+                # Real API error — log and wait a bit before retrying
+                print(f"❌ Failed to send to {phone_number}. Will retry after 2 mins.\n")
+                time.sleep(2 * 60)
 
         except Exception as e:
             print(f"❌ Error in marketing loop: {e}")
