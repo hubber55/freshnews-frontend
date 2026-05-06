@@ -21,7 +21,7 @@ export default async function AdminPostsPage() {
     return <div className="text-red-500">Error fetching posts: {error.message}</div>
   }
 
-  const postIds = (posts ?? []).map((p) => p.id)
+  const postIds = (posts ?? []).map((p: any) => p.id)
   const metricsByPostId = new Map<number, { clicks: number; fb: number; x: number; telegram: number; whatsapp: number; native: number }>()
   for (const id of postIds) {
     metricsByPostId.set(id, { clicks: 0, fb: 0, x: 0, telegram: 0, whatsapp: 0, native: 0 })
@@ -91,7 +91,7 @@ export default async function AdminPostsPage() {
             </tr>
           </thead>
           <tbody>
-            {posts?.map((post) => {
+            {posts?.map((post: any) => {
               const m = metricsByPostId.get(post.id) ?? { clicks: 0, fb: 0, x: 0, telegram: 0, whatsapp: 0, native: 0 }
               return (
               <tr key={post.id} className="border-b border-[var(--border)] last:border-0 hover:bg-[#21262d]/50">

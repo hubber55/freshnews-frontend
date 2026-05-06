@@ -82,7 +82,7 @@ export default async function ClassifiedsPage() {
             </div>
             <div className="mt-1.5 h-[3px] w-10 rounded-full bg-[var(--accent)]" />
           </div>
-          <Link href="/submit?type=classified" className="text-[13px] font-semibold text-[#ffd42a] hover:underline">
+          <Link href="/submit?type=classified" className="text-[13px] font-semibold text-[#00cfff] hover:underline">
             Submit Classifieds
           </Link>
         </section>
@@ -95,7 +95,7 @@ export default async function ClassifiedsPage() {
             </p>
             <Link
               href="/submit?type=classified"
-              className="mt-5 inline-flex rounded-full bg-[#ffd42a] px-5 py-3 text-sm font-bold text-black transition-colors hover:bg-[#ffe36d]"
+              className="mt-5 inline-flex rounded-full border border-[#00cfff] bg-transparent px-5 py-3 text-sm font-bold text-[#00cfff] transition-colors hover:bg-[#00cfff]/10"
             >
               Submit Classifieds
             </Link>
@@ -107,7 +107,11 @@ export default async function ClassifiedsPage() {
               const publishedAt = item.created_at;
 
               return (
-                <article key={item.id} className="overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--bg-card)]">
+                <Link
+                  key={item.id}
+                  href={`/classifieds/${item.id}`}
+                  className="block overflow-hidden rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] transition-transform duration-200 hover:-translate-y-0.5 hover:border-[#00cfff]/40"
+                >
                   <div className="grid gap-0 md:grid-cols-[280px_1fr]">
                     <div className="relative min-h-[240px] bg-black/20">
                       {image ? (
@@ -167,7 +171,7 @@ export default async function ClassifiedsPage() {
                       ) : null}
                     </div>
                   </div>
-                </article>
+                </Link>
               );
             })}
           </div>

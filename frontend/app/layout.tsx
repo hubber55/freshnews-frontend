@@ -121,13 +121,20 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const adminSupabase = createAdminClient();
-  const { data: settings } = await adminSupabase
-    .from('admin_settings')
-    .select('key, value')
-    .in('key', ['header_inserts', 'bidvertiser_verification_code']);
+  const hasSupabaseEnv =
+    Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL) &&
+    Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_KEY);
 
-  const settingsMap = new Map((settings ?? []).map((s) => [s.key, s.value]));
+  let settingsMap = new Map<string, string>();
+  if (hasSupabaseEnv) {
+    const adminSupabase = createAdminClient();
+    const { data: settings } = await adminSupabase
+      .from('admin_settings')
+      .select('key, value')
+      .in('key', ['header_inserts', 'bidvertiser_verification_code']);
+
+    settingsMap = new Map((settings ?? []).map((s) => [s.key, s.value]));
+  }
 
   const headerInserts = safeParseHeaderInserts(settingsMap.get('header_inserts'));
 

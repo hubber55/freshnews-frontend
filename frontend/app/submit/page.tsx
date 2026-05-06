@@ -423,6 +423,7 @@ function SubmitContent() {
               <input
                 value={title}
                 onChange={(e) => setTitle(e.target.value.slice(0, 70))}
+                maxLength={70}
                 className="w-full rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-4 py-3 text-white focus:border-[#00cfff] focus:outline-none focus:ring-1 focus:ring-[#00cfff]"
               />
             </div>
@@ -639,7 +640,7 @@ function SubmitContent() {
             <button
               type="submit"
               disabled={isSubmitting || loading}
-              className="w-full rounded-xl bg-[#00cfff] px-4 py-3 font-extrabold text-[#0d1117] shadow-md hover:brightness-110 disabled:opacity-60"
+              className="w-full rounded-xl border border-[#00cfff] bg-transparent px-4 py-3 font-extrabold text-[#00cfff] shadow-none transition-colors hover:bg-[#00cfff]/10 disabled:opacity-60"
             >
               {isSubmitting ? 'Submitting...' : 'Submit'}
             </button>
