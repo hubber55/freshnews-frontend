@@ -121,6 +121,39 @@ function SubmitContent() {
 
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [allApprovedTags, setAllApprovedTags] = useState<string[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+
+  // Fetch approved tags for predictive input
+  useEffect(() => {
+    async function fetchTags() {
+      const { data } = await supabase
+        .from('submissions')
+        .select('tags')
+        .eq('status', 'approved');
+      
+      const tagSet = new Set<string>();
+      data?.forEach(item => {
+        if (Array.isArray(item.tags)) {
+          item.tags.forEach((t: string) => {
+            const formatted = t.charAt(0).toUpperCase() + t.slice(1).toLowerCase();
+            tagSet.add(formatted);
+          });
+        }
+      });
+      setAllApprovedTags(Array.from(tagSet).sort());
+    }
+    fetchTags();
+  }, [supabase]);
+
+  const ghostText = tagInput.length >= 2 ? allApprovedTags.find(t => 
+    t.toLowerCase().startsWith(tagInput.toLowerCase()) && 
+    t.toLowerCase() !== tagInput.toLowerCase()
+  )?.slice(tagInput.length) || '' : '';
+
+  const suggestions = tagInput.length >= 2 ? allApprovedTags.filter(t => 
+    t.toLowerCase().includes(tagInput.toLowerCase())
+  ).slice(0, 5) : [];
 
   // Fetch max upload images setting
   useEffect(() => {
@@ -491,23 +524,63 @@ function SubmitContent() {
                   </span>
                 ))}
               </div>
-              <input
-                value={tagInput}
-                onChange={(e) => setTagInput(e.target.value.slice(0, 20))}
-                onKeyDown={(e) => {
-                  if (e.key === ',' || e.key === 'Enter') {
-                    e.preventDefault();
-                    const newTag = tagInput.trim();
-                    if (newTag && tags.length < 5 && !tags.includes(newTag)) {
-                      setTags([...tags, newTag]);
+              <div className="relative">
+                <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-[15px]">
+                  <span className="text-transparent">{tagInput}</span>
+                  <span className="text-white/30">{ghostText}</span>
+                </div>
+                <input
+                  value={tagInput}
+                  onChange={(e) => {
+                    const val = e.target.value.slice(0, 20);
+                    setTagInput(val);
+                    setShowSuggestions(true);
+                  }}
+                  onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Tab' && ghostText) {
+                      e.preventDefault();
+                      setTagInput(tagInput + ghostText);
+                    } else if (e.key === ',' || e.key === 'Enter') {
+                      e.preventDefault();
+                      const raw = tagInput.trim();
+                      if (raw && tags.length < 5) {
+                        const formatted = raw.charAt(0).toUpperCase() + raw.slice(1).toLowerCase();
+                        if (!tags.includes(formatted)) {
+                          setTags([...tags, formatted]);
+                        }
+                      }
+                      setTagInput('');
+                      setShowSuggestions(false);
                     }
-                    setTagInput('');
-                  }
-                }}
-                placeholder={tags.length >= 5 ? 'Maximum 5 tags reached' : 'Type tag and press comma or Enter'}
-                disabled={tags.length >= 5}
-                className="w-full rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-4 py-3 text-white focus:border-[#00cfff] focus:outline-none focus:ring-1 focus:ring-[#00cfff] disabled:opacity-50"
-              />
+                  }}
+                  placeholder={tags.length >= 5 ? 'Maximum 5 tags reached' : 'Type tag and press comma or Enter'}
+                  disabled={tags.length >= 5}
+                  className="w-full rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-4 py-3 text-white focus:border-[#00cfff] focus:outline-none focus:ring-1 focus:ring-[#00cfff] disabled:opacity-50"
+                />
+                {showSuggestions && suggestions.length > 0 && (
+                  <div className="absolute top-full left-0 right-0 z-50 mt-2 overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--bg-card)] shadow-2xl">
+                    {suggestions.map((s, i) => (
+                      <button
+                        key={i}
+                        type="button"
+                        onClick={() => {
+                          const formatted = s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
+                          if (!tags.includes(formatted)) {
+                            setTags([...tags, formatted]);
+                          }
+                          setTagInput('');
+                          setShowSuggestions(false);
+                        }}
+                        className="flex w-full items-center gap-3 px-4 py-3 text-left text-[14px] text-[var(--text-secondary)] hover:bg-[var(--border)] hover:text-[#00cfff] transition-colors border-b border-white/5 last:border-0"
+                      >
+                        <span className="text-[#00cfff]">#</span>
+                        {s}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
 
             {(type === 'ad' || type === 'classified') && (

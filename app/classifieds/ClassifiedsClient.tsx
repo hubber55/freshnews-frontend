@@ -183,11 +183,14 @@ export default function ClassifiedsClient({
                     {/* TAGS DISPLAY */}
                     {item.tags && item.tags.length > 0 && (
                       <div className="mt-4 flex flex-wrap gap-2">
-                        {item.tags.map((tag, idx) => (
-                          <span key={idx} className="text-[10px] font-bold text-[#00ffff]/60 px-2 py-0.5 rounded border border-[#00ffff]/20 uppercase tracking-tighter">
-                            #{tag}
-                          </span>
-                        ))}
+                        {item.tags.map((tag, idx) => {
+                          const formattedTag = tag.charAt(0).toUpperCase() + tag.slice(1).toLowerCase();
+                          return (
+                            <span key={idx} className="text-[10px] font-bold text-[#00ffff]/60 px-2 py-0.5 rounded border border-[#00ffff]/20 uppercase tracking-tighter">
+                              {formattedTag}
+                            </span>
+                          );
+                        })}
                       </div>
                     )}
                   </div>

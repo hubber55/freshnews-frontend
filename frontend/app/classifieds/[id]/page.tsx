@@ -161,21 +161,42 @@ export default async function ClassifiedDetailPage({ params }: { params: Promise
               {/* TAGS */}
               {item.tags && item.tags.length > 0 && (
                 <div className="mt-6 flex flex-wrap gap-2 pt-6 border-t border-white/5">
-                  {item.tags.map((tag, idx) => (
-                    <span key={idx} className="text-[11px] font-bold text-[#00ffff] bg-[#00ffff]/5 px-3 py-1 rounded-full border border-[#00ffff]/10 uppercase tracking-wide">
-                      #{tag}
-                    </span>
-                  ))}
+                  {item.tags.map((tag, idx) => {
+                    const formattedTag = tag.charAt(0).toUpperCase() + tag.slice(1).toLowerCase();
+                    return (
+                      <span key={idx} className="text-[11px] font-bold text-[#00ffff] bg-[#00ffff]/5 px-3 py-1 rounded-full border border-[#00ffff]/10 tracking-wide">
+                        {formattedTag}
+                      </span>
+                    );
+                  })}
                 </div>
               )}
+
+              {/* REPEAT PRICE AND PHONE AT END */}
+              <div className="mt-8 pt-8 border-t border-white/10 flex flex-wrap gap-6">
+                {item.price ? (
+                  <div className="flex flex-col gap-1">
+                    <span className="text-[11px] font-bold uppercase text-[var(--text-muted)] tracking-widest">Price</span>
+                    <div className="flex items-center gap-1.5 text-xl font-black text-[#ffd42a]">
+                      <Banknote size={20} />
+                      {item.price}
+                    </div>
+                  </div>
+                ) : null}
+                {item.contact_phone ? (
+                  <div className="flex flex-col gap-1">
+                    <span className="text-[11px] font-bold uppercase text-[var(--text-muted)] tracking-widest">Contact</span>
+                    <a href={`tel:${item.contact_phone}`} className="flex items-center gap-1.5 text-xl font-black text-[#00ffff] hover:underline transition-all">
+                      <Phone size={20} />
+                      {item.contact_phone}
+                    </a>
+                  </div>
+                ) : null}
+              </div>
             </div>
           </div>
         </article>
 
-        <div className="mt-5 flex items-center gap-2 text-xs text-[var(--text-muted)]">
-          <Megaphone size={14} className="text-[#00cfff]" />
-          Clicking a classifieds card now opens this detail view for every item.
-        </div>
       </main>
 
       <Footer />

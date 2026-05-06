@@ -79,7 +79,7 @@ export default function ClassifiedsClient({
         </div>
         <Link 
           href="/submit?type=classified" 
-          className="inline-flex items-center rounded-lg bg-[#00ffff] px-4 py-2 text-[13px] font-black text-black hover:bg-[#00dada] transition-all shadow-lg active:scale-95"
+          className="inline-flex items-center rounded-lg border border-[#00ffff] bg-transparent px-4 py-2 text-[13px] font-black text-[#00ffff] hover:bg-[#00ffff]/10 transition-all shadow-[0_0_15px_rgba(0,255,255,0.1)] active:scale-95"
         >
           Submit Classifieds
         </Link>
@@ -179,6 +179,20 @@ export default function ClassifiedsClient({
                         {item.content}
                       </p>
                     ) : null}
+
+                    {/* TAGS DISPLAY */}
+                    {item.tags && item.tags.length > 0 && (
+                      <div className="mt-4 flex flex-wrap gap-2">
+                        {item.tags.map((tag, idx) => {
+                          const formattedTag = tag.charAt(0).toUpperCase() + tag.slice(1).toLowerCase();
+                          return (
+                            <span key={idx} className="text-[10px] font-bold text-[#00ffff]/60 px-2 py-0.5 rounded border border-[#00ffff]/20 uppercase tracking-tighter">
+                              {formattedTag}
+                            </span>
+                          );
+                        })}
+                      </div>
+                    )}
                   </div>
 
                   <div className="mt-4 pt-4 border-t border-white/5 flex justify-between items-center">
