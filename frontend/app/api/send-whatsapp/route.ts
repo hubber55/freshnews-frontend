@@ -9,6 +9,15 @@ async function sendMessage(receiver: string, message: string) {
     throw new Error('WhatsApp API credentials are not configured.');
   }
 
+  // Add human-like behavior: typing indicator
+  await fetch(`http://${ip}:8080/chat/setPresence/${VercelBot2}`, {
+    method: 'POST',
+    headers: { 'apikey': apiKey, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ number: receiver, presence: 'composing' })
+  }).catch(() => {});
+  
+  await new Promise(resolve => setTimeout(resolve, 1000));
+
   const res = await fetch(`http://${ip}:8080/message/sendText/VercelBot2`, {
     method: 'POST',
     headers: {
@@ -17,6 +26,7 @@ async function sendMessage(receiver: string, message: string) {
     },
     body: JSON.stringify({
       number: receiver,
+      options: { delay: 1000 },
       textMessage: {
         text: message
       }
