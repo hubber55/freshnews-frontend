@@ -25,7 +25,17 @@ async function sendMessage(receiver: string, message: string) {
 
   if (!res.ok) {
     const errorBody = await res.json().catch(() => ({}));
-    throw new Error(`Evolution API send failed: ${res.status} ${JSON.stringify(errorBody)}`);
+    const errorStr = JSON.stringify(errorBody);
+    
+    // Check if it's a "number does not exist on WhatsApp" error
+    if (res.status === 400 && errorStr.includes('"exists":false')) {
+      const err = new Error('Number does not exist on WhatsApp');
+      (err as any).status = 400;
+      (err as any).isInvalidNumber = true;
+      throw err;
+    }
+
+    throw new Error(`Evolution API send failed: ${res.status} ${errorStr}`);
   }
 }
 
@@ -43,6 +53,10 @@ export async function POST(req: Request) {
 
   } catch (e: any) {
     console.error('Send WhatsApp API Error:', e);
-    return NextResponse.json({ error: e.message || 'An unexpected error occurred' }, { status: 500 });
+    const status = e.status || 500;
+    return NextResponse.json({ 
+      error: e.message || 'An unexpected error occurred',
+      isInvalidNumber: e.isInvalidNumber || false
+    }, { status });
   }
 }
