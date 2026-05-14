@@ -1,3 +1,4 @@
+export const runtime = 'edge';
 import CreatePostForm from './CreatePostForm'
 
 export default function NewPostPage() {
