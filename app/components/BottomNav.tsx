@@ -2,10 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import Home from 'lucide-react/dist/esm/icons/home'
-import Megaphone from 'lucide-react/dist/esm/icons/megaphone'
-import PlusCircle from 'lucide-react/dist/esm/icons/plus-circle'
-import User from 'lucide-react/dist/esm/icons/user'
+import { Home, Megaphone, PlusCircle, User } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
 import { useAuth } from './AuthProvider';

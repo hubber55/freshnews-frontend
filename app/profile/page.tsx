@@ -5,17 +5,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Header from '../components/header';
 import Footer from '../components/footer';
-import User from 'lucide-react/dist/esm/icons/user'
-import Edit from 'lucide-react/dist/esm/icons/edit'
-import Clock from 'lucide-react/dist/esm/icons/clock'
-import CheckCircle from 'lucide-react/dist/esm/icons/check-circle'
-import XCircle from 'lucide-react/dist/esm/icons/x-circle'
-import FileText from 'lucide-react/dist/esm/icons/file-text'
-import Calendar from 'lucide-react/dist/esm/icons/calendar'
-import Tag from 'lucide-react/dist/esm/icons/tag'
-import Newspaper from 'lucide-react/dist/esm/icons/newspaper'
-import Trash2 from 'lucide-react/dist/esm/icons/trash-2'
-import ExternalLink from 'lucide-react/dist/esm/icons/external-link'
+import { User, Edit, Clock, CheckCircle, XCircle, FileText, Calendar, Tag, Newspaper, Trash2, ExternalLink } from 'lucide-react';
 
 type UserSubmission = {
   id: number;

@@ -3,12 +3,7 @@ export const runtime = 'edge';
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import ChevronLeft from 'lucide-react/dist/esm/icons/chevron-left'
-import Send from 'lucide-react/dist/esm/icons/send'
-import Bell from 'lucide-react/dist/esm/icons/bell'
-import Info from 'lucide-react/dist/esm/icons/info'
-import CheckCircle2 from 'lucide-react/dist/esm/icons/check-circle-2'
-import AlertCircle from 'lucide-react/dist/esm/icons/alert-circle'
+import { ChevronLeft, Send, Bell, Info, CheckCircle2, AlertCircle } from 'lucide-react';
 
 export default function AdminNotificationsPage() {
   const [stats, setStats] = useState({ pushSubscribers: 0 });

@@ -2,14 +2,7 @@
 export const runtime = 'edge';
 
 import { useState, useEffect } from 'react';
-import Plus from 'lucide-react/dist/esm/icons/plus'
-import Trash2 from 'lucide-react/dist/esm/icons/trash-2'
-import CheckCircle2 from 'lucide-react/dist/esm/icons/check-circle-2'
-import XCircle from 'lucide-react/dist/esm/icons/x-circle'
-import TrendingUp from 'lucide-react/dist/esm/icons/trending-up'
-import Users from 'lucide-react/dist/esm/icons/users'
-import Share2 from 'lucide-react/dist/esm/icons/share-2'
-import ImageIcon from 'lucide-react/dist/esm/icons/image'
+import { Plus, Trash2, CheckCircle2, XCircle, TrendingUp, Users, Share2, Image as ImageIcon } from 'lucide-react';
 import { createPoll, togglePoll, deletePoll } from './actions';
 import { supabase } from '@/lib/supabase';
 
