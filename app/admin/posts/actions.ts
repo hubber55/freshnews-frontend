@@ -3,10 +3,8 @@
 import { createClient } from '@/app/utils/supabase/server'
 import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
-import { promises as fs } from 'fs'
-import path from 'path'
 import { v4 as uuidv4 } from 'uuid'
-import { createClient as createSupabaseAdmin } from '@supabase/supabase-js'
+import { createAdminClient } from '@/lib/supabase-admin'
 
 export async function updatePost(postId: string, prevState: any, formData: FormData) {
   const supabase = await createClient()
@@ -135,17 +133,25 @@ export async function createPost(prevState: any, formData: FormData) {
     }
 
     try {
-      const bytes = await image_file.arrayBuffer()
-      const buffer = Buffer.from(bytes)
+      const adminSupabase = createAdminClient()
+      const fileExt = image_file.name.split('.').pop()
+      const fileName = `${uuidv4()}.${fileExt}`
+      const filePath = `posts/${fileName}`
 
-      const uniqueFilename = `${uuidv4()}${path.extname(image_file.name)}`
-      const imagePath = path.join(process.cwd(), 'public', 'images', uniqueFilename)
-      
-      // Ensure the directory exists
-      await fs.mkdir(path.join(process.cwd(), 'public', 'images'), { recursive: true })
+      const { data: uploadData, error: uploadError } = await adminSupabase.storage
+        .from('submissions')
+        .upload(filePath, image_file)
 
-      await fs.writeFile(imagePath, buffer)
-      image_url = `/images/${uniqueFilename}` // Update image_url with the path to the uploaded file
+      if (uploadError) {
+        console.error('Storage upload error:', uploadError)
+        return { error: 'Failed to upload image to storage.' }
+      }
+
+      const { data: { publicUrl } } = adminSupabase.storage
+        .from('submissions')
+        .getPublicUrl(filePath)
+
+      image_url = publicUrl
     } catch (uploadError) {
       console.error('Error uploading image', uploadError)
       return { error: 'Failed to upload image.' }
