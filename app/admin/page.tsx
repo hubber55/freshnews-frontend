@@ -3,12 +3,20 @@ export const runtime = 'edge';
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { 
-  FileText, Tag, Settings, HelpCircle, 
-  Clock, Users, Megaphone, Calendar, 
-  ChevronRight, AlertCircle, TrendingUp,
-  MessageCircle, Bell, IndianRupee
-} from 'lucide-react';
+import FileText from 'lucide-react/dist/esm/icons/file-text';
+import Tag from 'lucide-react/dist/esm/icons/tag';
+import Settings from 'lucide-react/dist/esm/icons/settings';
+import HelpCircle from 'lucide-react/dist/esm/icons/help-circle';
+import Clock from 'lucide-react/dist/esm/icons/clock';
+import Users from 'lucide-react/dist/esm/icons/users';
+import Megaphone from 'lucide-react/dist/esm/icons/megaphone';
+import Calendar from 'lucide-react/dist/esm/icons/calendar';
+import ChevronRight from 'lucide-react/dist/esm/icons/chevron-right';
+import AlertCircle from 'lucide-react/dist/esm/icons/alert-circle';
+import TrendingUp from 'lucide-react/dist/esm/icons/trending-up';
+import MessageCircle from 'lucide-react/dist/esm/icons/message-circle';
+import Bell from 'lucide-react/dist/esm/icons/bell';
+import IndianRupee from 'lucide-react/dist/esm/icons/indian-rupee';
 
 export default function AdminDashboardPage() {
   const [stats, setStats] = useState({

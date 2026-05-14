@@ -3,7 +3,13 @@ export const runtime = 'edge';
 
 import { useState, useEffect } from 'react';
 import { createClient } from '@/app/utils/supabase/client';
-import { Plus, Trash2, Folder, Subtitles, Loader2, ChevronRight, AlertCircle } from 'lucide-react';
+import Plus from 'lucide-react/dist/esm/icons/plus'
+import Trash2 from 'lucide-react/dist/esm/icons/trash-2'
+import Folder from 'lucide-react/dist/esm/icons/folder'
+import Subtitles from 'lucide-react/dist/esm/icons/subtitles'
+import Loader2 from 'lucide-react/dist/esm/icons/loader-2'
+import ChevronRight from 'lucide-react/dist/esm/icons/chevron-right'
+import AlertCircle from 'lucide-react/dist/esm/icons/alert-circle'
 import Header from '@/app/components/header';
 import Footer from '@/app/components/footer';
 

@@ -5,7 +5,13 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { format } from 'date-fns';
-import { Trash2, RefreshCw, Pencil, Eye, Link as LinkIcon, MessageCircle, Share2 } from 'lucide-react';
+import Trash2 from 'lucide-react/dist/esm/icons/trash-2'
+import RefreshCw from 'lucide-react/dist/esm/icons/refresh-cw'
+import Pencil from 'lucide-react/dist/esm/icons/pencil'
+import Eye from 'lucide-react/dist/esm/icons/eye'
+import LinkIcon from 'lucide-react/dist/esm/icons/link'
+import MessageCircle from 'lucide-react/dist/esm/icons/message-circle'
+import Share2 from 'lucide-react/dist/esm/icons/share-2'
 
 export default function AdminPostsPage() {
   const [posts, setPosts] = useState<any[]>([]);

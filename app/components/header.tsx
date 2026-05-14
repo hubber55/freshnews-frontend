@@ -2,7 +2,9 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { X, Search, LogOut } from 'lucide-react';
+import X from 'lucide-react/dist/esm/icons/x'
+import Search from 'lucide-react/dist/esm/icons/search'
+import LogOut from 'lucide-react/dist/esm/icons/log-out'
 import { usePWAInstall } from '../hooks/usePWAInstall';
 
 const GUEST_LINKS = [

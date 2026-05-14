@@ -4,12 +4,28 @@ export const runtime = 'edge';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { format } from 'date-fns';
-import { 
-  ChevronLeft, Users, Search, 
-  MessageCircle, ArrowUpDown, 
-  Newspaper, Calendar, Tag, Megaphone,
-  Edit2, Ban, Trash2, ChevronRight
-} from 'lucide-react';
+import User from 'lucide-react/dist/esm/icons/user'
+import Mail from 'lucide-react/dist/esm/icons/mail'
+import Phone from 'lucide-react/dist/esm/icons/phone'
+import Calendar from 'lucide-react/dist/esm/icons/calendar'
+import Trash2 from 'lucide-react/dist/esm/icons/trash-2'
+import Shield from 'lucide-react/dist/esm/icons/shield'
+import ShieldAlert from 'lucide-react/dist/esm/icons/shield-alert'
+import Ban from 'lucide-react/dist/esm/icons/ban'
+import CheckCircle from 'lucide-react/dist/esm/icons/check-circle'
+import ChevronLeft from 'lucide-react/dist/esm/icons/chevron-left'
+import ChevronRight from 'lucide-react/dist/esm/icons/chevron-right'
+import Search from 'lucide-react/dist/esm/icons/search'
+import AlertCircle from 'lucide-react/dist/esm/icons/alert-circle'
+import RefreshCw from 'lucide-react/dist/esm/icons/refresh-cw'
+import Loader2 from 'lucide-react/dist/esm/icons/loader-2'
+import Users from 'lucide-react/dist/esm/icons/users'
+import MessageCircle from 'lucide-react/dist/esm/icons/message-circle'
+import ArrowUpDown from 'lucide-react/dist/esm/icons/arrow-up-down'
+import Newspaper from 'lucide-react/dist/esm/icons/newspaper'
+import Tag from 'lucide-react/dist/esm/icons/tag'
+import Megaphone from 'lucide-react/dist/esm/icons/megaphone'
+import Edit2 from 'lucide-react/dist/esm/icons/edit-2'
 
 type UserData = {
   id: number;

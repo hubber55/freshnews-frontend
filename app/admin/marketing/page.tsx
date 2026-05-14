@@ -3,7 +3,16 @@ export const runtime = 'edge';
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { ArrowLeft, Megaphone, Trash2, CheckCircle, Clock, AlertCircle, ChevronDown, ChevronUp, MessageSquareCheck, XCircle } from 'lucide-react';
+import ArrowLeft from 'lucide-react/dist/esm/icons/arrow-left'
+import Megaphone from 'lucide-react/dist/esm/icons/megaphone'
+import Trash2 from 'lucide-react/dist/esm/icons/trash-2'
+import CheckCircle from 'lucide-react/dist/esm/icons/check-circle'
+import Clock from 'lucide-react/dist/esm/icons/clock'
+import AlertCircle from 'lucide-react/dist/esm/icons/alert-circle'
+import ChevronDown from 'lucide-react/dist/esm/icons/chevron-down'
+import ChevronUp from 'lucide-react/dist/esm/icons/chevron-up'
+import MessageSquareCheck from 'lucide-react/dist/esm/icons/message-square-check'
+import XCircle from 'lucide-react/dist/esm/icons/x-circle'
 
 type MarketingNumber = { id: number; phone_number: string; status: string; category: string };
 

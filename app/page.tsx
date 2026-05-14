@@ -4,7 +4,8 @@ import TagScroller from './components/TagScroller';
 import { redirect } from 'next/navigation';
 
 import { supabase } from '@/lib/supabase';
-import { Clock, Home as HomeIcon } from 'lucide-react';
+import Clock from 'lucide-react/dist/esm/icons/clock'
+import HomeIcon from 'lucide-react/dist/esm/icons/home'
 import { formatDistanceToNow } from 'date-fns';
 import { hasMinimumWords, limitWords, formatSourceName, getFirstValidTag } from '../lib/posts';
 import Header from './components/header';
