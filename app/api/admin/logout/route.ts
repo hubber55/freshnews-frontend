@@ -5,12 +5,15 @@ import { cookies } from 'next/headers';
 export async function POST() {
   try {
     const cookieStore = await cookies();
-    const supabase = await import('@/lib/supabase');
-    
-    // Sign out from Supabase auth
-    await supabase.supabase.auth.signOut();
-    
-    return NextResponse.json({ success: true });
+    const response = NextResponse.json({ success: true });
+
+    for (const cookie of cookieStore.getAll()) {
+      if (cookie.name.startsWith('sb-')) {
+        response.cookies.set(cookie.name, '', { maxAge: 0, path: '/' });
+      }
+    }
+
+    return response;
   } catch (error) {
     return NextResponse.json({ success: false, error: 'Logout failed' }, { status: 500 });
   }

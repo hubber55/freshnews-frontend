@@ -51,7 +51,7 @@ export default function ManagePollsPage() {
     if (error) console.error(error);
     else {
       // Calculate total votes (seed + real)
-      const processed = (data || []).map(p => {
+      const processed = (data || []).map((p: Poll & { votes?: Array<{ count?: number }> }) => {
         const seedTotal = p.candidates.reduce((sum: number, c: any) => sum + (c.seed_votes || 0), 0);
         const realTotal = p.votes?.[0]?.count || 0;
         return { ...p, total_votes: seedTotal + realTotal };
@@ -301,3 +301,4 @@ export default function ManagePollsPage() {
     </div>
   );
 }
+

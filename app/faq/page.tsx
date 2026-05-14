@@ -1,4 +1,3 @@
-export const runtime = 'edge';
 import { createAdminClient } from '@/lib/supabase-admin';
 import Header from '../components/header';
 import Footer from '../components/footer';
@@ -63,8 +62,7 @@ const DUMMY_FAQS: FAQItem[] = [
   },
 ];
 
-export const dynamic = 'force-dynamic';
-export const revalidate = 0; // Always fresh
+export const revalidate = 300;
 
 export default async function FAQPage() {
   let faqs = DUMMY_FAQS;

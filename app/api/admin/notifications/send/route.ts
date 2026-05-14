@@ -22,19 +22,15 @@ export async function POST(request: Request) {
       console.log('Subject:', VAPID_SUBJECT);
       console.log('Public Key (first 10):', VAPID_PUBLIC_KEY.substring(0, 10) + '...');
       console.log('Private Key (first 5):', VAPID_PRIVATE_KEY.substring(0, 5) + '...');
-      
-      webpush.setVapidDetails(
-        VAPID_SUBJECT,
-        VAPID_PUBLIC_KEY,
-        VAPID_PRIVATE_KEY
-      );
+
+      webpush.setVapidDetails(VAPID_SUBJECT, VAPID_PUBLIC_KEY, VAPID_PRIVATE_KEY);
     } catch (vapidErr: any) {
       console.error('VAPID Config Error:', vapidErr.message);
       return NextResponse.json({ error: 'Invalid VAPID key format' }, { status: 500 });
     }
 
     const supabase = createAdminClient();
-    
+
     // Fetch all active subscriptions
     const { data: subscriptions, error } = await supabase
       .from('push_subscriptions')
@@ -49,11 +45,11 @@ export async function POST(request: Request) {
     const payload = JSON.stringify({
       title: title || 'FreshNews Update',
       body: body || 'Check out the latest news!',
-      url: url || '/'
+      url: url || '/',
     });
 
     const results = await Promise.allSettled(
-      subscriptions.map(async (sub) => {
+      subscriptions.map(async (sub: { id: number; subscription: any }) => {
         try {
           await webpush.sendNotification(sub.subscription, payload);
           return { success: true, id: sub.id };
@@ -61,9 +57,9 @@ export async function POST(request: Request) {
           console.error(`Push failed for sub ${sub.id}:`, {
             statusCode: err.statusCode,
             endpoint: sub.subscription.endpoint,
-            message: err.message
+            message: err.message,
           });
-          
+
           if (err.statusCode === 404 || err.statusCode === 410) {
             await supabase.from('push_subscriptions').delete().eq('id', sub.id);
           }
@@ -72,16 +68,16 @@ export async function POST(request: Request) {
       })
     );
 
-    const successful = results.filter(r => r.status === 'fulfilled').length;
-    const failed = results.filter(r => r.status === 'rejected').length;
+    const successful = results.filter((r) => r.status === 'fulfilled').length;
+    const failed = results.filter((r) => r.status === 'rejected').length;
 
     return NextResponse.json({
       success: true,
       stats: {
         total: subscriptions.length,
         successful,
-        failed
-      }
+        failed,
+      },
     });
   } catch (error: any) {
     console.error('Send notification error:', error);

@@ -26,7 +26,7 @@ export async function GET(req: NextRequest) {
         'user_post_final_delete_days'
       ]);
 
-    const settings = Object.fromEntries(settingsData?.map(s => [s.key, s.value]) || []);
+    const settings = Object.fromEntries((settingsData || []).map((s: { key: string; value: string }) => [s.key, s.value]));
     
     const newsDays = parseInt(settings.news_auto_delete_days || '10');
     const minViews = parseInt(settings.news_min_views || '10');
@@ -49,7 +49,7 @@ export async function GET(req: NextRequest) {
       .select('post_id')
       .not('post_id', 'is', null);
     
-    const linkedPostIds = linkedSubmissions?.map(s => s.post_id).filter(Boolean) || [];
+    const linkedPostIds = linkedSubmissions?.map((s: { post_id: number | null }) => s.post_id).filter(Boolean) || [];
 
     // Find candidate news posts
     let newsQuery = supabase
@@ -64,7 +64,7 @@ export async function GET(req: NextRequest) {
     const { data: candidateNews } = await newsQuery;
 
     if (candidateNews && candidateNews.length > 0) {
-      const candidateIds = candidateNews.map(p => p.id);
+      const candidateIds = candidateNews.map((p: { id: number }) => p.id);
       
       // Get engagement for these candidates
       const { data: engagement } = await supabase
@@ -73,9 +73,9 @@ export async function GET(req: NextRequest) {
         .in('post_id', candidateIds);
 
       const stats = new Map<number, { views: number; shares: number }>();
-      candidateIds.forEach(id => stats.set(id, { views: 0, shares: 0 }));
+      candidateIds.forEach((id: number) => stats.set(id, { views: 0, shares: 0 }));
 
-      engagement?.forEach(e => {
+      engagement?.forEach((e: { post_id: number; event_type: string; network?: string }) => {
         const s = stats.get(e.post_id);
         if (s) {
           if (e.event_type === 'click') s.views++;
@@ -86,7 +86,7 @@ export async function GET(req: NextRequest) {
       const idsToDelete: number[] = [];
       const imageUrlsToDelete: string[] = [];
 
-      candidateNews.forEach(p => {
+      candidateNews.forEach((p: { id: number; image_url?: string | null }) => {
         const s = stats.get(p.id);
         if (s && s.views < minViews && s.shares < minShares) {
           idsToDelete.push(p.id);
@@ -125,11 +125,11 @@ export async function GET(req: NextRequest) {
       .lt('created_at', userThreshold.toISOString());
 
     if (oldSubmissions && oldSubmissions.length > 0) {
-      const subIds = oldSubmissions.map(s => s.id);
-      const linkedPostIds = oldSubmissions.map(s => s.post_id).filter(Boolean) as number[];
+      const subIds = oldSubmissions.map((s: { id: number }) => s.id);
+      const linkedPostIds = oldSubmissions.map((s: { post_id: number | null }) => s.post_id).filter(Boolean) as number[];
       const imageUrls: string[] = [];
       
-      oldSubmissions.forEach(s => {
+      oldSubmissions.forEach((s: { id: number; post_id?: number | null; image_url?: string | null }) => {
         if (s.image_url) {
           if (s.image_url.startsWith('[')) {
             try { imageUrls.push(...JSON.parse(s.image_url)); } catch {}
@@ -169,9 +169,9 @@ export async function GET(req: NextRequest) {
       .lt('created_at', purgeThreshold.toISOString());
 
     if (purgeable && purgeable.length > 0) {
-      const purgeIds = purgeable.map(s => s.id);
+      const purgeIds = purgeable.map((s: { id: number }) => s.id);
       const purgeImages: string[] = [];
-      purgeable.forEach(s => {
+      purgeable.forEach((s: { id: number; image_url?: string | null }) => {
         if (s.image_url) {
           if (s.image_url.startsWith('[')) {
             try { purgeImages.push(...JSON.parse(s.image_url)); } catch {}
@@ -200,3 +200,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
+
+
+
+

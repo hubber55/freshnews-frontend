@@ -1,4 +1,3 @@
-export const runtime = 'edge';
 import Link from 'next/link';
 import TagScroller from './components/TagScroller';
 import { redirect } from 'next/navigation';
@@ -161,9 +160,9 @@ export default async function Home({ searchParams }: HomeProps) {
     ]);
 
   const adSettingsMap = new Map((adSettings ?? []).map((setting) => [setting.key, setting.value]));
-  const legacyAdsterra = typeof adSettingsMap.get('adsterra_code') === 'string' ? adSettingsMap.get('adsterra_code')!.trim() : '';
+  const legacyAdsterra = (adSettingsMap.get('adsterra_code') as string | undefined)?.trim() || '';
   const randomAdsEnabled = String(adSettingsMap.get('ad_networks_random') ?? '').toLowerCase() === 'true';
-  const adminAddedTagsStr = adSettingsMap.get('admin_added_tags') || '';
+  const adminAddedTagsStr = (adSettingsMap.get('admin_added_tags') as string | undefined) || '';
   const adminAddedTags = adminAddedTagsStr.split(',').map((t: string) => t.trim()).filter(Boolean);
 
   const adCode = pickAdCode({
@@ -508,3 +507,5 @@ export default async function Home({ searchParams }: HomeProps) {
     </div>
   );
 }
+
+

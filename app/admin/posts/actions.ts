@@ -59,9 +59,7 @@ export async function deletePostWithRedirect(postId: string, prevState: any, for
   }
 
   // Use service role key for delete to bypass RLS issues
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
-  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
-  const supabaseAdmin = createSupabaseAdmin(supabaseUrl, serviceRoleKey)
+  const supabaseAdmin = createAdminClient()
 
   const { error } = await supabaseAdmin
     .from('posts')

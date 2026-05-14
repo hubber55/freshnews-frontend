@@ -28,7 +28,7 @@ export async function GET(req: Request) {
     }
 
     // 2. Fetch events ONLY for the posts on this page
-    const postIds = posts.map(p => p.id);
+    const postIds = posts.map((p: { id: number }) => p.id);
     const { data: events, error: eventsError } = await supabase
       .from('post_events')
       .select('post_id, event_type, network')
@@ -38,7 +38,7 @@ export async function GET(req: Request) {
 
     // 3. Aggregate stats
     const statsMap: Record<number, any> = {};
-    events?.forEach(event => {
+    events?.forEach((event: { post_id: number; event_type: string; network?: string }) => {
       const pid = event.post_id;
       if (!statsMap[pid]) {
         statsMap[pid] = { views: 0, whatsapp: 0, facebook: 0, other: 0 };
@@ -54,7 +54,7 @@ export async function GET(req: Request) {
     });
 
     // 4. Attach stats to posts
-    const postsWithStats = posts.map(post => ({
+    const postsWithStats = posts.map((post: { id: number }) => ({
       ...post,
       stats: statsMap[post.id] || { views: 0, whatsapp: 0, facebook: 0, other: 0 }
     }));
@@ -68,3 +68,5 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
+
+
