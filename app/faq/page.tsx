@@ -1,3 +1,4 @@
+export const runtime = 'edge';
 import { createAdminClient } from '@/lib/supabase-admin';
 import Header from '../components/header';
 import Footer from '../components/footer';

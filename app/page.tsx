@@ -1,3 +1,4 @@
+export const runtime = 'edge';
 import Link from 'next/link';
 import TagScroller from './components/TagScroller';
 import { redirect } from 'next/navigation';

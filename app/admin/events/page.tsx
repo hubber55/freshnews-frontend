@@ -1,3 +1,4 @@
+export const runtime = 'edge';
 import { createAdminClient } from '@/lib/supabase-admin'
 import Link from 'next/link'
 import { format } from 'date-fns'
