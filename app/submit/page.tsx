@@ -124,23 +124,38 @@ function SubmitContent() {
   const [allApprovedTags, setAllApprovedTags] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
 
-  // Fetch approved tags for predictive input
+  // Fetch approved tags for predictive input from both submissions and main posts
   useEffect(() => {
     async function fetchTags() {
-      const { data } = await supabase
+      // 1. Fetch from submissions
+      const { data: subData } = await supabase
         .from('submissions')
         .select('tags')
         .eq('status', 'approved');
       
+      // 2. Fetch from main posts (top 1000 for efficiency)
+      const { data: postData } = await supabase
+        .from('posts')
+        .select('tags')
+        .eq('is_deleted', false)
+        .order('published_at', { ascending: false })
+        .limit(1000);
+      
       const tagSet = new Set<string>();
-      (data as any[])?.forEach((item: { tags: string[] | null }) => {
-        if (Array.isArray(item.tags)) {
-          item.tags.forEach((t: string) => {
-            const formatted = t.charAt(0).toUpperCase() + t.slice(1).toLowerCase();
-            tagSet.add(formatted);
-          });
-        }
-      });
+      const processTags = (data: any[]) => {
+        data?.forEach((item: { tags: string[] | null }) => {
+          if (Array.isArray(item.tags)) {
+            item.tags.forEach((t: string) => {
+              if (!t) return;
+              const formatted = t.trim().charAt(0).toUpperCase() + t.trim().slice(1).toLowerCase();
+              tagSet.add(formatted);
+            });
+          }
+        });
+      };
+
+      processTags(subData || []);
+      processTags(postData || []);
       setAllApprovedTags(Array.from(tagSet).sort());
     }
     fetchTags();
@@ -193,14 +208,11 @@ function SubmitContent() {
 
   // Auto-select Classifieds category
   useEffect(() => {
-    if (type === 'classified' && categories.length > 0) {
+    if ((type === 'classified' || type === 'ad') && categories.length > 0) {
       const classifiedCat = categories.find(c => c.name.toLowerCase() === 'classified' || c.name.toLowerCase() === 'classifieds');
-      if (classifiedCat) {
+      if (classifiedCat && !selectedCategory) {
         setSelectedCategory(classifiedCat.id.toString());
       }
-    } else if (type === 'ad') {
-      setSelectedCategory('');
-      setSelectedSubcategory('');
     }
   }, [type, categories]);
 
@@ -353,7 +365,7 @@ function SubmitContent() {
       }
 
       alert('Will Publish after Approval');
-      router.push('/');
+      router.push('/profile');
 
     } catch (error: unknown) {
       setError(getErrorMessage(error, 'Submission failed'));
@@ -392,7 +404,7 @@ function SubmitContent() {
               </select>
             </div>
 
-            {type === 'classified' && (
+            {(type === 'classified' || type === 'ad') && (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="mb-2 block text-sm font-bold text-[var(--text-secondary)]">Classifieds Type</label>
@@ -411,7 +423,7 @@ function SubmitContent() {
               </div>
             )}
 
-            {type === 'classified' && (
+            {(type === 'classified' || type === 'ad') && (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="mb-2 block text-sm font-bold text-[var(--text-secondary)]">District</label>
@@ -477,7 +489,92 @@ function SubmitContent() {
               />
             </div>
 
-            {type === 'classified' && (
+            {type !== 'ad' && type !== 'classified' && (
+              <div>
+                <label className="mb-2 block text-sm font-bold text-[var(--text-secondary)]">
+                  Tags
+                  <span className="ml-2 text-xs font-normal text-[var(--text-muted)]">
+                    (please enter upto 5 tags, comma separated - maximum 20 characters each)
+                  </span>
+                </label>
+                <div className="flex flex-wrap gap-2 mb-2">
+                  {tags.map((tag, index) => (
+                    <span
+                      key={index}
+                      className="inline-flex items-center gap-1 rounded-full bg-[#ff69b4] px-3 py-1 text-xs font-semibold text-white"
+                    >
+                      {tag}
+                      <button
+                        type="button"
+                        onClick={() => setTags(tags.filter((_, i) => i !== index))}
+                        className="ml-1 hover:text-red-200"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ))}
+                </div>
+                <div className="relative">
+                  <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-[15px]">
+                    <span className="text-transparent">{tagInput}</span>
+                    <span className="text-white/30">{ghostText}</span>
+                  </div>
+                  <input
+                    value={tagInput}
+                    onChange={(e) => {
+                      const val = e.target.value.slice(0, 20);
+                      setTagInput(val);
+                      setShowSuggestions(true);
+                    }}
+                    onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Tab' && ghostText) {
+                        e.preventDefault();
+                        setTagInput(tagInput + ghostText);
+                      } else if (e.key === ',' || e.key === 'Enter') {
+                        e.preventDefault();
+                        const raw = tagInput.trim();
+                        if (raw && tags.length < 5) {
+                          const formatted = raw.charAt(0).toUpperCase() + raw.slice(1).toLowerCase();
+                          if (!tags.includes(formatted)) {
+                            setTags([...tags, formatted]);
+                          }
+                        }
+                        setTagInput('');
+                        setShowSuggestions(false);
+                      }
+                    }}
+                    placeholder={tags.length >= 5 ? 'Maximum 5 tags reached' : 'Type tag and press comma or Enter'}
+                    disabled={tags.length >= 5}
+                    className="w-full rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-4 py-3 text-white focus:border-[#00cfff] focus:outline-none focus:ring-1 focus:ring-[#00cfff] disabled:opacity-50"
+                  />
+                  {showSuggestions && suggestions.length > 0 && (
+                    <div className="absolute top-full left-0 right-0 z-50 mt-2 overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--bg-card)] shadow-2xl">
+                      {suggestions.map((s, i) => (
+                        <button
+                          key={i}
+                          type="button"
+                          onClick={() => {
+                            const formatted = s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
+                            if (!tags.includes(formatted)) {
+                              setTags([...tags, formatted]);
+                            }
+                            setTagInput('');
+                            setShowSuggestions(false);
+                          }}
+                          className="flex w-full items-center gap-3 px-4 py-3 text-left text-[14px] text-[var(--text-secondary)] hover:bg-[var(--border)] hover:text-[#00cfff] transition-colors border-b border-white/5 last:border-0"
+                        >
+                          <span className="text-[#00cfff]">#</span>
+                          {s}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {(type === 'classified' || type === 'ad') && (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="mb-2 block text-sm font-bold text-[var(--text-secondary)]">Price (optional)</label>
@@ -499,89 +596,6 @@ function SubmitContent() {
                 </div>
               </div>
             )}
-
-            <div>
-              <label className="mb-2 block text-sm font-bold text-[var(--text-secondary)]">
-                Tags
-                <span className="ml-2 text-xs font-normal text-[var(--text-muted)]">
-                  (please enter upto 5 tags, comma separated - maximum 20 characters each)
-                </span>
-              </label>
-              <div className="flex flex-wrap gap-2 mb-2">
-                {tags.map((tag, index) => (
-                  <span
-                    key={index}
-                    className="inline-flex items-center gap-1 rounded-full bg-[#ff69b4] px-3 py-1 text-xs font-semibold text-white"
-                  >
-                    {tag}
-                    <button
-                      type="button"
-                      onClick={() => setTags(tags.filter((_, i) => i !== index))}
-                      className="ml-1 hover:text-red-200"
-                    >
-                      ×
-                    </button>
-                  </span>
-                ))}
-              </div>
-              <div className="relative">
-                <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-4 text-[15px]">
-                  <span className="text-transparent">{tagInput}</span>
-                  <span className="text-white/30">{ghostText}</span>
-                </div>
-                <input
-                  value={tagInput}
-                  onChange={(e) => {
-                    const val = e.target.value.slice(0, 20);
-                    setTagInput(val);
-                    setShowSuggestions(true);
-                  }}
-                  onBlur={() => setTimeout(() => setShowSuggestions(false), 200)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Tab' && ghostText) {
-                      e.preventDefault();
-                      setTagInput(tagInput + ghostText);
-                    } else if (e.key === ',' || e.key === 'Enter') {
-                      e.preventDefault();
-                      const raw = tagInput.trim();
-                      if (raw && tags.length < 5) {
-                        const formatted = raw.charAt(0).toUpperCase() + raw.slice(1).toLowerCase();
-                        if (!tags.includes(formatted)) {
-                          setTags([...tags, formatted]);
-                        }
-                      }
-                      setTagInput('');
-                      setShowSuggestions(false);
-                    }
-                  }}
-                  placeholder={tags.length >= 5 ? 'Maximum 5 tags reached' : 'Type tag and press comma or Enter'}
-                  disabled={tags.length >= 5}
-                  className="w-full rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-4 py-3 text-white focus:border-[#00cfff] focus:outline-none focus:ring-1 focus:ring-[#00cfff] disabled:opacity-50"
-                />
-                {showSuggestions && suggestions.length > 0 && (
-                  <div className="absolute top-full left-0 right-0 z-50 mt-2 overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--bg-card)] shadow-2xl">
-                    {suggestions.map((s, i) => (
-                      <button
-                        key={i}
-                        type="button"
-                        onClick={() => {
-                          const formatted = s.charAt(0).toUpperCase() + s.slice(1).toLowerCase();
-                          if (!tags.includes(formatted)) {
-                            setTags([...tags, formatted]);
-                          }
-                          setTagInput('');
-                          setShowSuggestions(false);
-                        }}
-                        className="flex w-full items-center gap-3 px-4 py-3 text-left text-[14px] text-[var(--text-secondary)] hover:bg-[var(--border)] hover:text-[#00cfff] transition-colors border-b border-white/5 last:border-0"
-                      >
-                        <span className="text-[#00cfff]">#</span>
-                        {s}
-                      </button>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
 
             {(type === 'ad' || type === 'classified') && (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

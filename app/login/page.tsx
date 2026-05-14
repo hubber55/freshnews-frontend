@@ -162,7 +162,8 @@ export default function LoginPage() {
     setBusy(true);
     setError(null);
     try {
-      const fullWhatsappNumber = buildFullWhatsappNumber(countryCode, whatsappNumber);
+      const effectiveCountryCode = countryCode === '' ? customCountryCode : countryCode;
+      const fullWhatsappNumber = buildFullWhatsappNumber(effectiveCountryCode, whatsappNumber);
       const res = await fetch('/api/wa-auth/verify-otp', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
@@ -185,10 +186,10 @@ export default function LoginPage() {
         <div className="mx-auto w-full max-w-[600px]">
           <div className="rounded-3xl border border-[var(--border)] bg-[var(--bg-card)] p-8 shadow-2xl">
             <h2 className="text-center text-2xl font-extrabold text-white" style={{ fontFamily: 'var(--font-en)' }}>
-              Login
+              Login / Signup
             </h2>
-            <p className="mt-2 text-center text-sm text-[var(--text-muted)]">
-              Use WhatsApp OTP to continue.
+            <p className="mt-2 text-center text-sm text-[#00ffff] font-medium">
+              Enter your WhatsApp number to receive an OTP and continue.
             </p>
 
             {error && (
@@ -239,7 +240,7 @@ export default function LoginPage() {
 
                 {/* WHATSAPP NUMBER */}
                 <div>
-                  <label className="block text-sm font-medium text-[var(--text-secondary)] mb-2">
+                  <label className="block text-sm font-medium text-[#ffd42a] mb-2">
                     WhatsApp Number
                     <span className="ml-2 text-xs text-[var(--text-muted)]">
                       {(countryCode === '' ? customCountryCode : countryCode) === '91' ? '(exactly 10 digits)' : '(7-15 digits)'}
@@ -277,7 +278,7 @@ export default function LoginPage() {
                   {maskHint(otpSentTo)}
                 </div>
                 <div>
-                  <label className="mb-2 block text-sm font-bold text-[var(--text-secondary)]">Enter OTP</label>
+                  <label className="mb-2 block text-sm font-bold text-[#ffd42a]">Enter OTP</label>
                   <input
                     value={otp}
                     onChange={(e) => setOtp(e.target.value)}
@@ -287,7 +288,7 @@ export default function LoginPage() {
                       }
                     }}
                     inputMode="numeric"
-                    placeholder="6-digit OTP"
+                    placeholder="4-digit OTP"
                     className="w-full rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-4 py-3 text-white focus:border-[#ffd42a] focus:outline-none focus:ring-1 focus:ring-[#ffd42a]"
                   />
                 </div>
@@ -314,12 +315,7 @@ export default function LoginPage() {
             )}
             </div>
 
-            <div className="mt-6 text-center text-sm">
-              <span className="text-[#ffd42a] font-bold">New here?{' '}</span>
-              <Link href="/signup" className="font-bold text-[#ffd42a] hover:underline">
-                Create an account
-              </Link>
-            </div>
+
           </div>
         </div>
       </div>

@@ -21,22 +21,60 @@ export async function POST(req: Request) {
     const type = formData.get('type') as string;
     const title = formData.get('title') as string;
     const content = formData.get('content') as string;
-    const tags = (formData.get('tags') as string)
-      .split(',')
-      .map(t => t.trim())
-      .filter(Boolean);
+    const tagsRaw = formData.get('tags') as string || '';
+    const tags = tagsRaw
+      ? tagsRaw.split(',').map(t => t.trim()).filter(Boolean)
+      : [];
     const categoryId = formData.get('categoryId') as string;
     const subcategoryId = formData.get('subcategoryId') as string;
+    const location = formData.get('location') as string;
+
     const externalUrl = formData.get('externalUrl') as string;
     const hyperlinkText = formData.get('hyperlinkText') as string;
-    const location = formData.get('location') as string;
     const price = formData.get('price') as string || null;
     const contactPhone = formData.get('contactPhone') as string || null;
     const isPremium = type === 'ad' ? true : formData.get('isPremium') === 'true';
+
+    // --- Automatic Tag Generation for Ads/Classifieds ---
+    let finalTags = [...tags];
+    if (type === 'ad' || type === 'classified') {
+      const autoTags = new Set<string>();
+      
+      // Add Location tags
+      if (location) {
+        const parts = location.split(',').map(p => p.trim());
+        parts.forEach(p => {
+          if (p && p !== 'Kerala') autoTags.add(p);
+        });
+      }
+
+      // Add Category/Subcategory names as tags if available
+      const { data: catData } = await supabase.from('ad_categories').select('name').eq('id', categoryId).single();
+      const { data: subData } = await supabase.from('ad_subcategories').select('name').eq('id', subcategoryId).single();
+      if (catData?.name) autoTags.add(catData.name);
+      if (subData?.name) autoTags.add(subData.name);
+
+      // Simple keyword matching for "Movies"
+      const content_to_check = (title + " " + content).toLowerCase();
+      const cinema_keywords = ['cinema', 'film', 'movie', 'actor', 'actress', 'director', 'mollywood', 'bollywood', 'സിനിമ', 'ചിത്രം', 'നടൻ', 'നടി', 'സംവിധായകൻ'];
+      if (cinema_keywords.some(kw => content_to_check.includes(kw))) {
+        autoTags.add('Movies');
+      }
+
+      finalTags = Array.from(new Set([...finalTags, ...Array.from(autoTags)]));
+    } else if (type === 'news') {
+       // News: Check for mandatory Movies tag
+       const content_to_check = (title + " " + content).toLowerCase();
+       const cinema_keywords = ['cinema', 'film', 'movie', 'actor', 'actress', 'director', 'mollywood', 'bollywood', 'സിനിമ', 'ചിത്രം', 'നടൻ', 'നടി', 'സംവിധായകൻ'];
+       if (cinema_keywords.some(kw => content_to_check.includes(kw)) && !finalTags.includes('Movies')) {
+         finalTags.unshift('Movies');
+       }
+    }
+
     const submissionTags = Array.from(new Set([
-      ...tags,
+      ...finalTags,
       ...(type === 'classified' ? ['Classifieds'] : []),
-    ]));
+    ])).slice(0, 8); // Allow more tags for better SEO
 
     const imageCount = parseInt(formData.get('imageCount') as string || '0');
 

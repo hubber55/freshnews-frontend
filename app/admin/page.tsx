@@ -6,14 +6,16 @@ import {
   FileText, Tag, Settings, HelpCircle, 
   Clock, Users, Megaphone, Calendar, 
   ChevronRight, AlertCircle, TrendingUp,
-  MessageCircle
+  MessageCircle, Bell, IndianRupee
 } from 'lucide-react';
 
 export default function AdminDashboardPage() {
   const [stats, setStats] = useState({
     pendingSubmissions: 0,
     endingPosts: 0,
-    totalUsers: 0
+    totalUsers: 0,
+    pushSubscribers: 0,
+    pendingPayments: 0
   });
   const [loading, setLoading] = useState(true);
 
@@ -43,16 +45,16 @@ export default function AdminDashboardPage() {
       href: '/admin/classifieds',
       icon: Megaphone,
       color: '#00cfff',
-      count: 0, // Will implement later
+      count: 0, 
       urgent: false
     },
     {
-      title: 'Manage Events',
-      desc: 'Manage upcoming events and gatherings.',
-      href: '/admin/events',
-      icon: Calendar,
-      color: '#90ee90',
-      count: 0,
+      title: 'Push Notifications',
+      desc: 'Send browser alerts to subscribers.',
+      href: '/admin/notifications',
+      icon: Bell,
+      color: '#ffd42a',
+      count: stats.pushSubscribers,
       urgent: false
     },
     {
@@ -62,6 +64,15 @@ export default function AdminDashboardPage() {
       icon: Users,
       color: '#ff90e8',
       count: stats.totalUsers,
+      urgent: false
+    },
+    {
+      title: 'Manage Events',
+      desc: 'Manage upcoming events and gatherings.',
+      href: '/admin/events',
+      icon: Calendar,
+      color: '#90ee90',
+      count: 0,
       urgent: false
     },
     {
@@ -101,11 +112,29 @@ export default function AdminDashboardPage() {
       urgent: false
     },
     {
+      title: 'Pending Payments',
+      desc: 'Approve manual UPI payment requests.',
+      href: '/admin/payments',
+      icon: IndianRupee,
+      color: '#90ee90',
+      count: stats.pendingPayments,
+      urgent: stats.pendingPayments > 0
+    },
+    {
       title: 'WhatsApp Marketing',
       desc: 'Upload and drip-feed outreach messages.',
       href: '/admin/marketing',
       icon: MessageCircle,
       color: '#25D366',
+      count: 0,
+      urgent: false
+    },
+    {
+      title: 'Manage Polls',
+      desc: 'Create interactive polls with dynamic candidates.',
+      href: '/admin/polls',
+      icon: TrendingUp,
+      color: '#ffd42a',
       count: 0,
       urgent: false
     }
@@ -119,7 +148,7 @@ export default function AdminDashboardPage() {
           <p className="text-[var(--text-muted)]">Welcome back. Here is what is happening across FreshNews.</p>
         </div>
         <div className="px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[10px] font-mono text-[var(--text-muted)] uppercase tracking-widest">
-          Ver: 1.3.2
+          Ver: 1.4.0
         </div>
       </div>
 

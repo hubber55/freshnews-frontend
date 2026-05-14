@@ -12,6 +12,11 @@ CREATE TABLE public.wa_users (
     id SERIAL PRIMARY KEY,
     whatsapp_number TEXT UNIQUE NOT NULL,
     name TEXT,
+    username TEXT UNIQUE,
+    username_edit_count INTEGER DEFAULT 0,
+    email TEXT,
+    email_edit_count INTEGER DEFAULT 0,
+    is_blocked BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 
@@ -152,3 +157,4 @@ CREATE TABLE IF NOT EXISTS public.whatsapp_templates (
     message_text TEXT NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
+

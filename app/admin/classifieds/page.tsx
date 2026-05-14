@@ -17,6 +17,7 @@ type Classified = {
   price: string | null;
   contact_phone: string | null;
   tags: string[] | null;
+  image_url: string | null;
   wa_users?: { name?: string; whatsapp_number?: string } | null;
   ad_categories?: { name?: string } | null;
   ad_subcategories?: { name?: string } | null;
@@ -119,6 +120,40 @@ export default function AdminClassifiedsPage() {
               </button>
             </div>
             <div className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-[var(--text-muted)] mb-2 uppercase text-center">Photos</label>
+                <div className="flex flex-wrap justify-center gap-2 mb-4">
+                  {(() => {
+                    let urls: string[] = [];
+                    if (editItem.image_url) {
+                      try {
+                        const parsed = JSON.parse(editItem.image_url);
+                        urls = Array.isArray(parsed) ? parsed : [editItem.image_url];
+                      } catch {
+                        urls = [editItem.image_url];
+                      }
+                    }
+                    
+                    if (urls.length === 0) return <div className="text-[var(--text-muted)] text-xs italic">No images uploaded</div>;
+                    
+                    return urls.map((url, i) => (
+                      <div key={i} className="relative w-20 h-20 rounded-lg overflow-hidden border border-[var(--border)] group">
+                        <img src={url} alt={`Classified ${i+1}`} className="w-full h-full object-cover" />
+                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                          <button 
+                            type="button"
+                            onClick={() => window.open(url, '_blank')}
+                            className="text-white text-[10px] font-bold uppercase underline"
+                          >
+                            View
+                          </button>
+                        </div>
+                      </div>
+                    ));
+                  })()}
+                </div>
+              </div>
+
               <div>
                 <label className="block text-xs font-bold text-[var(--text-muted)] mb-1 uppercase">Title</label>
                 <input value={editForm.title} onChange={e => setEditForm(f => ({ ...f, title: e.target.value }))}

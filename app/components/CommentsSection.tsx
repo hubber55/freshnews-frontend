@@ -7,7 +7,10 @@ interface Comment {
   id: string;
   content: string;
   created_at: string;
-  wa_users: { name: string };
+  wa_users: { 
+    name: string;
+    username: string;
+  };
 }
 
 interface CommentsSectionProps {
@@ -69,7 +72,11 @@ export default function CommentsSection({ postId }: CommentsSectionProps) {
   return (
     <div className="mt-12 border-t border-[var(--border)] pt-8">
       <h3 className="text-xl font-bold text-white mb-4">
-        {userName ? 'Post your comment (No hate, vulgar comments)' : (
+        {userName ? (
+          <>
+            Post your comment <span className="text-[#ffd42a] text-[12px] font-normal">( Comments Moderated )</span>
+          </>
+        ) : (
           <>
             Enter Your Comments - <Link href="/login" className="text-[#00cfff] hover:underline">Login/Signup</Link>
           </>
@@ -108,14 +115,18 @@ export default function CommentsSection({ postId }: CommentsSectionProps) {
         {comments.map((comment) => (
           <div key={comment.id} className="rounded-lg bg-[var(--bg-card)] p-4 border border-[var(--border)]">
             <div className="flex items-center gap-2 mb-2">
-              <span className="font-semibold text-[#ffd42a]">{comment.wa_users.name || 'Anonymous'}</span>
-              <span className="text-xs text-[var(--text-muted)]">
-                {new Date(comment.created_at).toLocaleString()}
+              <span className="font-semibold text-[#ffd42a]">
+                {comment.wa_users?.username || comment.wa_users?.name || 'FreshNews User'}
               </span>
             </div>
             <p className="text-[var(--text-primary)]">{comment.content}</p>
           </div>
         ))}
+        {comments.length === 0 && (
+          <p className="text-center py-4 text-[var(--text-muted)] text-sm italic">
+            No comments yet. Be the first to start the conversation!
+          </p>
+        )}
       </div>
     </div>
   );

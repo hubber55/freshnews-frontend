@@ -1,22 +1,24 @@
-import { createClient } from '@/app/utils/supabase/server';
 import { NextResponse } from 'next/server';
+import { getCurrentUser } from '@/lib/auth';
 
 export async function GET() {
-  const supabase = await createClient();
-  
-  // Get current user
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
   
   if (!user) {
     return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
   }
+
+  const { createClient } = await import('@supabase/supabase-js');
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+  const supabase = createClient(supabaseUrl, supabaseKey);
   
   // Fetch user's published posts
   const { data: posts, error } = await supabase
     .from('posts')
     .select('id, title, published_at')
     .eq('user_id', user.id)
-    .eq('is_published', true)
+    .eq('is_deleted', false)
     .order('published_at', { ascending: false });
   
   if (error) {

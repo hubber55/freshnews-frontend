@@ -55,6 +55,10 @@ def is_placeholder_image_url(url):
             "google-news",
             "googlenews",
             "news_icon",
+            "profile_blank",
+            "avatar",
+            "silhouette",
+            "no-image",
         ]
 
         if any(h in host for h in blocked_hosts):
@@ -598,7 +602,7 @@ def parse_date(entry):
     return None
 
 
-def fetch_feed_articles(feed_config, max_articles=5):
+def fetch_feed_articles(feed_config, max_articles=20):
     """Fetch articles from a single configured RSS feed."""
     feed_name = feed_config["name"]
     feed_url = feed_config["url"]
@@ -617,9 +621,13 @@ def fetch_feed_articles(feed_config, max_articles=5):
             logger.warning(f"⚠️  Failed to parse {feed_name}: {feed.bozo_exception}")
             return []
             
-        today_ist = datetime.now(IST).date()
+        now_ist = datetime.now(IST)
+        today_ist = now_ist.date()
 
-        for entry in feed.entries[:max_articles]:
+        for entry in feed.entries:
+            if len(articles) >= max_articles:
+                break
+
             title = clean_html(entry.get("title", ""))
             link = entry.get("link", "")
             description = clean_html(entry.get("summary", "") or entry.get("description", ""))
@@ -630,19 +638,42 @@ def fetch_feed_articles(feed_config, max_articles=5):
                     description = full_text
                     
             published = parse_date(entry)
+            
             if not title or not link:
                 continue
+
             if not published:
                 logger.debug(f"  ⏭️ Skipping undated article: {title[:60]}...")
                 continue
 
-            published_ist = published.astimezone(IST).date()
-            if published_ist != today_ist:
-                logger.info(f"  ⏭️ Skipping non-today article ({published_ist}): {title[:50]}...")
+            # Convert to IST for comparison
+            published_ist_dt = published.astimezone(IST)
+            published_ist_date = published_ist_dt.date()
+            
+            # STRICT DATE FILTER: Only today's news (IST)
+            if published_ist_date != today_ist:
+                # If it's earlier than today, skip
+                if published_ist_date < today_ist:
+                    logger.debug(f"  ⏭️ Skipping OLD article ({published_ist_date}): {title[:50]}...")
+                else:
+                    # If it's in the future (unlikely but possible due to clock drift), keep it? 
+                    # Usually better to skip if it's too far in the future.
+                    diff = published_ist_dt - now_ist
+                    if diff > timedelta(hours=24):
+                        logger.warning(f"  ⏭️ Skipping FUTURE article ({published_ist_dt}): {title[:50]}...")
+                    else:
+                        # Accept if it's "today" or very recent future
+                        articles.append({
+                            "title": title,
+                            "link": link,
+                            "description": description,
+                            "published": published,
+                            "source_name": feed_name,
+                            "category": category,
+                            "image_url": extract_image_from_entry(entry),
+                        })
                 continue
                 
-            image_url = extract_image_from_entry(entry)
-            
             articles.append({
                 "title": title,
                 "link": link,
@@ -650,9 +681,10 @@ def fetch_feed_articles(feed_config, max_articles=5):
                 "published": published,
                 "source_name": feed_name,
                 "category": category,
-                "image_url": image_url,
+                "image_url": extract_image_from_entry(entry),
             })
             
+        logger.info(f"  ✅ Fetched {len(articles)} articles from {feed_name} for {today_ist}")
         return articles
     except Exception as e:
         logger.error(f"  ❌ Error fetching {feed_name}: {e}")
@@ -711,6 +743,11 @@ def is_image_valid(url):
             content_type = response.headers.get("Content-Type", "")
             if "image" not in content_type:
                 return False
+            
+            content_length = int(response.headers.get("Content-Length", 0))
+            if content_length > 0 and content_length < 5000: # Less than 5KB is likely a placeholder/icon
+                return False
+                
             final_url = str(getattr(response, "url", url) or url)
             if is_placeholder_image_url(final_url):
                 return False

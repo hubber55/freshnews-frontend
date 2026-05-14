@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "build-cf": "next build && npx @cloudflare/next-on-pages",
+    "deploy-cf": "npm run build-cf && npx wrangler pages deploy .vercel/output"
   },
   "dependencies": {
     "@supabase/ssr": "^0.10.2",
@@ -14,20 +16,25 @@
     "date-fns": "^4.1.0",
     "lucide-react": "^1.8.0",
     "next": "16.2.3",
+    "package-manager-manager": "^0.2.0",
     "react": "19.2.4",
     "react-dom": "19.2.4",
-    "uuid": "^13.0.0"
+    "uuid": "^13.0.0",
+    "web-push": "^3.6.7"
   },
   "devDependencies": {
+    "@cloudflare/next-on-pages": "^1.13.16",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@types/web-push": "^3.6.4",
     "eslint": "^9",
     "eslint-config-next": "16.2.3",
     "jsdom": "^29.1.1",
     "tailwindcss": "^4",
     "typescript": "^5",
-    "vercel": "^52.0.0"
+    "vercel": "^52.0.0",
+    "wrangler": "^4.90.1"
   }
 }

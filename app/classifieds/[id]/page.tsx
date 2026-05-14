@@ -87,7 +87,7 @@ export default async function ClassifiedDetailPage({ params }: { params: Promise
     <div className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)]">
       <Header />
 
-      <main className="mx-auto w-full max-w-[800px] px-5 py-6 sm:px-6">
+      <main className="mx-auto w-full max-w-[1100px] px-5 py-6 sm:px-6">
         <div className="mb-4">
           <Link href="/classifieds" className="text-sm font-semibold text-[#00cfff] hover:underline">
             Back to Classifieds
@@ -164,9 +164,13 @@ export default async function ClassifiedDetailPage({ params }: { params: Promise
                   {item.tags.map((tag, idx) => {
                     const formattedTag = tag.charAt(0).toUpperCase() + tag.slice(1).toLowerCase();
                     return (
-                      <span key={idx} className="text-[11px] font-bold text-[#00ffff] bg-[#00ffff]/5 px-3 py-1 rounded-full border border-[#00ffff]/10 tracking-wide">
+                      <Link 
+                        key={idx} 
+                        href={`/classifieds?tag=${encodeURIComponent(tag)}`}
+                        className="text-[11px] font-bold text-[#00ffff] bg-[#00ffff]/5 px-3 py-1 rounded-full border border-[#00ffff]/10 tracking-wide hover:bg-[#00ffff]/10 transition-all"
+                      >
                         {formattedTag}
-                      </span>
+                      </Link>
                     );
                   })}
                 </div>

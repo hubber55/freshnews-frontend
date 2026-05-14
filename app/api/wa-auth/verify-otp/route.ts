@@ -21,7 +21,10 @@ function signToken(payload: object, secret: string) {
 
 export async function POST(req: Request) {
   try {
-    const { whatsappNumber, otp, name } = (await req.json()) as { whatsappNumber?: string; otp?: string; name?: string };
+    const { whatsappNumber, otp } = (await req.json()) as { 
+      whatsappNumber?: string; 
+      otp?: string; 
+    };
     const digits = normalizeWhatsAppNumber(whatsappNumber || '');
     const otpStr = String(otp || '').trim();
     if (!digits || otpStr.length < 4) {
@@ -54,24 +57,48 @@ export async function POST(req: Request) {
 
     await supabase.from('wa_otps').update({ consumed_at: nowIso }).eq('id', row.id);
 
-    // Upsert user (table expected: wa_users)
-    const displayName = (name || '').slice(0, 15) || null;
-    const { data: existing } = await supabase
+    // Function to generate a unique username: Fn + 3 to 5 digits (Capital F)
+    async function generateUniqueUsername() {
+      let attempts = 0;
+      while (attempts < 15) {
+        const length = Math.floor(Math.random() * 3) + 3; // 3, 4, or 5
+        const min = Math.pow(10, length - 1);
+        const max = Math.pow(10, length) - 1;
+        const randomNum = Math.floor(min + Math.random() * (max - min + 1));
+        
+        const username = `Fn${randomNum}`;
+        const { data: existing } = await supabase
+          .from('wa_users')
+          .select('id')
+          .eq('username', username)
+          .limit(1);
+        
+        if (!existing || existing.length === 0) {
+          return username;
+        }
+        attempts++;
+      }
+      return `Fn${Math.floor(10000 + Math.random() * 89999)}`;
+    }
+
+    const { data: existingUser } = await supabase
       .from('wa_users')
-      .select('id, name')
+      .select('id, name, username')
       .eq('whatsapp_number', digits)
       .limit(1);
 
-    let userId: number | null = existing?.[0]?.id ?? null;
+    let userId: number | null = existingUser?.[0]?.id ?? null;
     if (!userId) {
+      const displayUsername = await generateUniqueUsername();
       const { data: inserted } = await supabase
         .from('wa_users')
-        .insert({ whatsapp_number: digits, name: displayName })
+        .insert({ 
+          whatsapp_number: digits, 
+          username: displayUsername 
+        })
         .select('id')
         .single();
       userId = inserted?.id ?? null;
-    } else if (displayName && !existing?.[0]?.name) {
-      await supabase.from('wa_users').update({ name: displayName }).eq('id', userId);
     }
 
     const secret = process.env.WA_AUTH_SECRET || '';
@@ -94,7 +121,10 @@ export async function POST(req: Request) {
     });
 
     return res;
-  } catch (e: any) {
-    return NextResponse.json({ ok: false, error: e?.message || 'Failed' }, { status: 500 });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Failed';
+    return NextResponse.json({ ok: false, error: message }, { status: 500 });
   }
 }
+
+

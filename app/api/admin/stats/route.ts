@@ -28,10 +28,23 @@ export async function GET() {
       .from('wa_users')
       .select('*', { count: 'exact', head: true });
 
+    // Push subscribers count
+    const { count: pushSubscribers } = await supabase
+      .from('push_subscriptions')
+      .select('*', { count: 'exact', head: true });
+
+    // Pending payments count
+    const { count: pendingPayments } = await supabase
+      .from('payment_requests')
+      .select('*', { count: 'exact', head: true })
+      .eq('status', 'pending');
+
     return NextResponse.json({
       pendingSubmissions: pendingSubmissions || 0,
       endingPosts: endingPosts || 0,
       totalUsers: totalUsers || 0,
+      pushSubscribers: pushSubscribers || 0,
+      pendingPayments: pendingPayments || 0
     });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });

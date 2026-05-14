@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { ChevronLeft, Settings, Save, Info } from 'lucide-react';
+import { ChevronLeft, Settings, Save, Info, Image } from 'lucide-react';
 import Link from 'next/link';
+import PlaceholderAdManager from '../components/PlaceholderAdManager';
 
 type HeaderInsert = {
   id: string;
@@ -74,10 +75,15 @@ export default function AdminSettingsPage() {
     min_days_required: '2',
     discount_per_5_days: '5',
     max_discount: '30',
-    max_upload_images: '5'
+    max_upload_images: '5',
+    lock_rate_pos_2: '500',
+    lock_rate_pos_8: '400',
+    lock_rate_pos_16: '300',
+    lock_rate_pos_24: '200'
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
   const [headerInserts, setHeaderInserts] = useState<HeaderInsert[]>([]);
   const [adNetworks, setAdNetworks] = useState<AdNetwork[]>([]);
   const [randomAdsEnabled, setRandomAdsEnabled] = useState(false);
@@ -88,7 +94,8 @@ export default function AdminSettingsPage() {
       try {
         const res = await fetch('/api/admin/settings');
         if (res.status === 401) {
-          window.location.href = '/admin/login';
+          setError('Please log in to access settings');
+          setLoading(false);
           return;
         }
 
@@ -128,7 +135,8 @@ export default function AdminSettingsPage() {
           const legacyAdsterra = data.settings.find((s: { key: string; value: string }) => s.key === 'adsterra_code')?.value;
 
           const parsedAdNetworks = safeParseAdNetworks(adNetworksValue);
-          if (parsedAdNetworks.length > 0) {
+          
+          if (adNetworksValue !== undefined) {
             setAdNetworks(parsedAdNetworks);
           } else if (typeof legacyAdsterra === 'string' && legacyAdsterra.trim()) {
             setAdNetworks([{
@@ -182,6 +190,8 @@ export default function AdminSettingsPage() {
   async function saveAdNetworks() {
     await updateSetting('ad_networks', JSON.stringify(adNetworks, null, 2));
     await updateSetting('ad_networks_random', randomAdsEnabled ? 'true' : 'false');
+    // Clear legacy key to prevent it from coming back
+    await updateSetting('adsterra_code', '');
   }
 
   if (loading) {
@@ -222,6 +232,10 @@ export default function AdminSettingsPage() {
         { key: 'classified_url_rate', label: 'Classified External URL Rate', placeholder: '500' },
         { key: 'ad_insertion_rate', label: 'Ad Insertion Rate (per day)', placeholder: '500' },
         { key: 'min_days_required', label: 'Minimum Days Required', placeholder: '2' },
+        { key: 'lock_rate_pos_2', label: 'Lock News (2nd Position) Rate', placeholder: '500' },
+        { key: 'lock_rate_pos_8', label: 'Lock News (8th Position) Rate', placeholder: '400' },
+        { key: 'lock_rate_pos_16', label: 'Lock News (16th Position) Rate', placeholder: '300' },
+        { key: 'lock_rate_pos_24', label: 'Lock News (24th Position) Rate', placeholder: '200' },
       ]
     },
     {
@@ -229,6 +243,12 @@ export default function AdminSettingsPage() {
       fields: [
         { key: 'discount_per_5_days', label: 'Discount % (per 5 days)', placeholder: '5' },
         { key: 'max_discount', label: 'Maximum Discount %', placeholder: '30' },
+      ]
+    },
+    {
+      title: 'Homepage Features',
+      fields: [
+        { key: 'admin_added_tags', label: 'Admin Added Tags (Comma separated)', placeholder: 'Tag1, Tag2, Tag3', type: 'textarea' },
       ]
     }
   ];
@@ -484,9 +504,34 @@ export default function AdminSettingsPage() {
         </div>
       </div>
 
+      {error && (
+        <div className="mb-4 rounded-lg border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+          {error}
+        </div>
+      )}
+
       <div className="space-y-8">
         {headerGroup}
         {adNetworksGroup}
+        
+        {/* Placeholder Ads Section */}
+        <div className="rounded-2xl border border-[var(--border)] bg-[#161b22] overflow-hidden">
+          <div className="px-6 py-4 bg-[#21262d] border-b border-[var(--border)] flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <Image size={20} className="text-[#ffd42a]" />
+              <h2 className="text-sm font-bold text-white uppercase tracking-wider">Placeholder Ads (300x250)</h2>
+            </div>
+          </div>
+          <div className="p-6">
+            <div className="text-xs text-[var(--text-muted)] leading-relaxed mb-6">
+              Manage fallback ads displayed when no user-submitted ads are available. 
+              These 300x250 ads appear randomly on the homepage. 
+              Each ad can have a custom CTA button that opens in a new tab.
+            </div>
+            <PlaceholderAdManager />
+          </div>
+        </div>
+
         {settingGroups.map((group) => (
           <div key={group.title} className="rounded-2xl border border-[var(--border)] bg-[#161b22] overflow-hidden">
             <div className="px-6 py-4 bg-[#21262d] border-b border-[var(--border)]">

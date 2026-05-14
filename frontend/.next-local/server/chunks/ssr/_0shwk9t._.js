@@ -1,3 +1,0 @@
-module.exports=[68029,a=>{"use strict";var b=a.i(19104),c=a.i(30473);a.s([],33653),a.i(33653),a.s(["00042708ccac7e9faff59775c76c2f3a7b3412fba8",()=>b.logout,"40408bb79fb56da422121390110f2f5e7d2e71c60b",()=>b.login,"408230e6c7ea47ef1ca73b8440fbae0cc1e749cd19",()=>c.deleteSubmission,"40b46ab7c79d282b556b22fa44e4b352f1805a8961",()=>c.getSubmission,"40c9c99fa8b2505521c3dc503d49679abbf94b7f06",()=>c.rejectSubmission,"60010889e13aa34c333d89159c566802523669ffc8",()=>c.updateSubmission,"60e0c5aea0ed86f07224ac92e9320ac80bf4e955a1",()=>c.approveSubmission],68029)},54178,a=>{a.v(b=>Promise.all(["server/chunks/ssr/node_modules_@supabase_supabase-js_dist_index_mjs_0cqfzrn._.js"].map(b=>a.l(b))).then(()=>b(60527)))}];
-
-//# sourceMappingURL=_0shwk9t._.js.map

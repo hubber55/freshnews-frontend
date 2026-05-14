@@ -22,20 +22,11 @@ const AUTHED_FOOTER_LINKS = [
   { href: '/contact', label: 'Contact Us' },
 ];
 
-export default function Footer() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+import { useAuth } from './AuthProvider';
 
-  useEffect(() => {
-    // Check if user is logged in
-    fetch('/api/auth/me')
-      .then(res => res.json())
-      .then(data => {
-        setIsLoggedIn(!!data.name);
-      })
-      .catch(() => {
-        setIsLoggedIn(false);
-      });
-  }, []);
+export default function Footer() {
+  const { user } = useAuth();
+  const isLoggedIn = !!user;
 
   const footerLinks = isLoggedIn ? AUTHED_FOOTER_LINKS : GUEST_FOOTER_LINKS;
 

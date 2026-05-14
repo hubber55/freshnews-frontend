@@ -1,9 +1,7 @@
-'use client';
-
-import { useState, useEffect } from 'react';
+import { createAdminClient } from '@/lib/supabase-admin';
 import Header from '../components/header';
 import Footer from '../components/footer';
-import { ChevronDown, ChevronUp, HelpCircle } from 'lucide-react';
+import FAQClient from './FAQClient';
 
 type FAQItem = {
   id: number;
@@ -11,8 +9,12 @@ type FAQItem = {
   answer: string;
 };
 
-// Dummy FAQ data - in production this would come from an API
 const DUMMY_FAQS: FAQItem[] = [
+  {
+    id: 0,
+    question: 'What are your unique features?',
+    answer: 'We are more than just a news source! You can post your own Classifieds, local Events, Ads, and even your own News stories. \n\nKey features include:\n- **Read Aloud:** Simply close your eyes, relax, and let our site read the news for you. Perfect for driving (connect to Bluetooth in your car) or relaxing. You can skip between stories or go back to a previous one easily. This feature is also available for Classifieds!\n- **Zoom In:** Unlike many other apps, we allow you to zoom in on images and content to take a closer look at what matters to you.\n- **Summarizing:** We know you don\'t want to read lengthy news. So our AI summarises and let you know just the key facts. If you wish you can read the full News from its Original Source, which is linked underneath every Post.',
+  },
   {
     id: 1,
     question: 'What is FreshNews?',
@@ -21,7 +23,7 @@ const DUMMY_FAQS: FAQItem[] = [
   {
     id: 2,
     question: 'How do I submit news or events?',
-    answer: 'Simply create an account using your WhatsApp number, then click on "Submit News" or "Submit Events" from the menu. Fill in the details and your submission will be reviewed by our editors before publishing.',
+    answer: 'Simply create an account using your WhatsApp number, then click on "Submit" as per the Category. Fill in the details and your submission will be reviewed by our editors before publishing.',
   },
   {
     id: 3,
@@ -35,135 +37,59 @@ const DUMMY_FAQS: FAQItem[] = [
   },
   {
     id: 5,
-    question: 'Can I edit my nickname?',
-    answer: 'Yes! Your nickname is the name that appears publicly with your comments and ads. You can change it anytime by visiting your Profile page.',
+    question: 'Can I edit my username?',
+    answer: 'Yes! Your username is the name that appears publicly with your comments and ads. You can change it anytime by visiting your Profile page.',
   },
   {
     id: 6,
     question: 'How do I install FreshNews as an app?',
     answer: 'Go to the "Install As App" option in the menu. On Android, you can add it to your home screen directly. On iOS, use the Share button in Safari and select "Add to Home Screen".',
   },
+  {
+    id: 7,
+    question: 'What is the ideal size for advertisements?',
+    answer: 'For the best results, use a 16:9 aspect ratio (e.g., 1280x720 pixels) for mobile users, or a 21:9 aspect ratio (e.g., 1600x685 pixels) for desktop users. To ensure your message is never cut off, keep important text and logos within the central 60% of the image.',
+  },
+  {
+    id: 8,
+    question: 'Can I lock multiple news stories at once?',
+    answer: 'Yes! Multiple news stories can be locked at different positions (2nd, 8th, 16th, or 24th) simultaneously on the homepage.',
+  },
+  {
+    id: 9,
+    question: 'What is your Copyright & Takedown Policy?',
+    answer: 'As a news aggregator, FreshNews.top aggregates content from **publicly available RSS feeds** and operates in compliance with **Fair Usage** principles. We provide clear attribution and direct links to the source of every article. However, if you are a content owner and wish to have your content removed, we will honor your request immediately. Simply reach out via our **Contact Us** page.',
+  },
 ];
 
-export default function FAQPage() {
-  const [faqs, setFaqs] = useState<FAQItem[]>([]);
-  const [openId, setOpenId] = useState<number | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+export const dynamic = 'force-dynamic';
+export const revalidate = 0; // Always fresh
 
-  useEffect(() => {
-    async function fetchFaqs() {
-      const { createClient } = await import('@/app/utils/supabase/client');
-      const supabase = createClient();
-      
-      const { data, error } = await supabase
-        .from('admin_settings')
-        .select('value')
-        .eq('key', 'site_faqs')
-        .single();
-        
-      if (!error && data?.value) {
-        try {
-          const parsed = JSON.parse(data.value);
-          if (parsed && parsed.length > 0) {
-            setFaqs(parsed);
-            setIsLoading(false);
-            return;
-          }
-        } catch (e) {
-          console.error(e);
-        }
+export default async function FAQPage() {
+  let faqs = DUMMY_FAQS;
+
+  try {
+    const supabase = createAdminClient();
+    const { data, error } = await supabase
+      .from('admin_settings')
+      .select('value')
+      .eq('key', 'site_faqs')
+      .single();
+
+    if (!error && data?.value) {
+      const parsed = JSON.parse(data.value);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        faqs = parsed;
       }
-      
-      // Fallback to dummy data if not configured
-      setFaqs(DUMMY_FAQS);
-      setIsLoading(false);
     }
-    
-    fetchFaqs();
-  }, []);
-
-  const toggleFAQ = (id: number) => {
-    setOpenId(openId === id ? null : id);
-  };
+  } catch (err) {
+    console.error('Failed to fetch FAQs:', err);
+  }
 
   return (
     <div className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)]">
       <Header />
-      
-      <main className="px-4 pt-8 pb-10">
-        <div className="mx-auto w-full max-w-[800px]">
-          {/* Header */}
-          <div className="text-center mb-10">
-            <div className="inline-flex items-center justify-center rounded-2xl bg-[#ffd42a]/10 p-4 mb-4">
-              <HelpCircle size={32} className="text-[#ffd42a]" />
-            </div>
-            <h1 className="text-3xl font-extrabold text-white mb-2" style={{ fontFamily: 'var(--font-en)' }}>
-              Frequently Asked Questions
-            </h1>
-            <p className="text-[var(--text-secondary)]">
-              Find answers to common questions about FreshNews
-            </p>
-          </div>
-
-          {/* FAQ List */}
-          <div className="space-y-4">
-            {isLoading ? (
-              <div className="text-center py-10">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#ffd42a] mx-auto"></div>
-              </div>
-            ) : faqs.length === 0 ? (
-              <div className="text-center py-10 text-[var(--text-muted)]">
-                No FAQs available at the moment.
-              </div>
-            ) : (
-              faqs.map((faq) => (
-                <div
-                  key={faq.id}
-                  className="rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] overflow-hidden"
-                >
-                  <button
-                    onClick={() => toggleFAQ(faq.id)}
-                    className="w-full flex items-center justify-between p-6 text-left hover:bg-[var(--bg-primary)] transition-colors"
-                  >
-                    <h3 className="text-lg font-bold text-[#ffd42a] pr-4">
-                      {faq.question}
-                    </h3>
-                    {openId === faq.id ? (
-                      <ChevronUp size={24} className="text-[#ffd42a] flex-shrink-0" />
-                    ) : (
-                      <ChevronDown size={24} className="text-[#ffd42a] flex-shrink-0" />
-                    )}
-                  </button>
-                  
-                  {openId === faq.id && (
-                    <div className="px-6 pb-6">
-                      <div className="pt-2 border-t border-[var(--border)]">
-                        <p className="text-white leading-relaxed mt-4">
-                          {faq.answer}
-                        </p>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              ))
-            )}
-          </div>
-
-          {/* Contact Section */}
-          <div className="mt-10 text-center">
-            <p className="text-[var(--text-secondary)] mb-4">
-              Still have questions?
-            </p>
-            <a
-              href="/contact"
-              className="inline-flex items-center gap-2 rounded-xl bg-[#00cfff] px-6 py-3 font-bold text-[#0d1117] hover:brightness-110 transition-all"
-            >
-              Contact Us
-            </a>
-          </div>
-        </div>
-      </main>
-      
+      <FAQClient initialFaqs={faqs} />
       <Footer />
     </div>
   );

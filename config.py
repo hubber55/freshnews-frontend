@@ -14,6 +14,17 @@ load_dotenv()
 # ─── API Keys (loaded from .env or GitHub Secrets) ───
 GROQ_API_KEY = os.getenv("GROQ_API_KEY", "")
 MISTRAL_API_KEY = os.getenv("MISTRAL_API_KEY", "")
+# Collect all Google API keys for rotation
+GOOGLE_API_KEYS = []
+for i in range(1, 21):
+    key_name = "GOOGLE_API_KEY" if i == 1 else f"GOOGLE_API_KEY_{i}"
+    key = os.getenv(key_name)
+    if key:
+        GOOGLE_API_KEYS.append(key)
+
+GOOGLE_API_KEYS = [k for k in GOOGLE_API_KEYS if k]
+# Backward compatibility
+GOOGLE_API_KEY = GOOGLE_API_KEYS[0] if GOOGLE_API_KEYS else ""
 BLOGGER_BLOG_ID = os.getenv("BLOGGER_BLOG_ID", "")
 BLOGGER_CLIENT_ID = os.getenv("BLOGGER_CLIENT_ID", "")
 BLOGGER_CLIENT_SECRET = os.getenv("BLOGGER_CLIENT_SECRET", "")
@@ -93,10 +104,10 @@ MALAYALAM_RSS_FEEDS = [
 
 # ─── Processing Settings ───
 MAX_ARTICLES_PER_RUN = 10         # Safe to increase since we drip-feed with a 30s delay now!
-SIMILARITY_THRESHOLD = 0.65       # 65% similar title = duplicate (skip)
+SIMILARITY_THRESHOLD = 0.60       # Lower = more aggressive skipping (60% similar = duplicate)
 SUMMARY_MAX_SENTENCES = 4         # Keep summaries short
 FETCH_TIMEOUT_SECONDS = 15        # Timeout for HTTP requests
-MAX_RECENT_POSTS_CHECK = 1000     # Check last N Supabase posts for duplicates
+MAX_RECENT_POSTS_CHECK = 200      # Check last 200 posts to ensure no duplicates today
 
 # ─── Day/Night Scheduling ───
 # Daytime: 5 AM - 11 PM IST → 30 seconds interval
@@ -123,4 +134,5 @@ BLOGGER_LABELS_MAP = {
 # Mistral = PRIMARY (1B tokens/month free tier!)
 # Groq   = FALLBACK (500K tokens/day)
 MISTRAL_MODEL = os.getenv("MISTRAL_MODEL", "mistral-small-latest")
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-1.5-flash")
 GROQ_MODEL = os.getenv("GROQ_MODEL", "llama-3.1-8b-instant")

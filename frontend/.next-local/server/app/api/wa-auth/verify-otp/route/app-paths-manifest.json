@@ -1,3 +1,0 @@
-{
-  "/api/wa-auth/verify-otp/route": "app/api/wa-auth/verify-otp/route.js"
-}

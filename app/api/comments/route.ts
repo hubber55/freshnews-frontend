@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 
+export const runtime = 'edge';
+
 function countWords(text: string) {
   const trimmed = text.trim();
   if (!trimmed) return 0;
@@ -19,13 +21,45 @@ export async function GET(req: NextRequest) {
   try {
     const { data } = await supabase
       .from('comments')
-      .select('id, content, created_at, wa_users(name)')
+      .select('id, content, created_at, user_id, wa_users(name, username)')
       .eq('post_id', postId)
       .order('created_at', { ascending: false })
       .limit(50);
 
-    return NextResponse.json({ comments: data || [] });
-  } catch {
+    const rawComments = data || [];
+    if (rawComments.length === 0) return NextResponse.json({ comments: [] });
+
+    const userIds = [...new Set(rawComments.map((c) => c.user_id).filter(Boolean))];
+
+    const { data: usersData } = await supabase
+      .from('wa_users')
+      .select('id, name, username')
+      .in('id', userIds);
+
+    const userMap: Record<string, { name?: string; username?: string }> = {};
+    (usersData || []).forEach((u) => {
+      userMap[u.id.toString()] = {
+        ...u,
+        username: u.username || u.name || '',
+      };
+    });
+
+    const comments = rawComments.map((c) => {
+      const user = Array.isArray(c.wa_users) ? c.wa_users[0] : c.wa_users;
+      return {
+        ...c,
+        wa_users: user
+          ? {
+              ...user,
+              username: user.username || user.name || '',
+            }
+          : (userMap[c.user_id?.toString()] || null),
+      };
+    });
+
+    return NextResponse.json({ comments });
+  } catch (error: unknown) {
+    console.error('Fetch comments error:', error);
     return NextResponse.json({ comments: [] });
   }
 }
@@ -44,6 +78,22 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: false, error: 'Invalid input' }, { status: 400 });
     }
 
+    const { data: userData } = await supabase
+      .from('wa_users')
+      .select('is_blocked')
+      .eq('id', user.id)
+      .single();
+
+    if (userData?.is_blocked) {
+      return NextResponse.json(
+        {
+          ok: false,
+          error: 'Your commenting privileges have been suspended. Please contact support.',
+        },
+        { status: 403 }
+      );
+    }
+
     const { data, error } = await supabase
       .from('comments')
       .insert({
@@ -60,7 +110,6 @@ export async function POST(req: NextRequest) {
 
     const postUrl = `${req.nextUrl.origin}/posts/${postId}`;
 
-    // Send WhatsApp message
     try {
       await fetch(process.env.WHATSAPP_WEBHOOK_URL || 'https://example.com/whatsapp', {
         method: 'POST',
@@ -83,3 +132,4 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: 'Server error' }, { status: 500 });
   }
 }
+

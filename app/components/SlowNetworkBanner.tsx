@@ -1,13 +1,14 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { RefreshCw, WifiOff } from 'lucide-react';
 
 /**
  * SlowNetworkBanner
  *
- * Shows a subtle "Network seems slow… please refresh" toast after 4 seconds
- * IF the page hasn't fully loaded yet. Dismisses automatically once loaded,
- * or when the user taps the refresh button.
+ * Shows a premium "Network seems slow" notification after 4 seconds
+ * IF the page hasn't fully loaded yet. 
+ * Automatically disappears after 5 seconds to avoid clutter.
  */
 export default function SlowNetworkBanner() {
   const [visible, setVisible] = useState(false);
@@ -16,22 +17,27 @@ export default function SlowNetworkBanner() {
     // If page already loaded fast — don't start the timer at all
     if (document.readyState === 'complete') return;
 
-    const timer = setTimeout(() => {
-      // Double-check: only show if still loading
+    // Show after 4 seconds if still loading
+    const showTimer = setTimeout(() => {
       if (document.readyState !== 'complete') {
         setVisible(true);
+        
+        // Auto-hide after 5 seconds of visibility
+        setTimeout(() => {
+          setVisible(false);
+        }, 5000);
       }
     }, 4000);
 
     const onLoad = () => {
-      clearTimeout(timer);
+      clearTimeout(showTimer);
       setVisible(false);
     };
 
     window.addEventListener('load', onLoad);
 
     return () => {
-      clearTimeout(timer);
+      clearTimeout(showTimer);
       window.removeEventListener('load', onLoad);
     };
   }, []);
@@ -41,87 +47,28 @@ export default function SlowNetworkBanner() {
   return (
     <div
       id="slow-network-banner"
-      role="status"
-      aria-live="polite"
-      style={{
-        position: 'fixed',
-        bottom: '24px',
-        left: '50%',
-        transform: 'translateX(-50%)',
-        zIndex: 9999,
-        display: 'flex',
-        alignItems: 'center',
-        gap: '10px',
-        background: 'rgba(22, 27, 34, 0.96)',
-        border: '1px solid #30363d',
-        borderRadius: '14px',
-        padding: '12px 20px',
-        boxShadow: '0 8px 32px rgba(0,0,0,0.5)',
-        backdropFilter: 'blur(12px)',
-        animation: 'snb-fadein 0.4s ease',
-        maxWidth: '90vw',
-        width: 'max-content',
-      }}
+      className="fixed bottom-24 left-1/2 -translate-x-1/2 z-[9999] flex items-center gap-4 bg-[#161b22]/95 border border-[#30363d] rounded-2xl px-5 py-3 shadow-[0_8px_32px_rgba(0,0,0,0.8)] backdrop-blur-xl animate-in slide-in-from-bottom-4 duration-500 max-w-[90vw] w-max"
     >
-      {/* Animated signal icon */}
-      <span style={{ fontSize: '20px', lineHeight: 1 }}>📶</span>
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-yellow-500/10 text-yellow-500">
+        <WifiOff size={20} />
+      </div>
 
-      <span
-        style={{
-          fontSize: '13.5px',
-          color: '#c9d1d9',
-          fontFamily: 'system-ui, sans-serif',
-          lineHeight: 1.4,
-        }}
-      >
-        Network seems slow…
-        <br />
-        <span style={{ color: '#8b949e', fontSize: '12px' }}>please refresh</span>
-      </span>
+      <div className="flex flex-col">
+        <span className="text-xs font-black uppercase tracking-widest text-white leading-none mb-1">
+          Slow Network
+        </span>
+        <span className="text-[11px] font-bold text-[var(--text-muted)] leading-tight">
+          Connection seems laggy...
+        </span>
+      </div>
 
       <button
         onClick={() => window.location.reload()}
-        style={{
-          marginLeft: '8px',
-          background: '#ffd42a',
-          color: '#000',
-          border: 'none',
-          borderRadius: '8px',
-          padding: '6px 14px',
-          fontSize: '12.5px',
-          fontWeight: 700,
-          cursor: 'pointer',
-          fontFamily: 'system-ui, sans-serif',
-          flexShrink: 0,
-        }}
+        className="flex items-center gap-2 bg-[#ffd42a] text-black px-4 py-2 rounded-xl text-xs font-black uppercase tracking-wider hover:scale-105 active:scale-95 transition-all shadow-lg shadow-yellow-500/20"
       >
+        <RefreshCw size={14} />
         Refresh
       </button>
-
-      {/* Dismiss × */}
-      <button
-        onClick={() => setVisible(false)}
-        aria-label="Dismiss"
-        style={{
-          background: 'none',
-          border: 'none',
-          color: '#6e7681',
-          cursor: 'pointer',
-          fontSize: '16px',
-          lineHeight: 1,
-          padding: '2px 4px',
-          flexShrink: 0,
-        }}
-      >
-        ✕
-      </button>
-
-      <style>{`
-        @keyframes snb-fadein {
-          from { opacity: 0; transform: translateX(-50%) translateY(16px); }
-          to   { opacity: 1; transform: translateX(-50%) translateY(0); }
-        }
-      `}</style>
     </div>
   );
 }

@@ -57,12 +57,20 @@ export default function TosPage() {
               In no event shall FreshNews.top, its operators, or affiliates be liable for any indirect, incidental, special, consequential, or punitive damages resulting from your use of or inability to use the website.
             </p>
 
-            <p><strong>7. Third-Party Links</strong></p>
+            <p><strong>7. Third-Party Links & Attribution</strong></p>
             <p>
-              Our website may contain links to third-party websites or services that are not owned or controlled by FreshNews.top. We have no control over and assume no responsibility for the content, privacy policies, or practices of any third-party websites.
+              Our website contains links and summaries to third-party content. We provide full attribution and direct links to the original sources as a courtesy. We have no control over and assume no responsibility for the content, privacy policies, or practices of any third-party websites.
             </p>
 
-            <p><strong>8. Modifications</strong></p>
+            <p><strong>8. Notice and Takedown Policy</strong></p>
+            <p>
+              FreshNews.top respects the intellectual property rights of others. Our platform aggregates content from <strong>publicly available RSS feeds</strong> provided by original publishers, and we operate in full compliance with <strong>Fair Usage</strong> principles by providing clear attribution and direct links to the original sources. 
+            </p>
+            <p>
+              However, we understand that some owners may prefer their content not be aggregated. We are committed to a prompt response and will <strong>remove any content immediately</strong> upon receiving a valid request from the original source or authorized owner. If you wish to have your content removed, simply <a href="/contact" className="text-[#ffd42a] hover:underline">Contact Us</a>.
+            </p>
+
+            <p><strong>9. Modifications</strong></p>
             <p>
               We reserve the right to modify or replace these Terms at any time. It is your responsibility to review these Terms periodically for changes.
             </p>

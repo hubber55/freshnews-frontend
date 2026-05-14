@@ -1,7 +1,7 @@
 
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { getCurrentUser, getCurrentUserName } from '@/lib/auth';
+import { getCurrentUser, getCurrentUsername } from '@/lib/auth';
 
 export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const { id: submissionId } = await params;
@@ -10,7 +10,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
   );
   const user = await getCurrentUser();
-  const userName = await getCurrentUserName();
+  const userName = await getCurrentUsername();
 
   if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -123,9 +123,10 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
 
     return NextResponse.json({ ok: true });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Update failed';
     console.error('Update Submission Error:', error);
-    return NextResponse.json({ error: error.message || 'Update failed' }, { status: 500 });
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
 
@@ -150,3 +151,5 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
 
   return NextResponse.json(data);
 }
+
+

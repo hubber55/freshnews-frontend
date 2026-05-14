@@ -102,8 +102,8 @@ def publish_via_supabase(article):
     faq = article.get("faq", [])
 
     try:
-        # Insert row into the 'posts' table
-        response = supabase.table('posts').insert({
+        # 1. Insert row into the 'posts' table
+        post_response = supabase.table('posts').insert({
             "title": title,
             "summary": summary,
             "image_url": image_url,
@@ -114,14 +114,68 @@ def publish_via_supabase(article):
             "faq": faq if faq else None,
         }).execute()
 
-        logger.info(f"  \u2705 Inserted successfully into Supabase!")
+        if not post_response.data or len(post_response.data) == 0:
+            logger.error("  ❌ Post insertion failed - no data returned.")
+            return False
+
+        post_id = post_response.data[0]['id']
+        logger.info(f"  ✅ Post {post_id} inserted successfully into Supabase!")
+
+        # 2. Handle Bogus Comments
+        bogus_comments = article.get("bogus_comments", [])
+        if bogus_comments:
+            logger.info(f"  💬 Inserting {len(bogus_comments)} bogus comments...")
+            
+            # Helper to get or create a ghost user
+            def get_ghost_user_id(username):
+                try:
+                    # Check if user exists
+                    user_res = supabase.table('wa_users').select('id').eq('username', username).execute()
+                    if user_res.data and len(user_res.data) > 0:
+                        return user_res.data[0]['id']
+                    
+                    # Create ghost user with just username
+                    create_res = supabase.table('wa_users').insert({
+                        "username": username,
+                        "whatsapp_number": f"ghost_{username.lower()}"
+                    }).execute()
+                    
+                    if create_res.data and len(create_res.data) > 0:
+                        return create_res.data[0]['id']
+                except Exception as ex:
+                    logger.warning(f"  ⚠️ Error handling ghost user {username}: {ex}")
+                return None
+
+            inserted_comments = []
+            for i, c in enumerate(bogus_comments):
+                uid = get_ghost_user_id(c['username'])
+                if not uid:
+                    continue
+                
+                comment_data = {
+                    "post_id": post_id,
+                    "user_id": uid,
+                    "content": c['text']
+                }
+                
+                # If we had parent_id support, we'd add it here
+                # if c['is_reply'] and c['reply_index'] is not None and c['reply_index'] < i:
+                #    parent = inserted_comments[c['reply_index']]
+                #    comment_data["parent_id"] = parent['id']
+
+                res = supabase.table('comments').insert(comment_data).execute()
+                if res.data and len(res.data) > 0:
+                    inserted_comments.append(res.data[0])
+
+            logger.info(f"  ✅ {len(inserted_comments)} bogus comments added.")
+
         return True
     except Exception as e:
         err = str(e).lower()
         if "duplicate key value violates unique constraint" in err and "original_url_fingerprint" in err:
             logger.warning(f"  🔁 Duplicate blocked by DB unique guard for URL: {original_url}")
             return False
-        logger.error(f"  ❌ Supabase insert failed: {e}")
+        logger.error(f"  ❌ Supabase operation failed: {e}")
         return False
 
 def get_recent_posts(limit=20):

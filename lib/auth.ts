@@ -34,17 +34,17 @@ export async function getCurrentUser(): Promise<User | null> {
   }
 }
 
-export async function getCurrentUserName(): Promise<string | null> {
+export async function getCurrentUsername(): Promise<string | null> {
   const user = await getCurrentUser();
   if (!user) return null;
 
-  // Fetch name from wa_users table
+  // Fetch username from wa_users table
   const { supabase } = await import('./supabase');
   const { data } = await supabase
     .from('wa_users')
-    .select('name')
+    .select('username')
     .eq('id', user.id)
     .single();
 
-  return data?.name || 'User';
+  return data?.username || 'User';
 }

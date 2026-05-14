@@ -20,6 +20,22 @@ export default function ContactPage() {
               We value your feedback and are always happy to hear from our readers. Whether you have a question, suggestion, or concern, feel free to reach out to us.
             </p>
 
+            <p><strong>WhatsApp</strong></p>
+            <p>
+              For fast support or urgent inquiries:<br/>
+              <a href="https://wa.me/919037242045" target="_blank" rel="noopener noreferrer" className="text-[#00ffff] hover:underline text-[18px] font-semibold flex items-center gap-2">
+                +91 90372 42045
+              </a>
+            </p>
+
+            <p><strong>WhatsApp</strong></p>
+            <p>
+              For fast support or urgent inquiries:<br/>
+              <a href="https://wa.me/919037242045" target="_blank" rel="noopener noreferrer" className="text-[#00ffff] hover:underline text-[18px] font-semibold flex items-center gap-2">
+                +91 90372 42045
+              </a>
+            </p>
+
             <p><strong>Email</strong></p>
             <p>
               For general inquiries, feedback, or support:<br/>
@@ -35,11 +51,9 @@ export default function ContactPage() {
 
             <p><strong>Content Removal Requests</strong></p>
             <p>
-              If you are a content owner and would like your content removed from FreshNews.top, please email us with the following details:<br/>
-              • The URL of the content on our website<br/>
-              • Proof of ownership of the original content<br/>
-              • Your contact information<br/>
-              We will review and process all legitimate requests promptly.
+              FreshNews.top aggregates content from <strong>publicly available RSS feeds</strong> and complies with <strong>Fair Usage</strong>. However, if you are a content owner and would like your content removed, we will process your request immediately. Please contact us via:<br/>
+              • <strong>WhatsApp:</strong> <a href="https://wa.me/919037242045" className="text-[#00ffff] hover:underline">+91 90372 42045</a><br/>
+              • <strong>Email:</strong> <a href="mailto:kerlot4@gmail.com" className="text-[#ffd42a] hover:underline">kerlot4@gmail.com</a>
             </p>
 
             <p><strong>Advertising &amp; Partnerships</strong></p>

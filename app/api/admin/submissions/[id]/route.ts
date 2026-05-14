@@ -37,15 +37,46 @@ export async function PATCH(
 
     if (error) throw error;
 
-    // If approving, send WhatsApp to user
+    // If approving, promote to posts table and send WhatsApp to user
     if (status === 'approved') {
       const { data: submission } = await supabase
         .from('submissions')
-        .select('type, title, user_id')
+        .select('*')
         .eq('id', numericId)
         .single();
 
       if (submission) {
+        // 1. Create entry in posts table so it shows on homepage
+        const submissionTags = Array.from(new Set([
+          ...(Array.isArray(submission.tags) ? submission.tags.filter(Boolean) : []),
+          ...(submission.type === 'classified' ? ['Classifieds'] : []),
+        ]));
+
+        // Include price/phone in summary for homepage view if it's a classified
+        let displaySummary = submission.content;
+        if (submission.type === 'classified') {
+          const pricePart = submission.price ? `Price: ${submission.price}` : '';
+          const phonePart = submission.contact_phone ? `Phone: ${submission.contact_phone}` : '';
+          if (pricePart || phonePart) {
+            displaySummary = `${displaySummary}\n\n${[pricePart, phonePart].filter(Boolean).join(' | ')}`;
+          }
+        }
+
+        await supabase
+          .from('posts')
+          .insert({
+            title: submission.title,
+            summary: displaySummary,
+            source_name: 'FRESHNEWS',
+            image_url: submission.image_url || null,
+            tags: submissionTags,
+            published_at: new Date().toISOString(),
+            is_deleted: false,
+            // Store submission_id so we can link back or avoid duplicates if needed
+            submission_id: numericId 
+          });
+
+        // 2. Send WhatsApp notification
         const { data: waUser } = await supabase
           .from('wa_users')
           .select('whatsapp_number')
@@ -56,8 +87,7 @@ export async function PATCH(
           const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://freshnews.top';
           const type = submission.type;
           let liveMsg = '';
-          if (type === 'classified') liveMsg = `✅ Your Classified is Live Now!\n"${submission.title}"\nView: ${baseUrl}/classifieds`;
-          else if (type === 'ad') liveMsg = `✅ Your Ad is Live Now!\n"${submission.title}"\nView: ${baseUrl}/classifieds`;
+          if (type === 'classified' || type === 'ad') liveMsg = `✅ Your Classified/Ad is Live Now!\n"${submission.title}"\nView: ${baseUrl}/classifieds/${numericId}`;
           else if (type === 'news') liveMsg = `✅ Your News is Live Now!\n"${submission.title}"\nView: ${baseUrl}`;
           else if (type === 'event') liveMsg = `✅ Your Event is Live Now!\n"${submission.title}"\nView: ${baseUrl}`;
 
@@ -171,7 +201,10 @@ export async function POST(
 
     if (user?.whatsapp_number) {
       const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://freshnews.top';
-      const message = `Your ${submission.type} "${title}" has been approved! View it here: ${baseUrl}/posts/${newPost.id}`;
+      const postUrl = submission.type === 'classified' || submission.type === 'ad' 
+        ? `${baseUrl}/classifieds/${submissionId}`
+        : `${baseUrl}/posts/${newPost.id}`;
+      const message = `✅ Your ${submission.type} "${title}" has been approved!\nView it here: ${postUrl}`;
 
       await fetch(`${baseUrl}/api/send-whatsapp`, {
         method: 'POST',

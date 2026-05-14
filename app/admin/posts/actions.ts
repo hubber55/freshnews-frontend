@@ -2,6 +2,7 @@
 
 import { createClient } from '@/app/utils/supabase/server'
 import { redirect } from 'next/navigation'
+import { revalidatePath } from 'next/cache'
 import { promises as fs } from 'fs'
 import path from 'path'
 import { v4 as uuidv4 } from 'uuid'
@@ -33,6 +34,10 @@ export async function updatePost(postId: string, prevState: any, formData: FormD
     console.error('Error updating post', error)
     return { error: error.message }
   }
+
+  // Purge cache for home and the post page
+  revalidatePath('/')
+  revalidatePath(`/posts/${postId}`)
 
   redirect('/admin/posts')
 }
@@ -72,6 +77,10 @@ export async function deletePostWithRedirect(postId: string, prevState: any, for
     console.error('Error deleting post', error)
     return { error: error.message }
   }
+
+  // Purge cache
+  revalidatePath('/')
+  revalidatePath(`/posts/${postId}`)
 
   redirect('/admin/posts')
 }
@@ -159,6 +168,9 @@ export async function createPost(prevState: any, formData: FormData) {
     console.error('Error creating post', error)
     return { error: error.message }
   }
+
+  // Purge home feed cache for the new post
+  revalidatePath('/')
 
   redirect('/admin/posts')
 }

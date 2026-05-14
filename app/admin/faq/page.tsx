@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Plus, Trash2, Save, X, ChevronLeft, HelpCircle } from 'lucide-react';
+import { Plus, Trash2, Save, X, ChevronLeft, HelpCircle, ChevronUp, ChevronDown } from 'lucide-react';
 
 type FAQItem = {
   id: number;
@@ -21,23 +21,24 @@ export default function AdminFAQPage() {
 
   useEffect(() => {
     async function fetchFaqs() {
-      const { createClient } = await import('@/app/utils/supabase/client');
-      const supabase = createClient();
-      
-      const { data, error } = await supabase
-        .from('admin_settings')
-        .select('value')
-        .eq('key', 'site_faqs')
-        .single();
+      try {
+        const res = await fetch('/api/admin/settings');
+        if (!res.ok) throw new Error('Failed to fetch settings');
+        const data = await res.json();
+        const faqSetting = data.settings?.find((s: any) => s.key === 'site_faqs');
         
-      if (!error && data?.value) {
-        try {
-          const parsed = JSON.parse(data.value);
-          setFaqs(parsed);
-        } catch (e) {
+        if (faqSetting?.value) {
+          try {
+            const parsed = JSON.parse(faqSetting.value);
+            setFaqs(Array.isArray(parsed) ? parsed : []);
+          } catch (e) {
+            setFaqs([]);
+          }
+        } else {
           setFaqs([]);
         }
-      } else {
+      } catch (err) {
+        console.error('Fetch error:', err);
         setFaqs([]);
       }
       setIsLoading(false);
@@ -102,24 +103,38 @@ export default function AdminFAQPage() {
     setMessage(null);
 
     try {
-      const { createClient } = await import('@/app/utils/supabase/client');
-      const supabase = createClient();
-      
-      const { error } = await supabase
-        .from('admin_settings')
-        .upsert({ key: 'site_faqs', value: JSON.stringify(faqs) }, { onConflict: 'key' });
+      const res = await fetch('/api/admin/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ key: 'site_faqs', value: JSON.stringify(faqs) }),
+      });
 
-      if (!error) {
-        setMessage('FAQs saved successfully!');
-      } else {
-        setMessage('Failed to save FAQs: ' + error.message);
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Failed to save FAQs');
       }
+
+      setMessage('FAQs saved successfully!');
     } catch (err: any) {
       setMessage('Failed to save FAQs: ' + err.message);
     }
 
     setIsSaving(false);
     setTimeout(() => setMessage(null), 3000);
+  };
+
+  const moveUp = (index: number) => {
+    if (index === 0) return;
+    const newFaqs = [...faqs];
+    [newFaqs[index - 1], newFaqs[index]] = [newFaqs[index], newFaqs[index - 1]];
+    setFaqs(newFaqs);
+  };
+
+  const moveDown = (index: number) => {
+    if (index === faqs.length - 1) return;
+    const newFaqs = [...faqs];
+    [newFaqs[index], newFaqs[index + 1]] = [newFaqs[index + 1], newFaqs[index]];
+    setFaqs(newFaqs);
   };
 
   if (isLoading) {
@@ -133,7 +148,7 @@ export default function AdminFAQPage() {
   }
 
   return (
-    <div className="p-8">
+    <div className="p-8 pb-32">
       {/* Header */}
       <div className="flex items-center gap-4 mb-8">
         <Link
@@ -156,7 +171,44 @@ export default function AdminFAQPage() {
           </div>
         </div>
         
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
+          <button
+            onClick={() => {
+              const defaultFaqs = [
+                {
+                  id: 0,
+                  question: 'What are your unique features?',
+                  answer: 'We are more than just a news source! You can post your own Classifieds, local Events, Ads, and even your own News stories. \n\nKey features include:\n- **Read Aloud:** Simply close your eyes, relax, and let our site read the news for you. Perfect for driving (connect to Bluetooth in your car) or relaxing. You can skip between stories or go back to a previous one easily. This feature is also available for Classifieds!\n- **Zoom In:** Unlike many other apps, we allow you to zoom in on images and content to take a closer look at what matters to you.',
+                },
+                {
+                  id: 1,
+                  question: 'What is FreshNews?',
+                  answer: 'FreshNews is a Malayalam news aggregator platform where you can read the latest news, submit your own news stories, events, and classified advertisements for free.',
+                },
+                {
+                  id: 2,
+                  question: 'How do I submit news or events?',
+                  answer: 'Simply create an account using your WhatsApp number, then click on "Submit News" or "Submit Events" from the menu. Fill in the details and your submission will be reviewed by our editors before publishing.',
+                },
+                {
+                  id: 3,
+                  question: 'Is it free to post classified ads?',
+                  answer: 'Yes! Posting classified advertisements on FreshNews is completely free. You can post ads for jobs, real estate, services, items for sale, and more.',
+                },
+                {
+                  id: 7,
+                  question: 'What is the ideal size for advertisements?',
+                  answer: 'For the best results, use a 16:9 aspect ratio (e.g., 1280x720 pixels) for mobile users, or a 21:9 aspect ratio (e.g., 1600x685 pixels) for desktop users. To ensure your message is never cut off, keep important text and logos within the central 60% of the image.',
+                }
+              ];
+              if (confirm('This will load the default system FAQs into your list. You can then edit or save them. Continue?')) {
+                setFaqs(defaultFaqs);
+              }
+            }}
+            className="flex items-center gap-2 rounded-lg border border-[#ffd42a]/30 bg-[#ffd42a]/5 px-4 py-2 font-bold text-[#ffd42a] hover:bg-[#ffd42a]/10 transition-all"
+          >
+            Load Defaults
+          </button>
           <button
             onClick={handleAddNew}
             className="flex items-center gap-2 rounded-lg bg-[#00cfff] px-4 py-2 font-bold text-[#0d1117] hover:brightness-110 transition-all"
@@ -178,7 +230,7 @@ export default function AdminFAQPage() {
       {/* Message */}
       {message && (
         <div className={`mb-6 rounded-xl p-4 text-sm font-semibold ${
-          message.includes('success') 
+          message.includes('successfully') 
             ? 'bg-[#90ee90]/10 border border-[#90ee90]/30 text-[#90ee90]' 
             : 'bg-red-500/10 border border-red-500/30 text-red-400'
         }`}>
@@ -193,7 +245,7 @@ export default function AdminFAQPage() {
             No FAQs yet. Click "Add New" to create one.
           </div>
         ) : (
-          faqs.map((faq) => (
+          faqs.map((faq, index) => (
             <div
               key={faq.id}
               className="rounded-xl border border-[var(--border)] bg-[var(--bg-card)] overflow-hidden"
@@ -249,11 +301,35 @@ export default function AdminFAQPage() {
                   onClick={() => startEditing(faq)}
                 >
                   <div className="flex items-start justify-between gap-4">
+                    {/* Reorder Buttons */}
+                    <div className="flex flex-col gap-1 mt-1">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          moveUp(index);
+                        }}
+                        disabled={index === 0}
+                        className="p-1 rounded bg-white/5 text-[var(--text-muted)] hover:bg-white/10 hover:text-white disabled:opacity-0"
+                      >
+                        <ChevronUp size={16} />
+                      </button>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          moveDown(index);
+                        }}
+                        disabled={index === faqs.length - 1}
+                        className="p-1 rounded bg-white/5 text-[var(--text-muted)] hover:bg-white/10 hover:text-white disabled:opacity-0"
+                      >
+                        <ChevronDown size={16} />
+                      </button>
+                    </div>
+
                     <div className="flex-1">
                       <h3 className="text-lg font-bold text-[#ffd42a] mb-2">
                         {faq.question}
                       </h3>
-                      <p className="text-white leading-relaxed">
+                      <p className="text-white leading-relaxed whitespace-pre-line">
                         {faq.answer}
                       </p>
                     </div>
@@ -280,8 +356,10 @@ export default function AdminFAQPage() {
         <p className="font-semibold mb-2">Instructions:</p>
         <ul className="space-y-1 list-disc list-inside">
           <li>Click on any FAQ to edit it</li>
+          <li>Use the arrows on the left to reorder FAQs</li>
           <li>Click the trash icon to delete</li>
           <li>Use "Add New" to create new FAQs</li>
+          <li>Use "Load Defaults" to quickly pull in standard system FAQs</li>
           <li>Remember to click "Save All" when finished</li>
           <li>Questions appear in <span className="text-[#ffd42a]">Yellow</span>, Answers in <span className="text-white">White</span></li>
         </ul>

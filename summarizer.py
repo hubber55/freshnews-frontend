@@ -13,8 +13,9 @@ import time
 import requests
 import json
 import re
+import random
 
-from config import GROQ_API_KEY, GROQ_MODEL, MISTRAL_API_KEY, MISTRAL_MODEL
+from config import GROQ_API_KEY, GROQ_MODEL, MISTRAL_API_KEY, MISTRAL_MODEL, GOOGLE_API_KEYS, GEMINI_MODEL
 
 logger = logging.getLogger(__name__)
 
@@ -22,21 +23,21 @@ SUMMARIZE_PROMPT = """You are an expert Malayalam News Editor.
 Your task is to REWRITE the following news article while ensuring ABSOLUTE accuracy and maintaining the original message perfectly.
 
 Instructions:
-1. SUMMARIZE THE TITLE: Create a concise title in Malayalam that preserves the EXACT meaning of the original. IT MUST BE UNDER 10 WORDS. Do not rewrite or creatively change the title; simply ensure it fits the word limit without losing any core information. Simple truncation or literal translation is preferred.
-2. REWRITE THE CONTENT: Rephrase the article professionally in Malayalam. Target 250 to 500 words based on the original length. Ensure the Malayalam is natural and fluent.
-3. ACCURACY & MEANING: DO NOT change the original meaning. If a sentence or concept is complex, do not take risks with rephrasing that could distort or reverse the intended meaning. Preservation of truth is the top priority.
-4. QUOTES: Any text enclosed in double quotes " " or single quotes ' ' (representing direct quotes or official statements) MUST be kept mostly as-is or translated with zero change in essence.
-5. LANGUAGE RULES: Use Malayalam script. English is ONLY allowed for proper nouns or technical terms with no Malayalam equivalent.
-6. STRUCTURE: Use well-structured paragraphs. Start a new paragraph every 60-80 words.
+1. MEANINGFUL TITLE: Create a highly engaging, professional, and meaningful title in Malayalam that perfectly captures the essence of the news. IT MUST BE UNDER 12 WORDS.
+2. REWRITE THE CONTENT: Rephrase the article professionally in Malayalam. Target 250 to 500 words. Ensure the Malayalam is natural and fluent.
+3. ACCURACY & MEANING: DO NOT change the original meaning. Preservation of truth is the top priority.
+4. QUOTES: Keep direct quotes translated with zero change in essence.
+5. LANGUAGE RULES: Use Malayalam script. English is ONLY allowed for proper nouns.
+6. READABILITY & STRUCTURE: Use liberal paragraph breaks. Start a new paragraph every 4 to 6 lines (approx. 50-70 words) to ensure the article is easy to read on mobile devices. Use well-structured paragraphs with \n\n between them.
 7. NO PREFIXES: Do not include "Summary:", "സമ്മറി:", etc.
-8. KEYWORDS: Extract 3 relevant English keywords (strictly English).
+8. KEYWORDS: Extract 5 relevant English keywords (strictly English). If the article is about cinema, include "Movies" as one of the keywords.
 9. FAQ: Generate 3 FAQ items (q and a) in Malayalam based on the news.
 
 You must reply with a valid JSON object in EXACTLY this format:
 {{
   "title": "Rewritten Malayalam Title",
   "summary": "Full rewritten Malayalam article text with \\n\\n between paragraphs.",
-  "keywords": ["Word1", "Word2", "Word3"],
+  "keywords": ["Word1", "Word2", "Word3", "Word4", "Word5"],
   "faq": [
     {{"q": "Question?", "a": "Answer."}},
     {{"q": "Question?", "a": "Answer."}},
@@ -105,11 +106,67 @@ def _call_mistral(prompt):
     return None
 
 
+def _call_gemini(prompt):
+    """Call Google Gemini API (PRIMARY provider) with key rotation."""
+    if not GOOGLE_API_KEYS:
+        logger.debug("  ⏭️ Gemini: No API keys configured, skipping.")
+        return None
+
+    # Shuffle keys for this attempt
+    shuffled_keys = list(GOOGLE_API_KEYS)
+    random.shuffle(shuffled_keys)
+
+    for api_key in shuffled_keys:
+        logger.info(f"  🤖 Using Google Gemini ({GEMINI_MODEL}) - Key: {api_key[:8]}...")
+
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent?key={api_key}"
+        
+        headers = {
+            "Content-Type": "application/json"
+        }
+        
+        payload = {
+            "contents": [{
+                "parts": [{"text": prompt}]
+            }],
+            "generationConfig": {
+                "response_mime_type": "application/json",
+                "temperature": 0.2
+            }
+        }
+
+        for attempt in range(2): # 2 attempts per key
+            try:
+                response = requests.post(url, headers=headers, json=payload, timeout=60)
+                
+                if response.status_code == 429:
+                    logger.warning(f"  ⏳ Gemini rate limit hit for key {api_key[:8]}. Trying another key...")
+                    break # Break out of attempt loop to try next key
+
+                if response.status_code != 200:
+                    logger.warning(f"  ⚠️ Gemini API error: {response.status_code} - {response.text}")
+                    break # Try next key
+
+                data = response.json()
+                
+                if "candidates" in data and len(data["candidates"]) > 0:
+                    content = data["candidates"][0]["content"]["parts"][0]["text"]
+                    return content.strip()
+                
+                break # Try next key
+
+            except Exception as e:
+                logger.warning(f"  ⚠️ Gemini error: {e}")
+                time.sleep(2)
+    
+    return None
+
+
 # ─── Cascade: Try each provider in order ───
 
 PROVIDERS = [
+    ("Gemini", _call_gemini),
     ("Mistral", _call_mistral),
-    # Groq fallback removed as per user request
 ]
 
 
@@ -136,11 +193,22 @@ def summarize_article(article):
                 parsed = json.loads(content)
                 summary = str(parsed.get("summary", "")).strip()
                 
-                # Use the original title truncated to 10 words instead of AI rewritten title
-                new_title = truncate_title(title, 10)
+                # Use the AI-generated meaningful title
+                new_title = str(parsed.get("title", "")).strip()
+                if not new_title:
+                    new_title = truncate_title(title, 10)
                 
                 tags = [str(t).strip() for t in parsed.get("keywords", []) if str(t).strip()]
-                tags = [t for t in tags if len(t) < 20][:4]
+                
+                # Mandatory "Movies" tag logic
+                content_to_check = (title + " " + summary).lower()
+                cinema_keywords = ['cinema', 'film', 'movie', 'actor', 'actress', 'director', 'mollywood', 'bollywood', 'സിനിമ', 'ചിത്രം', 'നടൻ', 'നടി', 'സംവിധായകൻ']
+                is_cinema = any(kw in content_to_check for kw in cinema_keywords)
+                
+                if is_cinema and 'Movies' not in [t.capitalize() for t in tags]:
+                    tags.insert(0, 'Movies')
+
+                tags = [t for t in tags if len(t) < 20][:5]
                 
                 raw_faq = parsed.get("faq", [])
                 faq = []
@@ -159,11 +227,144 @@ def summarize_article(article):
     return None
 
 
+BOGUS_USERNAMES = [
+    "Arjun_Varghese", "Binu_Tvm", "Amit_Kochi", "Priya_Menon", "Latha_Dxb",
+    "Sanjay_Nair", "Vikram_Blr", "Jayan_Varkala", "Naveen_George", "Sneha_Tvm",
+    "Mini_Varghese", "Rajesh_Kollam", "Kiran_Nair", "Ravi_Pala", "Sameer_Kochi",
+    "Meera_Varghese", "Shibu_Tvm", "Vivek_Pillai", "Rohan_Thomas", "Vinu_Aluva",
+    "Kartik_Nair", "Anjali_Varghese", "Suku_Tvm", "Harish_Kurup", "Suresh_Kochi",
+    "Reena_Mathew", "Vinod_Tvm", "Divya_Varghese", "Anu_Kottayam", "Lokesh_Nair",
+    "Akash_Tvm", "Kichu_Kochi", "Arun_Varghese", "Neeta_Thrissur", "Babu_Nair",
+    "Jitin_Tvm", "Varun_Varghese", "Sabu_Kochi", "Pranav_Pillai", "Pooja_Tvm",
+    "Tinu_Varghese", "Sagar_Kochi", "Abhi_Nair", "Achu_Tvm", "Gokul_Varghese",
+    "Kavya_Kochi", "Monu_Nair", "Nithin_Tvm", "Rahul_Varghese", "Ammu_Kochi",
+    "Faisal_Nair", "Sunil_Tvm", "Rinu_Varghese", "Umesh_Kochi", "Isha_Nair",
+    "Appu_Tvm", "Tarun_Varghese", "Manoj_Kochi", "Chinu_Nair", "Ashok_Tvm",
+    "Kalesh_Varghese", "Prakash_Kochi", "Salim_Tvm", "Geetha_Nair", "Biju_Varghese",
+    "Maya_Kochi", "Soniya_Tvm", "Deepu_Varghese", "Sree_Kochi", "Hari_Nair",
+    "Vijay_Tvm", "Madhu_Varghese", "Indu_Kochi", "Sami_Nair", "Lijo_Tvm",
+    "Anil_Varghese", "Renu_Kochi", "Dinesh_Nair", "Saji_Tvm", "Binu_Varghese",
+    "Joy_Kochi", "Sibi_Nair", "Raji_Tvm", "Aji_Varghese", "Vysakh_Kochi",
+    "Midhun_Nair", "Rahul_Tvm", "Shaji_Varghese", "Nisha_Kochi", "Tessa_Nair",
+    "Jinto_Tvm", "Libin_Varghese", "Dona_Kochi", "Kevin_Nair", "Riya_Tvm",
+    "Sana_Varghese", "Zayan_Kochi", "Omar_Nair", "Farah_Tvm", "Esha_Varghese"
+]
+
+COMMENT_PROMPT = """You are a regular person reading a news article. 
+Your task is to generate 1 to 3 short, realistic comments based on the article provided. 
+
+Rules:
+1. TONE: Natural, conversational, "common man" style.
+2. LANGUAGE: Mix of Malayalam and English. Some comments can be purely English (e.g., "Good work", "Wow!"), some purely Malayalam, and some a mix of both (Manglish).
+3. VARIETY: Vary the lengths. Some should be just 1 word (e.g., "Super", "True"), some 1-line reactions, and some a short sentence.
+4. FORMAT: Return a valid JSON list of objects.
+   Each object must have:
+   - "text": The comment text.
+   - "is_reply": Boolean, true if this is a reply to another comment in this list.
+   - "reply_index": If is_reply is true, the 0-based index of the parent comment in this list. Otherwise null.
+
+Article Title: {title}
+Article Summary: {summary}
+"""
+
+def generate_bogus_comments(title, summary):
+    """Generate 1-3 AI comments for an article with 10% skip probability."""
+    # 10% chance to skip comments entirely for organic feel
+    if random.random() < 0.10:
+        return []
+
+    prompt = COMMENT_PROMPT.format(title=title, summary=summary)
+    
+    for provider_name, provider_fn in PROVIDERS:
+        content = provider_fn(prompt)
+        if content:
+            try:
+                comments = json.loads(content)
+                if not isinstance(comments, list):
+                    continue
+                
+                final_comments = []
+                # Pick unique random usernames
+                usernames = random.sample(BOGUS_USERNAMES, min(len(comments), len(BOGUS_USERNAMES)))
+                
+                for i, c in enumerate(comments[:3]):
+                    final_comments.append({
+                        "username": usernames[i],
+                        "text": str(c.get("text", "")).strip(),
+                        "is_reply": c.get("is_reply", False),
+                        "reply_index": c.get("reply_index")
+                    })
+                
+                return final_comments
+            except Exception:
+                continue
+    return []
+
+
+def summarize_article(article):
+    """
+    Generate a Malayalam summary, rewritten title, tags, and bogus comments using AI.
+    Returns (rewritten_title, summary_string, list_of_tags, faq_list, bogus_comments) or None.
+    """
+    title = article.get("title", "")
+    description = article.get("description", "")
+
+    if not description:
+        description = title
+
+    prompt = SUMMARIZE_PROMPT.format(
+        title=title,
+        description=description[:3000]
+    )
+
+    for provider_name, provider_fn in PROVIDERS:
+        content = provider_fn(prompt)
+        if content:
+            try:
+                parsed = json.loads(content)
+                summary = str(parsed.get("summary", "")).strip()
+                new_title = str(parsed.get("title", "")).strip()
+                if not new_title:
+                    new_title = truncate_title(title, 10)
+                
+                tags = [str(t).strip() for t in parsed.get("keywords", []) if str(t).strip()]
+                
+                # Mandatory "Movies" tag logic
+                content_to_check = (title + " " + summary).lower()
+                cinema_keywords = ['cinema', 'film', 'movie', 'actor', 'actress', 'director', 'mollywood', 'bollywood', 'സിനിമ', 'ചിത്രം', 'നടൻ', 'നടി', 'സംവിധായകൻ']
+                is_cinema = any(kw in content_to_check for kw in cinema_keywords)
+                
+                if is_cinema and 'Movies' not in [t.capitalize() for t in tags]:
+                    tags.insert(0, 'Movies')
+
+                tags = [t for t in tags if len(t) < 20][:5]
+                
+                raw_faq = parsed.get("faq", [])
+                faq = []
+                if isinstance(raw_faq, list):
+                    for item in raw_faq[:5]:
+                        if isinstance(item, dict) and item.get("q") and item.get("a"):
+                            faq.append({"q": str(item["q"]).strip(), "a": str(item["a"]).strip()})
+
+                if summary and len(summary) > 50:
+                    logger.info(f"  ✅ Summarized: {new_title[:50]}...")
+                    
+                    # Generate bogus comments as well
+                    bogus_comments = generate_bogus_comments(new_title, summary)
+                    
+                    return new_title, summary, tags, faq, bogus_comments
+            except Exception as e:
+                logger.warning(f"  ⚠️ Error parsing AI response: {e}")
+                continue
+
+    return None
+
+
 def summarize_batch(articles, delay_seconds=15):
     """
     Summarize a list of articles. Returns only the successfully summarized ones.
     """
-    logger.info(f"🤖 Summarizing {len(articles)} articles with AI (Mistral → Groq cascade)...")
+    logger.info(f"🤖 Summarizing {len(articles)} articles with AI (Gemini → Mistral cascade)...")
 
     valid_articles = []
     for i, article in enumerate(articles):
@@ -171,11 +372,12 @@ def summarize_batch(articles, delay_seconds=15):
 
         result = summarize_article(article)
         if result:
-            new_title, summary, tags, faq = result
+            new_title, summary, tags, faq, bogus_comments = result
             article["title"] = new_title
             article["summary"] = summary
             article["tags"] = tags
             article["faq"] = faq
+            article["bogus_comments"] = bogus_comments
             valid_articles.append(article)
         else:
             logger.warning(f"  ⚠️ Dropping article '{article['title'][:40]}' due to summarization failure.")

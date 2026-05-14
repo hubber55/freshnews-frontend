@@ -3,6 +3,7 @@ import './globals.css';
 import AuthHashHandler from './components/AuthHashHandler';
 import SlowNetworkBanner from './components/SlowNetworkBanner';
 import BottomNav from './components/BottomNav';
+import NotificationManager from './components/NotificationManager';
 import { createAdminClient } from '@/lib/supabase-admin';
 import Script from 'next/script';
 
@@ -64,6 +65,20 @@ export const metadata: Metadata = {
       },
     ],
   },
+  openGraph: {
+    type: 'website',
+    url: 'https://freshnews.top',
+    title: 'FreshNews.top',
+    description: 'Latest News- Also Submit your News/ Classifieds for free',
+    images: [
+      {
+        url: '/og_image.png',
+        width: 1200,
+        height: 630,
+        alt: 'FreshNews.top',
+      },
+    ],
+  },
 };
 
 type HeaderInsert = {
@@ -115,6 +130,8 @@ function extractScripts(html: string) {
   remainderParts.push(html.slice(lastIndex));
   return { scripts, remainder: remainderParts.join('').trim() };
 }
+
+import { AuthProvider } from './components/AuthProvider';
 
 export default async function RootLayout({
   children,
@@ -236,10 +253,13 @@ export default async function RootLayout({
         {bodyHtml ? (
           <div aria-hidden="true" className="hidden" dangerouslySetInnerHTML={{ __html: bodyHtml }} />
         ) : null}
-        <AuthHashHandler />
-        <SlowNetworkBanner />
-        {children}
-        <BottomNav />
+        <AuthProvider>
+          <AuthHashHandler />
+          <SlowNetworkBanner />
+          {children}
+          <BottomNav />
+          <NotificationManager />
+        </AuthProvider>
       </body>
     </html>
   );

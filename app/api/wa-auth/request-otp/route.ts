@@ -43,48 +43,30 @@ async function sendOtpViaEvolution(receiverDigits: string, otp: string) {
 
   const json = await res.json().catch(() => null);
   if (!res.ok) {
-    throw new Error(`Evolution API send failed: ${res.status} ${JSON.stringify(json)}`);
+    console.error('Evolution API send failed:', res.status, json);
+    throw new Error('Check your Country Code and WhatsApp number');
   }
 }
 
 export async function POST(req: Request) {
   try {
-    const { name, whatsappNumber } = (await req.json()) as { name?: string; whatsappNumber?: string };
+    const { whatsappNumber } = (await req.json()) as { whatsappNumber?: string };
     const digits = normalizeWhatsAppNumber(whatsappNumber || '');
     if (!digits) {
       return NextResponse.json({ ok: false, error: 'Invalid WhatsApp number' }, { status: 400 });
     }
     
-    // Validate name length (max 15 characters)
-    if (name && name.length > 15) {
-      return NextResponse.json({ ok: false, error: 'Name must be 15 characters or less' }, { status: 400 });
-    }
-
-    // Initialize Supabase client early for user lookup
+    // Initialize Supabase client
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
     const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
     const { createClient } = await import('@supabase/supabase-js');
     const supabase = createClient(supabaseUrl, key);
 
-    // Check if user already exists (for signup flow - when name is provided)
-    if (name) {
-      const { data: existingUser } = await supabase
-        .from('wa_users')
-        .select('whatsapp_number')
-        .eq('whatsapp_number', digits)
-        .single();
-      
-      if (existingUser) {
-        return NextResponse.json({ ok: false, error: 'Already registered. Please login' }, { status: 400 });
-      }
-    }
-
-    const otp = String(Math.floor(100000 + Math.random() * 900000));
+    const otp = String(Math.floor(1000 + Math.random() * 9000));
     const otpHash = hashOtp(otp);
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
 
     await supabase.from('wa_otps').insert({
-      name: (name || '').slice(0, 15) || null,
       whatsapp_number: digits,
       otp_hash: otpHash,
       expires_at: expiresAt,

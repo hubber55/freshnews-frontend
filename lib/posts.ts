@@ -10,6 +10,9 @@ export type PostRecord = {
   is_deleted?: boolean;
   redirect_to?: string | null;
   faq?: Array<{ q: string; a: string }> | null;
+  is_locked?: boolean;
+  locked_position?: number | null;
+  locked_until?: string | null;
 };
 
 export function stripHtml(value: string | null | undefined) {
@@ -162,4 +165,18 @@ export function shortenTitle(value: string | null | undefined, maxLength = 95) {
   const shortened = lastSpace > 55 ? sliced.slice(0, lastSpace) : sliced;
 
   return `${shortened.trim()}...`;
+}
+
+export function formatSourceName(name: string | null | undefined): string {
+  if (!name) return 'FreshNews';
+  let formatted = name.replace(/Kerala Kaumudi Latest/gi, 'Kerala Kaumudi');
+  formatted = formatted.replace(/Oneindia Malayalam/gi, 'OneIndia');
+  return formatted.trim();
+}
+
+export function getFirstValidTag(tags: string[] | null | undefined, defaultTag: string): string {
+  if (!tags || tags.length === 0) return defaultTag;
+  const dateRegex = /\b\d{1,2}(st|nd|rd|th)?\s+(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\s+\d{2,4}\b/i;
+  const validTags = tags.filter(tag => !dateRegex.test(tag.trim()));
+  return validTags.length > 0 ? formatSourceName(validTags[0]) : defaultTag;
 }

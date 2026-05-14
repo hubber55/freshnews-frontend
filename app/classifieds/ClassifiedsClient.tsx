@@ -7,6 +7,8 @@ import { formatDistanceToNow } from 'date-fns';
 import { CalendarDays, Clock, MapPin, Megaphone, Home, Phone, Banknote } from 'lucide-react';
 import ImageGallery from '../components/ImageGallery';
 import ClassifiedsFilter from './ClassifiedsFilter';
+import ClassifiedsRefreshRedirect from '../components/ClassifiedsRefreshRedirect';
+import FeedReadAloud from '../components/FeedReadAloud';
 
 type ClassifiedSubmission = {
   id: number;
@@ -53,36 +55,55 @@ export default function ClassifiedsClient({
   }, [initialClassifieds, search, activeTag]);
 
   return (
-    <main className="mx-auto w-full max-w-[800px] px-5 py-6 sm:px-6">
-      {/* BREADCRUMBS */}
-      <div className="mb-6 flex items-center gap-2 text-[13px] text-[var(--text-muted)]" style={{ fontFamily: 'var(--font-en)' }}>
-        <Link href="/" className="flex items-center gap-1 text-[var(--text-secondary)] hover:text-[#ffd42a]">
-          <Home size={14} /> Home
-        </Link>
-        <span>-</span>
-        <span className="text-[var(--text-primary)] font-bold">Classifieds</span>
-        {activeTag && (
-          <>
-            <span>-</span>
-            <span className="capitalize text-[var(--accent)] font-bold">{activeTag.replace(/-/g, ' ')}</span>
-          </>
-        )}
-      </div>
-
-      <section className="mb-5 flex items-end justify-between gap-4 border-b border-[var(--border)] pb-3">
-        <div>
-          <div className="flex items-center gap-2 text-[15px] font-extrabold uppercase tracking-wide text-[var(--text-primary)]" style={{ fontFamily: 'var(--font-en)' }}>
-            <Megaphone size={18} className="text-[#ffd42a]" />
-            Classifieds
-          </div>
-          <div className="mt-1.5 h-[3px] w-10 rounded-full bg-[var(--accent)]" />
+    <main className="mx-auto w-full max-w-[1100px] px-5 py-6 sm:px-6">
+      <ClassifiedsRefreshRedirect />
+      {/* BREADCRUMBS & TOP ACTIONS */}
+      <div className="mb-6 flex items-center justify-between gap-4 border-b border-white/5 pb-4">
+        <div className="flex items-center gap-2 text-[13px] text-[var(--text-muted)]" style={{ fontFamily: 'var(--font-en)' }}>
+          <Link href="/" className="flex items-center gap-1 text-[var(--text-secondary)] hover:text-[#ffd42a]">
+            <Home size={14} /> Home
+          </Link>
+          <span>-</span>
+          <span className="text-[var(--text-primary)] font-bold">Classifieds</span>
+          {activeTag && (
+            <>
+              <span>-</span>
+              <span className="capitalize text-[var(--accent)] font-bold">{activeTag.replace(/-/g, ' ')}</span>
+            </>
+          )}
         </div>
+
         <Link 
           href="/submit?type=classified" 
-          className="inline-flex items-center rounded-lg border border-[#00ffff] bg-transparent px-4 py-2 text-[13px] font-black text-[#00ffff] hover:bg-[#00ffff]/10 transition-all shadow-[0_0_15px_rgba(0,255,255,0.1)] active:scale-95"
+          className="inline-flex items-center rounded-lg border border-[#00ffff] bg-transparent px-4 py-2 text-[12px] font-black text-[#00ffff] hover:bg-[#00ffff]/10 transition-all shadow-[0_0_15px_rgba(0,255,255,0.1)] active:scale-95"
         >
-          Submit Classifieds
+          Submit
         </Link>
+      </div>
+
+      <section className="mb-5 flex items-center justify-between gap-4 border-b border-[var(--border)] pb-3">
+        <div className="flex items-center gap-4 flex-1">
+          <div>
+            <div className="flex items-center gap-2 text-[15px] font-extrabold uppercase tracking-wide text-[var(--text-primary)]" style={{ fontFamily: 'var(--font-en)' }}>
+              <Megaphone size={18} className="text-[#ffd42a]" />
+              {activeTag ? `#${activeTag}` : 'Classifieds'}
+            </div>
+            <div className="mt-1.5 h-[3px] w-10 rounded-full bg-[var(--accent)]" />
+          </div>
+
+          {/* CLASSIFIEDS READ ALOUD */}
+          {filteredClassifieds.length > 0 && (
+            <FeedReadAloud 
+              tag={activeTag || 'Classifieds'} 
+              posts={filteredClassifieds.map(p => ({
+                id: p.id,
+                title: p.title,
+                summary: p.content || '',
+                published_at: p.created_at
+              }))} 
+            />
+          )}
+        </div>
       </section>
 
       {/* STICKY FILTER BAR */}

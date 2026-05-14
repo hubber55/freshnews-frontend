@@ -5,21 +5,12 @@ import { usePathname } from 'next/navigation';
 import { Home, Megaphone, PlusCircle, User } from 'lucide-react';
 import { useState, useEffect } from 'react';
 
+import { useAuth } from './AuthProvider';
+
 export default function BottomNav() {
   const pathname = usePathname();
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-
-  useEffect(() => {
-    // Check if user is logged in
-    fetch('/api/auth/me')
-      .then(res => res.json())
-      .then(data => {
-        setIsLoggedIn(!!data.name);
-      })
-      .catch(() => {
-        setIsLoggedIn(false);
-      });
-  }, [pathname]);
+  const { user } = useAuth();
+  const isLoggedIn = !!user;
 
   // Don't show bottom nav on admin pages or login/signup
   const hideOnPaths = ['/admin', '/login', '/signup'];

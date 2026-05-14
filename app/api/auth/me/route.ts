@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
-import { getCurrentUserName, getCurrentUser } from '@/lib/auth';
+import { getCurrentUser } from '@/lib/auth';
+
+export const runtime = 'edge';
 
 export async function GET() {
   try {
@@ -14,14 +16,37 @@ export async function GET() {
     const supabase = createClient(supabaseUrl, supabaseKey);
     
     // Fetch full user data from wa_users
-    const { data: dbUser, error: userError } = await supabase
+    let dbUser: {
+      name?: string | null;
+      username?: string | null;
+      nickname?: string | null;
+      email?: string | null;
+      whatsapp_number?: string | null;
+      username_edit_count?: number | null;
+      nickname_edit_count?: number | null;
+      email_edit_count?: number | null;
+    } | null = null;
+
+    const newSchemaResult = await supabase
       .from('wa_users')
-      .select('name, nickname, email, whatsapp_number, nickname_edit_count, email_edit_count')
+      .select('name, username, email, whatsapp_number, username_edit_count, email_edit_count')
       .eq('id', user.id)
       .single();
-      
-    if (userError) {
-      console.error('Error fetching user:', userError);
+
+    if (newSchemaResult.error) {
+      const legacyResult = await supabase
+        .from('wa_users')
+        .select('name, nickname, email, whatsapp_number, nickname_edit_count, email_edit_count')
+        .eq('id', user.id)
+        .single();
+
+      if (legacyResult.error) {
+        console.error('Error fetching user:', newSchemaResult.error, legacyResult.error);
+      } else {
+        dbUser = legacyResult.data;
+      }
+    } else {
+      dbUser = newSchemaResult.data;
     }
     
     // Check if user is admin
@@ -34,11 +59,12 @@ export async function GET() {
     const isAdmin = adminSettings?.value && user.whatsapp_number === adminSettings.value;
     
     return NextResponse.json({ 
+      id: user.id,
       name: dbUser?.name || 'User',
-      nickname: dbUser?.nickname || '',
+      username: dbUser?.username || dbUser?.nickname || dbUser?.name || '',
       email: dbUser?.email || '',
       whatsappNumber: dbUser?.whatsapp_number || user.whatsapp_number,
-      nicknameEditCount: dbUser?.nickname_edit_count || 0,
+      usernameEditCount: dbUser?.username_edit_count ?? dbUser?.nickname_edit_count ?? 0,
       emailEditCount: dbUser?.email_edit_count || 0,
       isAdmin 
     });

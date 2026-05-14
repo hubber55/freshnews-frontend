@@ -4,10 +4,10 @@ import { notFound, redirect } from 'next/navigation';
 import { Clock, ChevronLeft, ChevronRight, Home } from 'lucide-react';
 import { format } from 'date-fns';
 
-export const revalidate = 60; // ISR: Revalidate every 60 seconds
+export const revalidate = false; // ISR: Cache forever, rely on on-demand revalidation
 
 import { supabase } from '../../../lib/supabase';
-import { getSiteUrl, limitWords, splitParagraphs, stripHtml, type PostRecord } from '../../../lib/posts';
+import { getSiteUrl, limitWords, splitParagraphs, stripHtml, formatSourceName, type PostRecord } from '../../../lib/posts';
 import ShareButtons from './share-buttons';
 import Header from '../../components/header';
 import Footer from '../../components/footer';
@@ -15,6 +15,8 @@ import TagBadge from '../../components/tag-badge';
 import CommentsSection from '../../components/CommentsSection';
 import PostTracker from '../../components/PostTracker';
 import NetworkAd from '../../components/NetworkAd';
+import ReadAloud from '../../components/ReadAloud';
+import ArticleContent from './ArticleContent';
 import { createAdminClient } from '../../../lib/supabase-admin';
 
 type AdNetwork = {
@@ -131,13 +133,18 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       url: articleUrl,
       title: post.title,
       description: seoDescription,
-      images: post.image_url ? [{ url: post.image_url, alt: post.title }] : undefined,
+      images: [
+        {
+          url: post.image_url || '/og_image.png',
+          alt: post.title,
+        }
+      ],
     },
     twitter: {
       card: post.image_url ? 'summary_large_image' : 'summary',
       title: post.title,
       description: seoDescription,
-      images: post.image_url ? [post.image_url] : undefined,
+      images: [post.image_url || '/og_image.png'],
     },
   };
 }
@@ -240,7 +247,7 @@ export default async function PostPage({ params }: PageProps) {
     headline: post.title,
     image: post.image_url ? [post.image_url] : undefined,
     datePublished: post.published_at || undefined,
-    author: { '@type': 'Organization', name: post.source_name || 'FreshNews.top' },
+    author: { '@type': 'Organization', name: formatSourceName(post.source_name) || 'FreshNews.top' },
     publisher: {
       '@type': 'Organization',
       name: 'FreshNews.top',
@@ -287,89 +294,21 @@ export default async function PostPage({ params }: PageProps) {
                 ഹോം
               </Link>
               <span>›</span>
-              <span>{post.source_name}</span>
+              <span>{formatSourceName(post.source_name)}</span>
             </div>
 
-            {/* TITLE */}
-            <h1 className="post-title mb-5 text-[#00ffff]">
-              {post.title}
-            </h1>
-
-            {/* META */}
-            <div className="mb-6 flex flex-wrap items-center gap-4 border-t border-b border-[var(--border)] py-3 text-[12px] text-[var(--text-muted)]" style={{ fontFamily: 'var(--font-en)' }}>
-              {publishedDate && (
-                <span className="flex items-center gap-1">
-                  <Clock size={14} />
-                  {format(publishedDate, 'MMMM d, yyyy')}
-                </span>
-              )}
-              <span>{Math.max(1, Math.ceil(stripHtml(post.summary).split(' ').length / 220))} minute read</span>
-            </div>
-
-            {/* IMAGE */}
-            <div className="mb-8 w-full overflow-hidden rounded-xl space-y-4">
-              {post.image_url ? (
-                (post.image_url.startsWith('["') ? JSON.parse(post.image_url) : [post.image_url]).map((url: string, idx: number) => (
-                  <img
-                    key={idx}
-                    src={url}
-                    alt={`${post.title} - Image ${idx + 1}`}
-                    className="w-full max-h-[500px] object-cover object-center rounded-lg"
-                  />
-                ))
-              ) : (
-                <div className="flex h-48 w-full items-center justify-center bg-[#21262d] text-sm text-[var(--text-muted)]">
-                  No Image Available
-                </div>
-              )}
-            </div>
-
-            {/* ARTICLE BODY */}
-            <div className="article-body text-[var(--text-primary)]">
-              {bodyItems.map((item, index) => {
-                if (item.isCredit) {
-                  const [prefix, ...nameParts] = item.text.split(':');
-                  const sourceName = nameParts.join(':').trim();
-                  
-                  return (
-                    <p
-                      key={`${post.id}-${index}`}
-                      className="text-[10px] italic opacity-70 mt-12 mb-6 leading-relaxed tracking-wide"
-                    >
-                      {prefix}: <span className="text-[#00ffff] font-medium">
-                        {post.original_url ? (
-                          <a 
-                            href={post.original_url} 
-                            target="_blank" 
-                            rel="nofollow" 
-                            className="hover:underline"
-                          >
-                            {sourceName || post.source_name}
-                          </a>
-                        ) : (
-                          sourceName || post.source_name
-                        )}
-                      </span>
-                    </p>
-                  );
-                }
-
-                return (
-                  <p
-                    key={`${post.id}-${index}`}
-                    className="mb-6 leading-loose"
-                  >
-                    {item.text}
-                  </p>
-                );
-              })}
-            </div>
+            {/* ARTICLE CONTENT (TITLE, READ ALOUD, BODY WITH HIGHLIGHTING) */}
+            <ArticleContent 
+              post={post} 
+              bodyItems={bodyItems} 
+              readingTime={`${Math.max(1, Math.ceil(stripHtml(post.summary).split(' ').length / 220))} minute read`}
+            />
 
             {/* TAGS – colorful */}
-            <div className="mt-10 flex flex-wrap items-center gap-3 border-t border-[var(--border)] pt-8">
+            <div className="relative z-10 mt-10 flex flex-wrap items-center gap-3 border-t border-[var(--border)] pt-8">
               <span className="text-[12px] font-bold text-white bg-gray-700 px-3 py-1.5 rounded-md" style={{ fontFamily: 'var(--font-en)' }}>Tags</span>
               {post.tags?.slice(0, 5).map((tag: string, i: number) => (
-                <TagBadge key={tag} tag={tag} withHash={false} index={i} />
+                <TagBadge key={tag} tag={formatSourceName(tag)} withHash={false} index={i} />
               ))}
             </div>
 
@@ -404,7 +343,7 @@ export default async function PostPage({ params }: PageProps) {
                         <span>{item.q}</span>
                         <span className="text-[var(--text-muted)] text-xs ml-2 group-open:rotate-180 transition-transform">▼</span>
                       </summary>
-                      <div className="px-4 pb-4 pt-1 text-[14px] leading-relaxed text-[var(--text-secondary)]">
+                      <div className="px-4 pb-4 pt-1 text-[14px] leading-relaxed text-white">
                         {item.a}
                       </div>
                     </details>
@@ -450,7 +389,7 @@ export default async function PostPage({ params }: PageProps) {
             {moreFromSource.length > 0 && (
               <div className="mt-10 border-t border-[var(--border)] pt-8">
                 <h2 className="text-lg font-bold text-[#ffd42a] mb-5" style={{ fontFamily: 'var(--font-en)' }}>
-                  {post.source_name}ൽ നിന്നുള്ള കൂടുതൽ വാർത്തകൾ
+                  {formatSourceName(post.source_name)}ൽ നിന്നുള്ള കൂടുതൽ വാർത്തകൾ
                 </h2>
                 <div className="space-y-4">
                   {moreFromSource.map((sp) => (

@@ -174,32 +174,22 @@ def run_rotation():
                 logger.warning("  Skipping article due to AI failure.")
                 continue
             
-            new_title, summary, keywords, faq = result
+            new_title, summary, keywords, faq, bogus_comments = result
+            best_article["bogus_comments"] = bogus_comments
             
             # Update title with rewritten version
             best_article["title"] = new_title
             
-            # Generate Date Tag (e.g. 13th April 26)
-            def get_day_suffix(n):
-                if 11 <= n <= 13: return "th"
-                return {1: "st", 2: "nd", 3: "rd"}.get(n % 10, "th")
-            
-            now_ist = datetime.now(IST)
-            day = now_ist.day
-            date_tag = now_ist.strftime(f"{day}{get_day_suffix(day)} %B %y")
-            
-            # Final Tag List: Date (1) + Content (3). 
+            # Final Tag List: 4 AI Keywords. 
             # (Note: Supabase publisher automatically adds Source Name as the 1st tag)
             
-            # Ensure we have exactly 3 keywords to hit the 5-tag total
-            ai_keywords = keywords[:3]
-            while len(ai_keywords) < 3:
-                ai_keywords.append(["Trending", "News", "Update"][len(ai_keywords)])
-            
-            final_tags = [date_tag] + ai_keywords
+            # Ensure we have exactly 4 keywords to hit the 5-tag total
+            ai_keywords = keywords[:4]
+            while len(ai_keywords) < 4:
+                ai_keywords.append(["Trending", "News", "Update", "Flash"][len(ai_keywords)])
             
             best_article["summary"] = summary + f"\n\nPhoto and News Source: {best_article['source_name']}"
-            best_article["tags"] = final_tags
+            best_article["tags"] = ai_keywords
             best_article["faq"] = faq
             
             # D. Publish directly to Supabase Postgre DB!
@@ -213,6 +203,9 @@ def run_rotation():
                 recent_sources.append(base_source)
                 if len(recent_sources) > 3:
                     recent_sources.pop(0)
+            else:
+                # If publishing failed (e.g. duplicate blocked by DB), skip delay and go to next source
+                continue
                 
         except Exception as e:
              logger.error(f"  Article Pipeline failed: {e}")
