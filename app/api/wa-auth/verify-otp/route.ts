@@ -1,22 +1,41 @@
 export const runtime = 'edge';
 import { NextResponse } from 'next/server';
-import crypto from 'crypto';
-
 function normalizeWhatsAppNumber(input: string) {
   const digits = (input || '').replace(/[^\d]/g, '');
   if (digits.length < 10) return null;
   return digits;
 }
 
-function hashOtp(otp: string) {
-  return crypto.createHash('sha256').update(otp).digest('hex');
+async function hashOtp(otp: string) {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(otp);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
-function signToken(payload: object, secret: string) {
-  const header = Buffer.from(JSON.stringify({ alg: 'HS256', typ: 'JWT' })).toString('base64url');
-  const body = Buffer.from(JSON.stringify(payload)).toString('base64url');
+function base64url(str: string) {
+  return btoa(str).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
+}
+
+async function signToken(payload: object, secret: string) {
+  const encoder = new TextEncoder();
+  const header = base64url(JSON.stringify({ alg: 'HS256', typ: 'JWT' }));
+  const body = base64url(JSON.stringify(payload));
   const data = `${header}.${body}`;
-  const sig = crypto.createHmac('sha256', secret).update(data).digest('base64url');
+  
+  const key = await crypto.subtle.importKey(
+    'raw',
+    encoder.encode(secret),
+    { name: 'HMAC', hash: 'SHA-256' },
+    false,
+    ['sign']
+  );
+  
+  const sigBuffer = await crypto.subtle.sign('HMAC', key, encoder.encode(data));
+  const sigArray = Array.from(new Uint8Array(sigBuffer));
+  const sig = btoa(String.fromCharCode(...sigArray)).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
+  
   return `${data}.${sig}`;
 }
 
@@ -37,7 +56,7 @@ export async function POST(req: Request) {
     const { createClient } = await import('@supabase/supabase-js');
     const supabase = createClient(supabaseUrl, key);
 
-    const otpHash = hashOtp(otpStr);
+    const otpHash = await hashOtp(otpStr);
     const nowIso = new Date().toISOString();
 
     // Find latest unconsumed OTP for this number
@@ -107,7 +126,7 @@ export async function POST(req: Request) {
       return NextResponse.json({ ok: false, error: 'Missing WA_AUTH_SECRET' }, { status: 500 });
     }
 
-    const token = signToken(
+    const token = await signToken(
       { sub: userId, wa: digits, iat: Math.floor(Date.now() / 1000) },
       secret
     );

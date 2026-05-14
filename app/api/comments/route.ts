@@ -3,7 +3,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
 
-export const runtime = 'edge';
 
 function countWords(text: string) {
   const trimmed = text.trim();

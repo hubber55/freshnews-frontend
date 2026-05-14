@@ -3,7 +3,6 @@ import { NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
 import { createClient } from '@supabase/supabase-js';
 
-export const runtime = 'edge';
 
 export async function POST(req: Request) {
   try {

@@ -1,10 +1,15 @@
 export const runtime = 'edge';
 import { NextResponse } from 'next/server';
-import crypto from 'crypto';
+async function hashOtp(otp: string) {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(otp);
+  const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
 
 function normalizeWhatsAppNumber(input: string) {
   const digits = (input || '').replace(/[^\d]/g, '');
-  // Basic: require country code + number, min 10 digits
   if (digits.length < 10) return null;
   return digits;
 }
@@ -13,10 +18,6 @@ function maskNumber(digits: string) {
   if (digits.length <= 4) return 'xxxx';
   const last4 = digits.slice(-4);
   return `${'x'.repeat(Math.max(0, digits.length - 4))}${last4}`;
-}
-
-function hashOtp(otp: string) {
-  return crypto.createHash('sha256').update(otp).digest('hex');
 }
 
 async function sendOtpViaEvolution(receiverDigits: string, otp: string) {
@@ -64,7 +65,7 @@ export async function POST(req: Request) {
     const supabase = createClient(supabaseUrl, key);
 
     const otp = String(Math.floor(1000 + Math.random() * 9000));
-    const otpHash = hashOtp(otp);
+    const otpHash = await hashOtp(otp);
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
 
     await supabase.from('wa_otps').insert({
