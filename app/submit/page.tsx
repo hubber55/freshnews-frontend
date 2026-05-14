@@ -1,5 +1,5 @@
-export const runtime = 'edge';
 'use client';
+export const runtime = 'edge';
 // BUILD_VERSION: 20250427 - 500 words limit
 
 import { useState, useEffect, useCallback, Suspense } from 'react';
