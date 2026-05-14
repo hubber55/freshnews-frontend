@@ -1,3 +1,4 @@
+// Deployment Trigger: Updated output directory to .vercel/output/static
 import type { Metadata } from 'next';
 import './globals.css';
 import AuthHashHandler from './components/AuthHashHandler';
