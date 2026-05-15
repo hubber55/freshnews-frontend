@@ -1,5 +1,4 @@
 'use client';
-export const runtime = 'edge';
 
 import { useState, useEffect } from 'react';
 import { ChevronLeft, Settings, Save, Info, Image } from 'lucide-react';

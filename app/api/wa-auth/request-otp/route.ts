@@ -1,4 +1,3 @@
-export const runtime = 'edge';
 import { NextResponse } from 'next/server';
 async function hashOtp(otp: string) {
   const encoder = new TextEncoder();

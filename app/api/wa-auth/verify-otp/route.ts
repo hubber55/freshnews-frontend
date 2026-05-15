@@ -1,4 +1,3 @@
-export const runtime = 'edge';
 import { NextResponse } from 'next/server';
 function normalizeWhatsAppNumber(input: string) {
   const digits = (input || '').replace(/[^\d]/g, '');
