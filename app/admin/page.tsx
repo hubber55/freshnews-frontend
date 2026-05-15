@@ -6,7 +6,7 @@ import {
   FileText, Tag, Settings, HelpCircle, 
   Clock, Users, Megaphone, Calendar, 
   ChevronRight, AlertCircle, TrendingUp,
-  MessageCircle, Bell, IndianRupee
+  MessageCircle, MessageSquare, Bell, IndianRupee
 } from 'lucide-react';
 
 export default function AdminDashboardPage() {
