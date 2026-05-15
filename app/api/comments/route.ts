@@ -1,3 +1,4 @@
+process.env.TZ = 'Asia/Kolkata';
 import { NextRequest, NextResponse } from 'next/server';
 import { getCurrentUser } from '@/lib/auth';
 import { supabase } from '@/lib/supabase';
@@ -74,10 +75,13 @@ export async function POST(req: NextRequest) {
     const { postId, content } = await req.json();
     const trimmedContent = String(content || '').trim();
     const words = countWords(trimmedContent);
+
+    // 1. Basic validation
     if (!postId || !trimmedContent || trimmedContent.length > 500 || words > 100) {
       return NextResponse.json({ ok: false, error: 'Invalid input' }, { status: 400 });
     }
 
+    // Check if user is blocked
     const { data: userData } = await supabase
       .from('wa_users')
       .select('is_blocked')
@@ -85,15 +89,67 @@ export async function POST(req: NextRequest) {
       .single();
 
     if (userData?.is_blocked) {
-      return NextResponse.json(
-        {
-          ok: false,
-          error: 'Your commenting privileges have been suspended. Please contact support.',
-        },
-        { status: 403 }
-      );
+      return NextResponse.json({ ok: false, error: 'Your privileges are suspended.' }, { status: 403 });
     }
 
+    // 2. Check for 3-minute cooldown
+    const { data: lastComment } = await supabase
+      .from('comments')
+      .select('created_at')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single();
+
+    if (lastComment) {
+      const waitTime = 3 * 60 * 1000; // 3 minutes
+      const diff = Date.now() - new Date(lastComment.created_at).getTime();
+      if (diff < waitTime) {
+        const remaining = Math.ceil((waitTime - diff) / 1000);
+        return NextResponse.json({ 
+          ok: false, 
+          error: `Slow down! Please wait ${Math.floor(remaining / 60)}m ${remaining % 60}s before posting again.` 
+        }, { status: 429 });
+      }
+    }
+
+    // 3. Check for exact duplicate on any post
+    const { count: dupCount } = await supabase
+      .from('comments')
+      .select('*', { count: 'exact', head: true })
+      .eq('content', trimmedContent)
+      .limit(1);
+
+    if (dupCount && dupCount > 0) {
+      return NextResponse.json({ ok: false, error: 'You have already posted this comment elsewhere.' }, { status: 400 });
+    }
+
+    // 4. Check for violation attempts limit
+    const { data: violationData } = await supabase
+      .from('comment_violations')
+      .select('attempts')
+      .eq('user_id', user.id)
+      .eq('post_id', postId)
+      .single();
+
+    const attempts = violationData?.attempts || 0;
+    if (attempts >= 3) {
+      return NextResponse.json({ ok: false, error: 'You have exceeded the comment attempts for this post.' }, { status: 403 });
+    }
+
+    // 5. Fast Link Check
+    const linkRegex = /(https?:\/\/[^\s]+)|(www\.[^\s]+)|(\.[a-z]{2,}\/)/i;
+    if (linkRegex.test(trimmedContent)) {
+      return await handleViolation(user.id, postId, attempts, 'external link');
+    }
+
+    // 6. Mistral AI Moderation
+    const mistralReason = await scanWithMistral(trimmedContent);
+    if (mistralReason !== 'OK') {
+      return await handleViolation(user.id, postId, attempts, mistralReason);
+    }
+
+    // 7. Insert the comment
     const { data, error } = await supabase
       .from('comments')
       .insert({
@@ -105,32 +161,82 @@ export async function POST(req: NextRequest) {
       .select('id, content, created_at, wa_users(name)')
       .single();
 
-    if (error) {
-      return NextResponse.json({ ok: false, error: 'Failed to post comment' }, { status: 500 });
-    }
-
-    const postUrl = `${req.nextUrl.origin}/posts/${postId}`;
-
-    try {
-      await fetch(process.env.WHATSAPP_WEBHOOK_URL || 'https://example.com/whatsapp', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({
-          to: '917907005054',
-          message: `New comment posted. Please moderate.\nPost: ${postUrl}\nComment: ${trimmedContent}`,
-        }),
-      });
-    } catch {
-      // Ignore WhatsApp send failure
-    }
+    if (error) throw error;
 
     return NextResponse.json({
       ok: true,
       comment: data,
-      message: 'Comments will be moderated and published soon',
+      message: 'Comment submitted! It will appear after moderation.',
     });
-  } catch {
+  } catch (err: any) {
+    console.error('Comment error:', err);
     return NextResponse.json({ ok: false, error: 'Server error' }, { status: 500 });
   }
 }
+
+async function handleViolation(userId: number, postId: number, currentAttempts: number, reason: string) {
+  const newAttempts = currentAttempts + 1;
+  await supabase
+    .from('comment_violations')
+    .upsert({ 
+      user_id: userId, 
+      post_id: postId, 
+      attempts: newAttempts,
+      last_attempt_at: new Date().toISOString()
+    });
+
+  const remaining = 3 - newAttempts;
+  return NextResponse.json({ 
+    ok: false, 
+    error: `Please re-edit. Your comment contains ${reason}. (${remaining} attempts left)`,
+    remainingAttempts: remaining
+  }, { status: 400 });
+}
+
+async function scanWithMistral(text: string): Promise<string> {
+  const apiKey = process.env.MISTRAL_API_KEY;
+  if (!apiKey) return 'OK'; // Fallback if no key
+
+  try {
+    const prompt = `You are a strict comment moderator for a Malayalam news site. 
+Analyze the following comment. 
+RULES:
+1. ONLY allow English, Malayalam, or Manglish (Malayalam in English script).
+2. REJECT gibberish, nonsense words, or random character strings.
+3. REJECT hate speech, vulgarity, obscenity, spam, or product promotions.
+4. If OK, respond ONLY with "OK".
+5. If it contains hate speech, respond ONLY with "hate speech".
+6. If it is obscene/vulgar, respond ONLY with "obscene content".
+7. If it is spam/promotion, respond ONLY with "spam".
+8. If it is gibberish or not English/Malayalam, respond ONLY with "nonsensical content".
+
+Comment: "${text}"`;
+
+    const res = await fetch('https://api.mistral.ai/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${apiKey}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: 'mistral-tiny',
+        messages: [{ role: 'user', content: prompt }],
+        temperature: 0
+      })
+    });
+
+    const data = await res.json();
+    const result = data.choices[0].message.content.trim().toLowerCase();
+    
+    if (result.includes('ok')) return 'OK';
+    if (result.includes('hate')) return 'hate speech';
+    if (result.includes('obscene')) return 'obscene content';
+    if (result.includes('spam')) return 'spam';
+    return 'nonsensical content';
+  } catch (e) {
+    console.error('Mistral scan error:', e);
+    return 'OK';
+  }
+}
+
 

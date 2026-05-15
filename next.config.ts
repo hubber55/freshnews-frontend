@@ -1,3 +1,4 @@
+process.env.TZ = 'Asia/Kolkata';
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
