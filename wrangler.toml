@@ -1,7 +1,32 @@
-name = "freshnews"
+name = "freshnews-frontend"
 compatibility_date = "2025-04-01"
 compatibility_flags = ["nodejs_compat"]
-pages_build_output_dir = ".open-next/assets"
+pages_build_output_dir = ".open-next"
+
+[observability]
+enabled = true
+
+# Durable Objects for ISR caching/revalidation
+[[durable_objects.bindings]]
+name = "NEXT_CACHE_DO_QUEUE"
+class_name = "DOQueueHandler"
+
+[[durable_objects.bindings]]
+name = "NEXT_CACHE_DO_TAG"
+class_name = "DOShardedTagCache"
+
+[[durable_objects.bindings]]
+name = "NEXT_CACHE_DO_PURGE"
+class_name = "BucketCachePurge"
+
+[[migrations]]
+tag = "v1"
+new_classes = ["DOQueueHandler", "DOShardedTagCache", "BucketCachePurge"]
+
+# Self-reference for ISR revalidation
+[[services]]
+binding = "WORKER_SELF_REFERENCE"
+service = "freshnews-frontend"
 
 [vars]
 NEXT_PUBLIC_SUPABASE_URL = "https://luvdgrpykesexfuqgvvt.supabase.co"
