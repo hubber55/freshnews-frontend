@@ -6,11 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint",
-    "build-cf": "npx @opennextjs/cloudflare build",
-    "pages-build": "npx @opennextjs/cloudflare build && mv .open-next/worker.js .open-next/_worker.js",
-    "preview-cf": "npx @opennextjs/cloudflare preview",
-    "deploy-cf": "npx @opennextjs/cloudflare deploy"
+    "lint": "eslint"
   },
   "dependencies": {
     "@supabase/ssr": "^0.10.2",
@@ -36,10 +32,6 @@
     "package-manager-manager": "^0.2.0",
     "tailwindcss": "^4",
     "typescript": "^5",
-    "vercel": "^52.0.0",
-    "wrangler": "^4.91.0"
-  },
-  "overrides": {
-    "picomatch": "4.0.4"
+    "vercel": "^52.0.0"
   }
 }
