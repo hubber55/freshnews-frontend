@@ -133,7 +133,7 @@ export async function POST(req: NextRequest) {
       .single();
 
     const attempts = violationData?.attempts || 0;
-    if (attempts >= 3) {
+    if (attempts >= 5) {
       return NextResponse.json({ ok: false, error: 'You have exceeded the comment attempts for this post.' }, { status: 403 });
     }
 
@@ -143,11 +143,17 @@ export async function POST(req: NextRequest) {
       return await handleViolation(user.id, postId, attempts, 'external link');
     }
 
-    // 6. Mistral AI Moderation
-    const mistralReason = await scanWithMistral(trimmedContent);
-    if (mistralReason !== 'OK') {
-      return await handleViolation(user.id, postId, attempts, mistralReason);
+    // 6. Mistral AI Moderation & Auto-Correction
+    const scanResult = await scanWithMistral(trimmedContent);
+    
+    if (scanResult.startsWith('REJECT:')) {
+      const reason = scanResult.split('REJECT:')[1];
+      return await handleViolation(user.id, postId, attempts, reason);
     }
+
+    const finalContent = scanResult.startsWith('SAFE:') 
+      ? scanResult.split('SAFE:')[1].trim() 
+      : trimmedContent;
 
     // 7. Insert the comment
     const { data, error } = await supabase
@@ -155,7 +161,7 @@ export async function POST(req: NextRequest) {
       .insert({
         post_id: postId,
         user_id: user.id,
-        content: trimmedContent,
+        content: finalContent,
         is_approved: false
       })
       .select('id, content, created_at, wa_users(name)')
@@ -185,7 +191,7 @@ async function handleViolation(userId: number, postId: number, currentAttempts: 
       last_attempt_at: new Date().toISOString()
     });
 
-  const remaining = 3 - newAttempts;
+  const remaining = Math.max(0, 5 - newAttempts);
   return NextResponse.json({ 
     ok: false, 
     error: `Please re-edit. Your comment contains ${reason}. (${remaining} attempts left)`,
@@ -195,20 +201,19 @@ async function handleViolation(userId: number, postId: number, currentAttempts: 
 
 async function scanWithMistral(text: string): Promise<string> {
   const apiKey = process.env.MISTRAL_API_KEY;
-  if (!apiKey) return 'OK'; // Fallback if no key
+  if (!apiKey) return 'SAFE:' + text; 
 
   try {
-    const prompt = `You are a strict comment moderator for a Malayalam news site. 
-Analyze the following comment. 
+    const prompt = `You are a lenient and helpful comment moderator.
+Analyze this comment for a news site.
+
 RULES:
-1. ONLY allow English, Malayalam, or Manglish (Malayalam in English script).
-2. REJECT gibberish, nonsense words, or random character strings.
-3. REJECT hate speech, vulgarity, obscenity, spam, or product promotions.
-4. If OK, respond ONLY with "OK".
-5. If it contains hate speech, respond ONLY with "hate speech".
-6. If it is obscene/vulgar, respond ONLY with "obscene content".
-7. If it is spam/promotion, respond ONLY with "spam".
-8. If it is gibberish or not English/Malayalam, respond ONLY with "nonsensical content".
+1. If the comment is safe and in English, Malayalam, or Manglish:
+   - Fix any minor spelling or grammar mistakes.
+   - Respond ONLY with "SAFE:" followed by the corrected version.
+2. If the comment is definitely HATE SPEECH, OBSCENE, SPAM, or TOTAL GIBBERISH (random letters like "asdfgh"):
+   - Respond with "REJECT:reason" (choose one: "hate speech", "obscene content", "spam", "nonsensical content").
+3. Be friendly and allow informal conversation.
 
 Comment: "${text}"`;
 
@@ -221,22 +226,22 @@ Comment: "${text}"`;
       body: JSON.stringify({
         model: 'mistral-tiny',
         messages: [{ role: 'user', content: prompt }],
-        temperature: 0
+        temperature: 0.1
       })
     });
 
     const data = await res.json();
-    const result = data.choices[0].message.content.trim().toLowerCase();
+    const result = data.choices[0].message.content.trim();
     
-    if (result.includes('ok')) return 'OK';
-    if (result.includes('hate')) return 'hate speech';
-    if (result.includes('obscene')) return 'obscene content';
-    if (result.includes('spam')) return 'spam';
-    return 'nonsensical content';
+    if (result.toUpperCase().startsWith('SAFE:')) return result;
+    if (result.toUpperCase().startsWith('REJECT:')) return result;
+    
+    return 'SAFE:' + text;
   } catch (e) {
     console.error('Mistral scan error:', e);
-    return 'OK';
+    return 'SAFE:' + text;
   }
 }
+
 
 
