@@ -15,7 +15,8 @@ export default function AdminDashboardPage() {
     endingPosts: 0,
     totalUsers: 0,
     pushSubscribers: 0,
-    pendingPayments: 0
+    pendingPayments: 0,
+    pendingComments: 0
   });
   const [loading, setLoading] = useState(true);
 
@@ -137,6 +138,15 @@ export default function AdminDashboardPage() {
       color: '#ffd42a',
       count: 0,
       urgent: false
+    },
+    {
+      title: 'Manage Comments',
+      desc: 'Moderate and approve user interactions.',
+      href: '/admin/comments',
+      icon: MessageSquare,
+      color: '#ff90e8',
+      count: stats.pendingComments,
+      urgent: stats.pendingComments > 0
     }
   ];
 

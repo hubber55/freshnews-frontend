@@ -155,7 +155,8 @@ def publish_via_supabase(article):
                 comment_data = {
                     "post_id": post_id,
                     "user_id": uid,
-                    "content": c['text']
+                    "content": c['text'],
+                    "is_approved": False
                 }
                 
                 # If we had parent_id support, we'd add it here

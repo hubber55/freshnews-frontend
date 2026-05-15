@@ -22,6 +22,7 @@ export async function GET(req: NextRequest) {
       .from('comments')
       .select('id, content, created_at, user_id, wa_users(name, username)')
       .eq('post_id', postId)
+      .eq('is_approved', true)
       .order('created_at', { ascending: false })
       .limit(50);
 
@@ -99,6 +100,7 @@ export async function POST(req: NextRequest) {
         post_id: postId,
         user_id: user.id,
         content: trimmedContent,
+        is_approved: false
       })
       .select('id, content, created_at, wa_users(name)')
       .single();

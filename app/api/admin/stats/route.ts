@@ -39,12 +39,19 @@ export async function GET() {
       .select('*', { count: 'exact', head: true })
       .eq('status', 'pending');
 
+    // Pending comments count
+    const { count: pendingComments } = await supabase
+      .from('comments')
+      .select('*', { count: 'exact', head: true })
+      .eq('is_approved', false);
+
     return NextResponse.json({
       pendingSubmissions: pendingSubmissions || 0,
       endingPosts: endingPosts || 0,
       totalUsers: totalUsers || 0,
       pushSubscribers: pushSubscribers || 0,
-      pendingPayments: pendingPayments || 0
+      pendingPayments: pendingPayments || 0,
+      pendingComments: pendingComments || 0
     });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
