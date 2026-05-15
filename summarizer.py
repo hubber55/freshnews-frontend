@@ -24,8 +24,8 @@ Your task is to REWRITE the following news article while ensuring ABSOLUTE accur
 
 Instructions:
 1. MEANINGFUL TITLE: Create a highly engaging, professional, and meaningful title in Malayalam that perfectly captures the essence of the news. IT MUST BE UNDER 12 WORDS.
-2. REWRITE THE CONTENT: Rephrase the article professionally in Malayalam. Target 250 to 500 words. Ensure the Malayalam is natural and fluent.
-3. ACCURACY & MEANING: DO NOT change the original meaning. Preservation of truth is the top priority.
+2. REWRITE THE CONTENT: Rephrase the article professionally in Malayalam. Target 250 to 500 words. Ensure the Malayalam is natural and fluent. DO NOT repeat words.
+3. ACCURACY & MEANING: DO NOT change the original meaning. NO HALLUCINATIONS. Do not generate fake words or endless repetitions (like "beniath").
 4. QUOTES: Keep direct quotes translated with zero change in essence.
 5. LANGUAGE RULES: Use Malayalam script. English is ONLY allowed for proper nouns.
 6. READABILITY & STRUCTURE: Use liberal paragraph breaks. Start a new paragraph every 4 to 6 lines (approx. 50-70 words) to ensure the article is easy to read on mobile devices. Use well-structured paragraphs with \n\n between them.
@@ -57,6 +57,18 @@ def truncate_title(title, max_words=10):
     if len(words) <= max_words:
         return title
     return " ".join(words[:max_words]) + "......"
+
+def clean_hallucinations(text):
+    """Remove repeating hallucinated words like 'beniath' from AI output."""
+    if not text:
+        return ""
+    # Remove the specific word that was hallucinated
+    cleaned = re.sub(r'\bbeniath\b', '', text, flags=re.IGNORECASE)
+    # Remove any word that repeats 4 or more times in a row
+    cleaned = re.sub(r'\b(\w+)(?:\s+\1){3,}\b', r'\1', cleaned, flags=re.IGNORECASE)
+    # Clean up extra spaces
+    cleaned = re.sub(r'\s{2,}', ' ', cleaned)
+    return cleaned.strip()
 
 
 def _call_mistral(prompt):
@@ -322,8 +334,8 @@ def summarize_article(article):
         if content:
             try:
                 parsed = json.loads(content)
-                summary = str(parsed.get("summary", "")).strip()
-                new_title = str(parsed.get("title", "")).strip()
+                summary = clean_hallucinations(str(parsed.get("summary", "")).strip())
+                new_title = clean_hallucinations(str(parsed.get("title", "")).strip())
                 if not new_title:
                     new_title = truncate_title(title, 10)
                 
