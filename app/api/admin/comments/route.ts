@@ -18,7 +18,7 @@ export async function GET(req: NextRequest) {
       query = query.eq('is_approved', true);
     }
 
-    const { data, error } = await query.limit(100).execute();
+    const { data, error } = await query.limit(100);
 
     if (error) throw error;
 
@@ -55,7 +55,7 @@ export async function DELETE(req: NextRequest) {
     if (!id) return NextResponse.json({ error: 'ID required' }, { status: 400 });
 
     const supabase = createAdminClient();
-    const { error } = await supabase.from('comments').delete().eq('id', id).execute();
+    const { error } = await supabase.from('comments').delete().eq('id', id);
 
     if (error) throw error;
 
