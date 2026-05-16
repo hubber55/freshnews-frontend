@@ -10,12 +10,21 @@ function countWords(text: string) {
   return trimmed.split(/\s+/).length;
 }
 
+const commentsCache = new Map<string, { data: any, timestamp: number }>();
+const CACHE_TTL = 30 * 1000; // 30 seconds
+
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const postId = searchParams.get('postId');
 
   if (!postId) {
     return NextResponse.json({ error: 'postId required' }, { status: 400 });
+  }
+
+  // Check cache
+  const cached = commentsCache.get(postId);
+  if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+    return NextResponse.json({ comments: cached.data });
   }
 
   try {
@@ -28,7 +37,10 @@ export async function GET(req: NextRequest) {
       .limit(50);
 
     const rawComments = data || [];
-    if (rawComments.length === 0) return NextResponse.json({ comments: [] });
+    if (rawComments.length === 0) {
+      commentsCache.set(postId, { data: [], timestamp: Date.now() });
+      return NextResponse.json({ comments: [] });
+    }
 
     const userIds = [...new Set(rawComments.map((c) => c.user_id).filter(Boolean))];
 
@@ -58,6 +70,7 @@ export async function GET(req: NextRequest) {
       };
     });
 
+    commentsCache.set(postId, { data: comments, timestamp: Date.now() });
     return NextResponse.json({ comments });
   } catch (error: unknown) {
     console.error('Fetch comments error:', error);
