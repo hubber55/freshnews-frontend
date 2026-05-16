@@ -74,7 +74,7 @@ export default function CommentsSection({ postId }: CommentsSectionProps) {
       <h3 className="text-xl font-bold text-white mb-4">
         {userName ? (
           <>
-            Post your comment <span className="text-[#ffd42a] text-[12px] font-normal">( Comments Moderated )</span>
+            Post your comment <span className="text-[#00cfff] text-[12px] font-normal">( AI Protected )</span>
           </>
         ) : (
           <>

@@ -162,7 +162,7 @@ export async function POST(req: NextRequest) {
         post_id: postId,
         user_id: user.id,
         content: finalContent,
-        is_approved: false
+        is_approved: true
       })
       .select('id, content, created_at, wa_users(name)')
       .single();
@@ -172,7 +172,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       ok: true,
       comment: data,
-      message: 'Comment submitted! It will appear after moderation.',
+      message: 'Comment posted successfully!',
     });
   } catch (err: any) {
     console.error('Comment error:', err);
