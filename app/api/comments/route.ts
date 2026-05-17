@@ -105,7 +105,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: false, error: 'Your privileges are suspended.' }, { status: 403 });
     }
 
-    // 2. Check for 3-minute cooldown
+    // 2. Check for 30-second cooldown
     const { data: lastComment } = await supabase
       .from('comments')
       .select('created_at')
@@ -115,13 +115,13 @@ export async function POST(req: NextRequest) {
       .single();
 
     if (lastComment) {
-      const waitTime = 3 * 60 * 1000; // 3 minutes
+      const waitTime = 30 * 1000; // 30 seconds
       const diff = Date.now() - new Date(lastComment.created_at).getTime();
       if (diff < waitTime) {
         const remaining = Math.ceil((waitTime - diff) / 1000);
         return NextResponse.json({ 
           ok: false, 
-          error: `Slow down! Please wait ${Math.floor(remaining / 60)}m ${remaining % 60}s before posting again.` 
+          error: `Slow down! Please wait ${remaining}s before posting again.` 
         }, { status: 429 });
       }
     }
@@ -217,16 +217,18 @@ async function scanWithMistral(text: string): Promise<string> {
   if (!apiKey) return 'SAFE:' + text; 
 
   try {
-    const prompt = `You are a lenient and helpful comment moderator.
-Analyze this comment for a news site.
+    const prompt = `You are an extremely lenient and permissive comment moderator.
+Analyze this comment for a news aggregator site.
 
 RULES:
-1. If the comment is safe and in English, Malayalam, or Manglish:
-   - Fix any minor spelling or grammar mistakes.
-   - Respond ONLY with "SAFE:" followed by the corrected version.
-2. If the comment is definitely HATE SPEECH, OBSCENE, SPAM, or TOTAL GIBBERISH (random letters like "asdfgh"):
-   - Respond with "REJECT:reason" (choose one: "hate speech", "obscene content", "spam", "nonsensical content").
-3. Be friendly and allow informal conversation.
+1. The moderation MUST BE VERY LIGHT.
+2. ALLOW casual abuse, insults, strong opinions, and words like "stupid", "pervert", "idiot", "fool", etc. These are perfectly fine and should be marked SAFE.
+3. ONLY disallow/reject comments that contain EXTREME hate speech (inciting violence, communal hatred), highly explicit sexual obscenity, severe pornography, automated spam, or completely meaningless gibberish (e.g., "asdfgh").
+4. If the comment is safe (almost always):
+   - Keep the original wording and spelling intact.
+   - Respond ONLY with "SAFE:" followed by the comment.
+5. If the comment is highly objectionable under the rules above:
+   - Respond with "REJECT:reason" (choose one: "extreme hate speech", "obscene content", "spam", "nonsensical content").
 
 Comment: "${text}"`;
 
