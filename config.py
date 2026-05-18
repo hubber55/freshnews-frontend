@@ -100,6 +100,13 @@ MALAYALAM_RSS_FEEDS = [
     
     # DriveSpark (moved to last since it's working)
     google_news_query_feed("DriveSpark", "DriveSpark Malayalam"),
+
+    # Newly Added News Sources
+    google_news_site_feed("Kalipanthu", "kalipanthu.com", "sports"),
+    google_news_site_feed("Express Kerala International", "expresskerala.com/news/international", "world"),
+    google_news_site_feed("Express Kerala Technology", "expresskerala.com/news/technology", "technology"),
+    google_news_site_feed("Express Kerala National", "expresskerala.com/news/national", "india"),
+    google_news_site_feed("Gizbot Malayalam", "malayalam.gizbot.com", "technology"),
 ]
 
 # ─── Processing Settings ───
