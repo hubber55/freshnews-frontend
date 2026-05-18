@@ -104,7 +104,11 @@ def extract_full_article_text(url):
                 # Navigate with shorter wait - just need the redirect
                 try:
                     page.goto(url, wait_until="domcontentloaded", timeout=10000)
-                    page.wait_for_timeout(2000)  # Give time for JS redirect
+                    # Poll every 200ms until page redirects away from news.google.com
+                    for _ in range(30):
+                        if "news.google.com" not in page.url:
+                            break
+                        page.wait_for_timeout(200)
                 except:
                     pass  # Timeout is OK, we just need the URL
                 # Get final URL after all redirects
@@ -112,17 +116,16 @@ def extract_full_article_text(url):
                 browser.close()
             
             logger.info(f"    🔄 Google News resolved to: {actual_url[:80]}...")
-            if "keralakaumudi.com" in actual_url:
-                logger.info(f"    🔍 Full Kerala Kaumudi URL: {actual_url}")
-                # Skip photo gallery and cartoon URLs which often don't have proper article content
-                if "/photogallery/" in actual_url or "/cartoon/" in actual_url:
-                    logger.warning(f"    ⚠️ Skipping Kerala Kaumudi {('photo gallery' if '/photogallery/' in actual_url else 'cartoon')} URL")
-                    return None
         except Exception as e:
             logger.warning(f"    Could not resolve Google News redirect with Playwright: {e}")
     
-    # Check if it's a JavaScript-heavy site that needs Playwright
+    # Skip index, archive, category, tag, author, photo gallery and cartoon pages
     url_lower = actual_url.lower()
+    if any(p in url_lower for p in ["/tag/", "/category/", "/author/", "/page/", "/search/", "/photogallery/", "/cartoon/"]):
+        logger.warning(f"    ⚠️ Skipping index/archive/gallery URL: {actual_url}")
+        return None
+    
+    # Check if it's a JavaScript-heavy site that needs Playwright
     if any(site in url_lower for site in ["drivespark.com", "keralakaumudi.com"]):
         site_name = "DriveSpark" if "drivespark" in url_lower else "Kerala Kaumudi"
         logger.info(f"    🎯 {site_name} detected! Using Playwright...")
@@ -134,7 +137,7 @@ def extract_full_article_text(url):
         headers = {
             "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
         }
-        response = http_request("GET", url, headers=headers, timeout=FETCH_TIMEOUT_SECONDS)
+        response = http_request("GET", actual_url, headers=headers, timeout=FETCH_TIMEOUT_SECONDS)
         response.raise_for_status()
         
         soup = BeautifulSoup(response.text, "html.parser")
@@ -404,7 +407,11 @@ def extract_og_image(url):
                 page = context.new_page()
                 try:
                     page.goto(url, wait_until="domcontentloaded", timeout=10000)
-                    page.wait_for_timeout(2000)
+                    # Poll every 200ms until page redirects away from news.google.com
+                    for _ in range(30):
+                        if "news.google.com" not in page.url:
+                            break
+                        page.wait_for_timeout(200)
                     resolved_url = page.url
                 except:
                     pass

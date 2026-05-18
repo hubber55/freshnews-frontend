@@ -103,9 +103,9 @@ MALAYALAM_RSS_FEEDS = [
 
     # Newly Added News Sources
     google_news_site_feed("Kalipanthu", "kalipanthu.com", "sports"),
-    google_news_site_feed("Express Kerala International", "expresskerala.com/news/international", "world"),
-    google_news_site_feed("Express Kerala Technology", "expresskerala.com/news/technology", "technology"),
-    google_news_site_feed("Express Kerala National", "expresskerala.com/news/national", "india"),
+    google_news_query_feed("Express Kerala International", "site:expresskerala.com international", "world"),
+    google_news_query_feed("Express Kerala Technology", "site:expresskerala.com technology", "technology"),
+    google_news_query_feed("Express Kerala National", "site:expresskerala.com national", "india"),
     google_news_site_feed("Gizbot Malayalam", "malayalam.gizbot.com", "technology"),
 ]
 

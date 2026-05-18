@@ -182,61 +182,6 @@ PROVIDERS = [
 ]
 
 
-def summarize_article(article):
-    """
-    Generate a Malayalam summary and rewritten title using Mistral AI.
-    Returns (rewritten_title, summary_string, list_of_tags, faq_list) or None.
-    """
-    title = article.get("title", "")
-    description = article.get("description", "")
-
-    if not description:
-        description = title
-
-    prompt = SUMMARIZE_PROMPT.format(
-        title=title,
-        description=description[:3000]
-    )
-
-    for provider_name, provider_fn in PROVIDERS:
-        content = provider_fn(prompt)
-        if content:
-            try:
-                parsed = json.loads(content)
-                summary = str(parsed.get("summary", "")).strip()
-                
-                # Use the AI-generated meaningful title
-                new_title = str(parsed.get("title", "")).strip()
-                if not new_title:
-                    new_title = truncate_title(title, 10)
-                
-                tags = [str(t).strip() for t in parsed.get("keywords", []) if str(t).strip()]
-                
-                # Mandatory "Movies" tag logic
-                content_to_check = (title + " " + summary).lower()
-                cinema_keywords = ['cinema', 'film', 'movie', 'actor', 'actress', 'director', 'mollywood', 'bollywood', 'സിനിമ', 'ചിത്രം', 'നടൻ', 'നടി', 'സംവിധായകൻ']
-                is_cinema = any(kw in content_to_check for kw in cinema_keywords)
-                
-                if is_cinema and 'Movies' not in [t.capitalize() for t in tags]:
-                    tags.insert(0, 'Movies')
-
-                tags = [t for t in tags if len(t) < 20][:5]
-                
-                raw_faq = parsed.get("faq", [])
-                faq = []
-                if isinstance(raw_faq, list):
-                    for item in raw_faq[:5]:
-                        if isinstance(item, dict) and item.get("q") and item.get("a"):
-                            faq.append({"q": str(item["q"]).strip(), "a": str(item["a"]).strip()})
-
-                if summary and len(summary) > 50:
-                    logger.info(f"  ✅ Summarized: {new_title[:50]}...")
-                    return new_title, summary, tags, faq
-            except Exception as e:
-                logger.warning(f"  ⚠️ Error parsing AI response: {e}")
-                continue
-
-    return None
 
 
 BOGUS_USERNAMES = [
