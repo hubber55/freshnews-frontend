@@ -59,7 +59,7 @@ export async function POST(req: Request) {
 
     await sendMessage(to, message);
 
-    return NextResponse.json({ ok: true });
+    return NextResponse.json({ ok: true, success: true });
 
   } catch (e: any) {
     console.error('Send WhatsApp API Error:', e);
