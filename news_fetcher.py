@@ -59,6 +59,16 @@ def is_placeholder_image_url(url):
             "avatar",
             "silhouette",
             "no-image",
+            "card",
+            "social",
+            "facebook",
+            "fallback",
+            "sirajlive.jpg",
+            "share",
+            "-og",
+            "_og",
+            "og-image",
+            "og_image",
         ]
 
         if any(h in host for h in blocked_hosts):
@@ -644,11 +654,34 @@ def fetch_feed_articles(feed_config, max_articles=20):
                 if len(full_text) > len(description):
                     description = full_text
                     
-            published = parse_date(entry)
-            
             if not title or not link:
                 continue
 
+            # 1. Broad listing/archive filter
+            title_lower = title.lower()
+            link_lower = link.lower()
+            
+            is_listing = False
+            listing_patterns = [
+                r"/tag/",
+                r"/category/",
+                r"/author/",
+                r"/search/",
+                r"/page/\d+",
+                r"archives",
+                r"ആർക്കൈവ്സ്",
+                r"untitled",
+            ]
+            
+            if any(re.search(pat, link_lower) for pat in listing_patterns) or \
+               any(pat in title_lower for pat in ["archives", "ആർക്കൈവ്സ്", "untitled"]):
+                is_listing = True
+                
+            if is_listing:
+                logger.info(f"  ⏭️ Skipping INDEX/LISTING URL: {title[:50]}... ({link})")
+                continue
+
+            published = parse_date(entry)
             if not published:
                 logger.debug(f"  ⏭️ Skipping undated article: {title[:60]}...")
                 continue
@@ -658,27 +691,14 @@ def fetch_feed_articles(feed_config, max_articles=20):
             published_ist_date = published_ist_dt.date()
             
             # STRICT DATE FILTER: Only today's news (IST)
-            if published_ist_date != today_ist:
-                # If it's earlier than today, skip
-                if published_ist_date < today_ist:
-                    logger.debug(f"  ⏭️ Skipping OLD article ({published_ist_date}): {title[:50]}...")
-                else:
-                    # If it's in the future (unlikely but possible due to clock drift), keep it? 
-                    # Usually better to skip if it's too far in the future.
-                    diff = published_ist_dt - now_ist
-                    if diff > timedelta(hours=24):
-                        logger.warning(f"  ⏭️ Skipping FUTURE article ({published_ist_dt}): {title[:50]}...")
-                    else:
-                        # Accept if it's "today" or very recent future
-                        articles.append({
-                            "title": title,
-                            "link": link,
-                            "description": description,
-                            "published": published,
-                            "source_name": feed_name,
-                            "category": category,
-                            "image_url": extract_image_from_entry(entry),
-                        })
+            if published_ist_date < today_ist:
+                logger.info(f"  ⏭️ Skipping OLD article ({published_ist_date}): {title[:50]}...")
+                continue
+                
+            # Skip FUTURE articles that are more than 2 hours ahead of our current IST time
+            # (Allows mild 2-hour clock drift, but completely blocks tomorrow or beyond)
+            if published_ist_dt > now_ist + timedelta(hours=2):
+                logger.info(f"  ⏭️ Skipping FUTURE article ({published_ist_dt}): {title[:50]}...")
                 continue
                 
             articles.append({

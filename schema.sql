@@ -48,6 +48,12 @@ CREATE POLICY "Allow public read comments" ON public.comments FOR SELECT USING (
 -- Allow authenticated users to insert comments (but since using custom auth, allow all for simplicity)
 CREATE POLICY "Allow insert comments" ON public.comments FOR INSERT WITH CHECK (true);
 
+-- Enable RLS for wa_users (already enabled on droplet, documented here)
+ALTER TABLE public.wa_users ENABLE ROW LEVEL SECURITY;
+
+-- Allow public read for wa_users (needed to show names/usernames in comments)
+CREATE POLICY "Allow public read wa_users" ON public.wa_users FOR SELECT USING (true);
+
 -- DB-level duplicate guard for source URLs
 -- 1) Add deterministic URL fingerprint column
 ALTER TABLE public.posts ADD COLUMN IF NOT EXISTS original_url_fingerprint TEXT;

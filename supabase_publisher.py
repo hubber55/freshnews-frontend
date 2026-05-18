@@ -101,6 +101,15 @@ def publish_via_supabase(article):
     # FAQ data from AI (list of {q, a} dicts) — stored as JSONB
     faq = article.get("faq", [])
 
+    from datetime import datetime, timezone
+    published_at = article.get("published")
+    if isinstance(published_at, datetime):
+        published_at_str = published_at.isoformat()
+    elif isinstance(published_at, str):
+        published_at_str = published_at
+    else:
+        published_at_str = datetime.now(timezone.utc).isoformat()
+
     try:
         # 1. Insert row into the 'posts' table
         post_response = supabase.table('posts').insert({
@@ -112,6 +121,7 @@ def publish_via_supabase(article):
             "original_url": original_url,
             "original_url_fingerprint": original_url_fingerprint or None,
             "faq": faq if faq else None,
+            "published_at": published_at_str,
         }).execute()
 
         if not post_response.data or len(post_response.data) == 0:
@@ -156,7 +166,7 @@ def publish_via_supabase(article):
                     "post_id": post_id,
                     "user_id": uid,
                     "content": c['text'],
-                    "is_approved": False
+                    "is_approved": True
                 }
                 
                 # If we had parent_id support, we'd add it here
