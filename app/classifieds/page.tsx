@@ -3,7 +3,7 @@ import Header from '../components/header';
 import Footer from '../components/footer';
 import ClassifiedsClient from './ClassifiedsClient';
 
-export const revalidate = 120;
+export const revalidate = 10;
 
 export default async function ClassifiedsPage() {
   const supabase = createAdminClient();

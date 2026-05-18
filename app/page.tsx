@@ -20,7 +20,7 @@ import PollCard from './components/PollCard';
 
 import LockNewsButton from './components/LockNewsButton';
 
-export const revalidate = 60; // Revalidate every 60 seconds to reduce DB egress
+export const revalidate = 10; // Revalidate every 10 seconds to reduce DB egress
 
 type HeaderInsert = {
   enabled?: boolean;
