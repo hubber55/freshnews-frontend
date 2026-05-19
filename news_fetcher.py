@@ -142,11 +142,13 @@ def extract_full_article_text(url):
         return None
     
     # Check if it's a JavaScript-heavy site that needs Playwright
-    if any(site in url_lower for site in ["drivespark.com", "keralakaumudi.com", "oneindia.com"]):
+    if any(site in url_lower for site in ["drivespark.com", "keralakaumudi.com", "oneindia.com", "filmibeat.com"]):
         if "drivespark" in url_lower:
             site_name = "DriveSpark"
         elif "keralakaumudi" in url_lower:
             site_name = "Kerala Kaumudi"
+        elif "filmibeat" in url_lower:
+            site_name = "Filmibeat"
         else:
             site_name = "OneIndia"
             
@@ -450,11 +452,13 @@ def extract_og_image(url):
     
     # For JavaScript-heavy sites, use Playwright to bypass Cloudflare
     url_lower = actual_url.lower()
-    if any(site in url_lower for site in ["drivespark.com", "keralakaumudi.com", "oneindia.com"]):
+    if any(site in url_lower for site in ["drivespark.com", "keralakaumudi.com", "oneindia.com", "filmibeat.com"]):
         if "drivespark" in url_lower:
             site_name = "DriveSpark"
         elif "keralakaumudi" in url_lower:
             site_name = "Kerala Kaumudi"
+        elif "filmibeat" in url_lower:
+            site_name = "Filmibeat"
         else:
             site_name = "OneIndia"
             

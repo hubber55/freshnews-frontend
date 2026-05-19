@@ -208,7 +208,7 @@ BOGUS_USERNAMES = [
 ]
 
 COMMENT_PROMPT = """You are a regular person reading a news article. 
-Your task is to generate 1 to 3 short, realistic comments based on the article provided. 
+Your task is to generate exactly 4 short, realistic comments based on the article provided. 
 
 Rules:
 1. TONE: Natural, conversational, "common man" style.
@@ -225,9 +225,10 @@ Article Summary: {summary}
 """
 
 def generate_bogus_comments(title, summary):
-    """Generate 1-3 AI comments for an article with 10% skip probability."""
-    # 10% chance to skip comments entirely for organic feel
-    if random.random() < 0.10:
+    """Generate 0-4 AI comments for an article randomly."""
+    # Determine number of comments to keep (0 to 4)
+    num_comments = random.randint(0, 4)
+    if num_comments == 0:
         return []
 
     prompt = COMMENT_PROMPT.format(title=title, summary=summary)
@@ -244,7 +245,7 @@ def generate_bogus_comments(title, summary):
                 # Pick unique random usernames
                 usernames = random.sample(BOGUS_USERNAMES, min(len(comments), len(BOGUS_USERNAMES)))
                 
-                for i, c in enumerate(comments[:3]):
+                for i, c in enumerate(comments[:num_comments]):
                     final_comments.append({
                         "username": usernames[i],
                         "text": str(c.get("text", "")).strip(),
