@@ -6,11 +6,29 @@
   "start_url": "/",
   "categories": ["news", "politics", "social"],
   "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
   "background_color": "#0d1117",
   "theme_color": "#ffd42a",
   "orientation": "portrait",
   "scope": "/",
   "lang": "ml",
+  "dir": "ltr",
+  "shortcuts": [
+    {
+      "name": "Submit News",
+      "short_name": "Submit",
+      "description": "Submit a news report, classified ad, or event",
+      "url": "/submit",
+      "icons": [{ "src": "/logos/favicon_128.png?v=2", "sizes": "128x128" }]
+    },
+    {
+      "name": "Classifieds",
+      "short_name": "Classifieds",
+      "description": "View local classified ads",
+      "url": "/classifieds",
+      "icons": [{ "src": "/logos/favicon_128.png?v=2", "sizes": "128x128" }]
+    }
+  ],
   "icons": [
     {
       "src": "/logos/favicon_128.png?v=2",
