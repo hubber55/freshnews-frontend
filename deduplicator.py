@@ -8,9 +8,11 @@ Compares against recently published Blogger posts.
 from difflib import SequenceMatcher
 import logging
 import re
+import json
+import requests
 from urllib.parse import urlparse, parse_qsl, urlencode
 
-from config import SIMILARITY_THRESHOLD
+from config import SIMILARITY_THRESHOLD, MISTRAL_API_KEY, MISTRAL_MODEL
 
 logger = logging.getLogger(__name__)
 
@@ -221,3 +223,52 @@ def rank_articles(articles):
     ranked.extend(remaining)
     
     return ranked
+
+
+def ai_semantic_dedup(candidate_title, existing_titles):
+    """
+    Use Mistral AI to perform a semantic check of the candidate title against 
+    the last 50 published titles to catch duplicates with different wordings.
+    Returns True if duplicate, False otherwise.
+    """
+    if not candidate_title or not existing_titles or not MISTRAL_API_KEY:
+        return False
+        
+    logger.info(f"  🧠 Running AI Semantic Deduplication for: '{candidate_title[:50]}...'")
+    
+    prompt = f"You are a news deduplication system.\n\nCandidate News Title: {candidate_title}\n\nRecent Published Titles:\n"
+    for t in existing_titles[:50]:  # Limit to 50 to ensure fast response and low token usage
+        if t:
+            prompt += f"- {t}\n"
+            
+    prompt += """
+Is the Candidate News Title reporting the EXACT SAME specific news event or story as ANY of the Recent Published Titles?
+Focus on the core meaning. If they are about the exact same incident involving the same people, return YES. If it is a different event, return NO.
+Reply with a valid JSON object ONLY: {"is_duplicate": true} or {"is_duplicate": false}
+"""
+    headers = {
+        "Authorization": f"Bearer {MISTRAL_API_KEY}",
+        "Content-Type": "application/json"
+    }
+    payload = {
+        "model": MISTRAL_MODEL,
+        "messages": [{"role": "user", "content": prompt}],
+        "response_format": {"type": "json_object"},
+        "max_tokens": 50,
+        "temperature": 0.0
+    }
+    
+    try:
+        response = requests.post("https://api.mistral.ai/v1/chat/completions", headers=headers, json=payload, timeout=20)
+        if response.status_code == 200:
+            data = response.json()
+            content = data["choices"][0]["message"]["content"]
+            result = json.loads(content)
+            is_dup = result.get("is_duplicate", False)
+            if is_dup:
+                logger.warning(f"  🛑 AI Semantic Dedup flagged as duplicate!")
+            return is_dup
+    except Exception as e:
+        logger.warning(f"  ⚠️ AI Semantic Dedup failed: {e}")
+        
+    return False

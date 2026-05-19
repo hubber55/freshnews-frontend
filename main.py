@@ -22,7 +22,7 @@ from config import (
     DAY_DELAY_SECONDS, NIGHT_DELAY_SECONDS,
 )
 from news_fetcher import fetch_feed_articles, enrich_with_images, scrape_full_text_if_needed, is_image_valid
-from deduplicator import deduplicate_articles, rank_articles, is_duplicate_title
+from deduplicator import deduplicate_articles, rank_articles, is_duplicate_title, ai_semantic_dedup
 from summarizer import summarize_article
 from supabase_publisher import publish_via_supabase, get_existing_posts, get_recent_posts, soft_delete_post
 
@@ -126,6 +126,11 @@ def run_rotation():
             title_lower = title.lower()
             if any(re.search(pattern, title_lower) for pattern in BLOCKED_TITLE_PATTERNS):
                 logger.info(f"  ⏭️ Candidate {idx}: skipped low-value page title '{title[:40]}...'")
+                continue
+
+            # AI Semantic Deduplication (early skip before scraping)
+            if ai_semantic_dedup(title, [ep.get("title") for ep in existing_posts]):
+                logger.info(f"  ⏭️ Candidate {idx}: AI flagged as semantic duplicate '{title[:40]}...'")
                 continue
 
             candidate = scrape_full_text_if_needed(candidate)
