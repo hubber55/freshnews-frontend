@@ -69,6 +69,12 @@ def is_placeholder_image_url(url):
             "_og",
             "og-image",
             "og_image",
+            "kerala-kaumudi-card",
+            "janam-news-card",
+            "keralakaumudidaily",
+            "kaumudi-logo",
+            "logo-og",
+            "default_image"
         ]
 
         if any(h in host for h in blocked_hosts):

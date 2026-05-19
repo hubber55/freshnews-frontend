@@ -118,24 +118,30 @@ def deduplicate_articles(articles, existing_posts):
     seen_titles = []
     seen_urls = set()
     seen_snippets = set()
+    seen_images = set()
 
     # Backward compatible: accept either list[str] or list[dict]
     for entry in existing_posts or []:
         if isinstance(entry, dict):
             title = entry.get("title", "")
             url = normalize_url(entry.get("original_url", ""))
+            image_url = entry.get("image_url", "")
         else:
             title = str(entry or "")
             url = ""
+            image_url = ""
         if title:
             seen_titles.append(title)
         if url:
             seen_urls.add(url)
+        if image_url:
+            seen_images.add(image_url)
     
     for article in articles:
         title = article["title"]
         article_url = normalize_url(article.get("link", ""))
         article_snippet = normalize_snippet(article.get("description", ""))
+        article_image = article.get("image_url", "")
         is_duplicate = False
 
         # 1) URL-level duplicate (strongest signal)
@@ -159,6 +165,15 @@ def deduplicate_articles(articles, existing_posts):
             if article_snippet in seen_snippets:
                 logger.debug(f"🔄 Duplicate snippet: '{title[:50]}...'")
                 is_duplicate = True
+
+        # 4) Image-level duplicate across current batch/source variants
+        if not is_duplicate and article_image:
+            # We must verify the image is not just a generic placeholder because 
+            # if multiple articles have the same generic image, they aren't necessarily duplicates.
+            # But the backend news_fetcher.py already blocks generic placeholders.
+            if article_image in seen_images:
+                logger.debug(f"🔄 Duplicate image: '{title[:50]}...'")
+                is_duplicate = True
         
         if not is_duplicate:
             unique_articles.append(article)
@@ -167,6 +182,8 @@ def deduplicate_articles(articles, existing_posts):
                 seen_urls.add(article_url)
             if article_snippet:
                 seen_snippets.add(article_snippet)
+            if article_image:
+                seen_images.add(article_image)
     
     duplicates_found = len(articles) - len(unique_articles)
     logger.info(

@@ -513,7 +513,7 @@ export default function ProfilePage() {
                     <div className="flex-1 min-w-0">
                       <h3 className="font-semibold text-white truncate">{post.title}</h3>
                       <div className="flex items-center gap-4 mt-1 text-sm text-[var(--text-muted)]">
-                        <span>{new Date(post.published_at).toLocaleDateString()}</span>
+                        <span className="text-[#ffd42a] font-medium">{new Date(post.published_at).toLocaleDateString()}</span>
                       </div>
                     </div>
                     <div className="flex items-center gap-2">
@@ -580,7 +580,7 @@ export default function ProfilePage() {
                       <div className="flex flex-wrap items-center gap-3 text-sm text-[var(--text-muted)]">
                         <span className="capitalize font-medium text-white/70">{submission.type}</span>
                         <span>•</span>
-                        <span>{new Date(submission.submitted_at).toLocaleDateString()}</span>
+                        <span className="text-[#ffd42a] font-medium">{new Date(submission.submitted_at).toLocaleDateString()}</span>
                         {submission.clicks !== undefined && submission.clicks > 0 && (
                           <>
                             <span>•</span>

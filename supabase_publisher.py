@@ -28,7 +28,7 @@ def get_existing_posts(limit=MAX_RECENT_POSTS_CHECK):
     try:
         response = (
             supabase.table('posts')
-            .select('title, original_url')
+            .select('title, original_url, image_url')
             .eq('is_deleted', False)
             .order('published_at', desc=True)
             .limit(limit)
