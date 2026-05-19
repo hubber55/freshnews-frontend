@@ -22,7 +22,7 @@ from config import (
     DAY_DELAY_SECONDS, NIGHT_DELAY_SECONDS,
 )
 from news_fetcher import fetch_feed_articles, enrich_with_images, scrape_full_text_if_needed, is_image_valid
-from deduplicator import deduplicate_articles, rank_articles
+from deduplicator import deduplicate_articles, rank_articles, is_duplicate_title
 from summarizer import summarize_article
 from supabase_publisher import publish_via_supabase, get_existing_posts, get_recent_posts, soft_delete_post
 
@@ -168,6 +168,17 @@ def run_rotation():
                 logger.warning("  Skipping article because no valid image was found.")
                 continue
                  
+            # Image Deduplication: Check if the enriched image already exists
+            img_dup = False
+            for ep in existing_posts:
+                if ep.get("image_url") and best_article["image_url"] == ep.get("image_url"):
+                    logger.warning(f"  🔁 Skipping: Image is already used by an existing post.")
+                    img_dup = True
+                    break
+                    
+            if img_dup:
+                continue
+                 
             # C. Summarize with AI (Mistral primary)
             result = summarize_article(best_article)
             if not result:
@@ -179,6 +190,18 @@ def run_rotation():
             
             # Update title with rewritten version
             best_article["title"] = new_title
+            
+            # Secondary Deduplication: Ensure the AI rewritten title isn't a duplicate of what's already published
+            ai_dup = False
+            for ep in existing_posts:
+                is_dup_title, sim, overlap = is_duplicate_title(new_title, ep.get("title", ""))
+                if is_dup_title:
+                    logger.warning(f"  🔁 Skipping: AI generated title '{new_title[:40]}...' is a duplicate of existing post.")
+                    ai_dup = True
+                    break
+                    
+            if ai_dup:
+                continue
             
             # Final Tag List: 4 AI Keywords. 
             # (Note: Supabase publisher automatically adds Source Name as the 1st tag)
@@ -197,6 +220,7 @@ def run_rotation():
                 existing_posts.append({
                     "title": best_article.get("title", ""),
                     "original_url": best_article.get("link", ""),
+                    "image_url": best_article.get("image_url", ""),
                 })
                 
                 # Update recent sources to prevent consecutive posts from same source

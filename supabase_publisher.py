@@ -111,6 +111,12 @@ def publish_via_supabase(article):
         published_at_str = datetime.now(timezone.utc).isoformat()
 
     try:
+        # 0. Pre-insertion check: Block if exact same title already exists
+        title_check = supabase.table('posts').select('id').eq('title', title).eq('is_deleted', False).execute()
+        if title_check.data and len(title_check.data) > 0:
+            logger.warning(f"  🔁 DB duplicate guard: Post with exact title already exists: {title}")
+            return False
+
         # 1. Insert row into the 'posts' table
         post_response = supabase.table('posts').insert({
             "title": title,
