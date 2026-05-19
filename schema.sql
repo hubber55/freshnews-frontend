@@ -7,6 +7,11 @@ ALTER TABLE public.posts ADD COLUMN IF NOT EXISTS redirect_to TEXT DEFAULT NULL;
 -- Adding FAQ data (AI-generated Q&A pairs) stored as JSONB
 ALTER TABLE public.posts ADD COLUMN IF NOT EXISTS faq JSONB DEFAULT NULL;
 
+-- Adding Locked Posts functionality
+ALTER TABLE public.posts ADD COLUMN IF NOT EXISTS is_locked BOOLEAN DEFAULT FALSE;
+ALTER TABLE public.posts ADD COLUMN IF NOT EXISTS locked_position INTEGER DEFAULT NULL;
+ALTER TABLE public.posts ADD COLUMN IF NOT EXISTS locked_until TIMESTAMP WITH TIME ZONE DEFAULT NULL;
+
 -- WhatsApp Auth Users
 CREATE TABLE public.wa_users (
     id SERIAL PRIMARY KEY,
