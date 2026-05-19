@@ -142,8 +142,14 @@ def extract_full_article_text(url):
         return None
     
     # Check if it's a JavaScript-heavy site that needs Playwright
-    if any(site in url_lower for site in ["drivespark.com", "keralakaumudi.com"]):
-        site_name = "DriveSpark" if "drivespark" in url_lower else "Kerala Kaumudi"
+    if any(site in url_lower for site in ["drivespark.com", "keralakaumudi.com", "oneindia.com"]):
+        if "drivespark" in url_lower:
+            site_name = "DriveSpark"
+        elif "keralakaumudi" in url_lower:
+            site_name = "Kerala Kaumudi"
+        else:
+            site_name = "OneIndia"
+            
         logger.info(f"    🎯 {site_name} detected! Using Playwright...")
         return extract_with_playwright(actual_url)
     else:
@@ -444,8 +450,14 @@ def extract_og_image(url):
     
     # For JavaScript-heavy sites, use Playwright to bypass Cloudflare
     url_lower = actual_url.lower()
-    if any(site in url_lower for site in ["drivespark.com", "keralakaumudi.com"]):
-        site_name = "DriveSpark" if "drivespark" in url_lower else "Kerala Kaumudi"
+    if any(site in url_lower for site in ["drivespark.com", "keralakaumudi.com", "oneindia.com"]):
+        if "drivespark" in url_lower:
+            site_name = "DriveSpark"
+        elif "keralakaumudi" in url_lower:
+            site_name = "Kerala Kaumudi"
+        else:
+            site_name = "OneIndia"
+            
         logger.info(f"    🎯 {site_name} image - using Playwright")
         return extract_image_with_playwright(actual_url)
     
