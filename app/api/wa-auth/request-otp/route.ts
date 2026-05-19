@@ -45,6 +45,9 @@ async function sendOtpViaEvolution(receiverDigits: string, otp: string) {
   const json = await res.json().catch(() => null);
   if (!res.ok) {
     console.error('Evolution API send failed:', res.status, json);
+    if (res.status === 500 || res.status === 502 || res.status === 503) {
+      throw new Error('WhatsApp service is currently offline. Please try again later.');
+    }
     throw new Error('Check your Country Code and WhatsApp number');
   }
 }
