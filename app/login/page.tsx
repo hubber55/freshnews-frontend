@@ -93,6 +93,7 @@ export default function LoginPage() {
   const [otp, setOtp] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
   const [isBanned, setIsBanned] = useState(false);
 
   useEffect(() => {
@@ -161,6 +162,7 @@ export default function LoginPage() {
   const verifyOtp = async () => {
     setBusy(true);
     setError(null);
+    setSuccessMessage(null);
     try {
       const effectiveCountryCode = countryCode === '' ? customCountryCode : countryCode;
       const fullWhatsappNumber = buildFullWhatsappNumber(effectiveCountryCode, whatsappNumber);
@@ -171,10 +173,10 @@ export default function LoginPage() {
       });
       const json = await res.json();
       if (!json.ok) throw new Error(json.error || 'Invalid OTP');
+      setSuccessMessage('Logged in successfully! Redirecting...');
       window.location.href = '/';
     } catch (e: any) {
       setError(e?.message || 'Failed');
-    } finally {
       setBusy(false);
     }
   };
@@ -195,6 +197,12 @@ export default function LoginPage() {
             {error && (
               <div className="mt-5 rounded-xl border border-red-500/20 bg-red-500/10 p-3 text-sm font-semibold text-red-400">
                 {error}
+              </div>
+            )}
+
+            {successMessage && (
+              <div className="mt-5 rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-3 text-sm font-semibold text-emerald-400">
+                {successMessage}
               </div>
             )}
 
