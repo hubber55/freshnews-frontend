@@ -36,6 +36,10 @@ services:
       - CONFIG_SESSION_PHONE_CLIENT=FreshNews Bot
       - DELAY_SEND_MESSAGE=1000
       
+      # Cache and Redis (Disabled)
+      - CACHE_REDIS_ENABLED=false
+      - REDIS_ENABLED=false
+      
       # Database Persistence (PostgreSQL)
       - DATABASE_ENABLED=true
       - DATABASE_PROVIDER=postgresql
