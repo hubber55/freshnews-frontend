@@ -38,9 +38,7 @@ async function sendOtpViaEvolution(receiverDigits: string, otp: string) {
     },
     body: JSON.stringify({
       number: receiverDigits,
-      textMessage: {
-        text: message
-      }
+      text: message
     }),
   });
 

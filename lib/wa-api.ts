@@ -14,9 +14,7 @@ export async function sendWaMessage(receiverDigits: string, message: string) {
     },
     body: JSON.stringify({
       number: receiverDigits,
-      textMessage: {
-        text: message
-      }
+      text: message
     }),
   });
 

@@ -28,9 +28,7 @@ async function sendMessage(receiver: string, message: string) {
     body: JSON.stringify({
       number: receiver,
       options: { delay: 1000 },
-      textMessage: {
-        text: message
-      }
+      text: message
     }),
   });
 

@@ -2,19 +2,19 @@ import requests
 import json
 
 # HARDCODED VALUES FROM YOUR REVEAL
-IP = "3.107.91.28"
+IP = "wa.freshnews.top"
 KEY = "Maramon7#5*"
 INSTANCE = "VercelBot2"
 NUMBER = "919567135764" # The number from your log
 
-url = f"http://{IP}:8080/message/sendText/{INSTANCE}"
+url = f"https://{IP}/message/sendText/{INSTANCE}"
 headers = {
     "apikey": KEY,
     "Content-Type": "application/json"
 }
 payload = {
     "number": NUMBER,
-    "textMessage": {"text": "Test from Script"}
+    "text": "Test from Script"
 }
 
 print(f"Testing URL: {url}")

@@ -59,9 +59,7 @@ def send_whatsapp(phone_number: str, message_text: str) -> tuple[bool, bool]:
             "presence": "composing",
             "linkPreview": False
         },
-        "textMessage": {
-            "text": message_text
-        }
+        "text": message_text
     }
     
     print(f"   🚀 Sending Message to {phone_number}...")
