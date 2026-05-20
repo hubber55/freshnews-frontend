@@ -15,7 +15,7 @@ services:
       - "127.0.0.1:5433:5432" # Keep it bound to localhost for security
 
   evolution-api:
-    image: atendai/evolution-api:v2.1.1
+    image: evoapicloud/evolution-api:v2.3.2
     container_name: evolution_api
     restart: always
     ports:
@@ -46,7 +46,7 @@ services:
       - DATABASE_CONNECTION_URI=postgresql://evolution_user:evolution_db_password_7788@postgres:5432/evolution?schema=public
       - DATABASE_SAVE_DATA_INSTANCE=true
       - DATABASE_SAVE_DATA_NEW_MESSAGE=true
-      - DATABASE_SAVE_MESSAGE_CONNCTION=true
+      - DATABASE_SAVE_MESSAGE_CONNECTION=true
       - DATABASE_SAVE_DATA_CONTACTS=true
       - DATABASE_SAVE_DATA_CHATS=true
     volumes:
