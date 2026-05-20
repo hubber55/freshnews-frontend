@@ -22,13 +22,15 @@ function maskNumber(digits: string) {
 async function sendOtpViaEvolution(receiverDigits: string, otp: string) {
   const ip = (process.env.WA_EC2_IP || '').trim();
   const apiKey = (process.env.WA_API_KEY || '').trim();
+  const baseUrl = (process.env.WA_API_URL || `http://${ip}:8080`).trim();
 
-  if (!ip) throw new Error('Missing WA_EC2_IP');
-  if (!apiKey) throw new Error('Missing WA_API_KEY');
+  if ((!baseUrl && !ip) || !apiKey) {
+    throw new Error('WhatsApp API credentials are not configured.');
+  }
 
   const message = `Freshnews OTP: ${otp}`;
 
-  const res = await fetch(`http://${ip}:8080/message/sendText/VercelBot2`, {
+  const res = await fetch(`${baseUrl}/message/sendText/VercelBot2`, {
     method: 'POST',
     headers: {
       'apikey': apiKey,
