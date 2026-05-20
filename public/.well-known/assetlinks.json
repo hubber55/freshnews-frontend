@@ -1,0 +1,14 @@
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "top.freshnews.twa",
+      "sha256_cert_fingerprints": [
+        "93:3E:C5:D4:35:64:B2:EC:DF:91:7E:C9:C1:42:8D:3B:F9:43:D4:B2:8B:E3:F7:66:C8:3E:C9:91:8E:37:63:93"
+      ]
+    }
+  }
+]
