@@ -1,0 +1,49 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: evolution_postgres
+    restart: always
+    environment:
+      POSTGRES_DB: evolution
+      POSTGRES_USER: evolution_user
+      POSTGRES_PASSWORD: evolution_db_password_7788
+    volumes:
+      - ./postgres_data:/var/lib/postgresql/data
+    ports:
+      - "127.0.0.1:5433:5432" # Keep it bound to localhost for security
+
+  evolution-api:
+    image: atendai/evolution-api:v2.1.1
+    container_name: evolution_api
+    restart: always
+    ports:
+      - "127.0.0.1:8082:8080" # Exposed on port 8082 on localhost, Nginx will proxy to it
+    depends_on:
+      - postgres
+    environment:
+      # General Settings
+      - SERVER_URL=https://wa.freshnews.top
+      - PORT=8080
+      
+      # Authentication
+      - AUTHENTICATION_TYPE=apikey
+      - AUTHENTICATION_API_KEY=Maramon7#5*
+      - AUTHENTICATION_EXPOSE_IN_FIND_ALL=true
+      
+      # Sessions Settings
+      - CONFIG_SESSION_PHONE_CLIENT=FreshNews Bot
+      - DELAY_SEND_MESSAGE=1000
+      
+      # Database Persistence (PostgreSQL)
+      - DATABASE_ENABLED=true
+      - DATABASE_PROVIDER=postgresql
+      - DATABASE_CONNECTION_URI=postgresql://evolution_user:evolution_db_password_7788@postgres:5432/evolution?schema=public
+      - DATABASE_SAVE_DATA_INSTANCE=true
+      - DATABASE_SAVE_DATA_NEW_MESSAGE=true
+      - DATABASE_SAVE_MESSAGE_CONNCTION=true
+      - DATABASE_SAVE_DATA_CONTACTS=true
+      - DATABASE_SAVE_DATA_CHATS=true
+    volumes:
+      - ./instances:/evolution/instances

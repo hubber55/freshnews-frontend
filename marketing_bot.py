@@ -18,7 +18,7 @@ supabase: Client = create_client(SUPABASE_URL, SUPABASE_KEY)
 WA_EC2_IP = os.getenv("WA_EC2_IP", "127.0.0.1").strip().replace('"', '').replace("'", "")
 WA_API_KEY = os.getenv("WA_API_KEY", "").strip().replace('"', '').replace("'", "")
 WA_INSTANCE = os.getenv("WA_INSTANCE", "VercelBot2").strip().replace('"', '').replace("'", "")
-BASE_ENDPOINT = f"http://{WA_EC2_IP}:8080"
+BASE_ENDPOINT = os.getenv("WA_API_URL", f"http://{WA_EC2_IP}:8080").strip().replace('"', '').replace("'", "").rstrip('/')
 
 def get_ist_time():
     """Returns current time in Indian Standard Time (IST)"""

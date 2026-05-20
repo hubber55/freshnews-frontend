@@ -27,3 +27,12 @@ To take a new backup manually:
 ```bash
 docker exec -it supabase-db pg_dump -U postgres -d postgres > backup_$(date +%F).sql
 ```
+
+## 💬 WhatsApp API (Evolution API)
+- **Service Domain:** `https://wa.freshnews.top`
+- **Dashboard (Manager):** `https://wa.freshnews.top/manager/`
+- **Global API Key:** `Maramon7#5*`
+- **Port:** `8082` (Mapped via Nginx reverse proxy)
+- **Local Compose Dir:** `~/website/evolution-api/`
+- **Instance Name:** `VercelBot2`
+

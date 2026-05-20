@@ -1,11 +1,12 @@
 export async function sendWaMessage(receiverDigits: string, message: string) {
   const ip = (process.env.WA_EC2_IP || '').trim();
   const apiKey = (process.env.WA_API_KEY || '').trim();
+  const baseUrl = (process.env.WA_API_URL || `http://${ip}:8080`).trim();
 
-  if (!ip) throw new Error('Missing WA_EC2_IP');
+  if (!baseUrl && !ip) throw new Error('Missing WhatsApp URL or IP configuration');
   if (!apiKey) throw new Error('Missing WA_API_KEY');
 
-  const res = await fetch(`http://${ip}:8080/message/sendText/VercelBot2`, {
+  const res = await fetch(`${baseUrl}/message/sendText/VercelBot2`, {
     method: 'POST',
     headers: {
       'apikey': apiKey,

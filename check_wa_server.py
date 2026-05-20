@@ -8,7 +8,7 @@ load_dotenv()
 IP = os.getenv("WA_EC2_IP", "127.0.0.1")
 KEY = os.getenv("WA_API_KEY", "")
 INSTANCE = os.getenv("WA_INSTANCE", "VercelBot2")
-BASE_URL = f"http://{IP}:8080"
+BASE_URL = os.getenv("WA_API_URL", f"http://{IP}:8080").strip().rstrip('/')
 
 def run_diagnostics():
     print(f"\n========================================")
