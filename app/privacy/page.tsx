@@ -20,7 +20,7 @@ export default function PrivacyPage() {
 
           <div className="article-body text-[var(--text-primary)]">
             <p>
-              At FreshNews.top, we are committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you visit our website.
+              At FreshNews.top, we are committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you visit our website. You may request permanent account deletion from your profile or the delete-account page.
             </p>
 
             <p><strong>1. Information We Collect</strong></p>
@@ -49,22 +49,27 @@ export default function PrivacyPage() {
               We may use third-party advertising companies to serve ads when you visit our website. These companies may use information about your visits to provide advertisements about goods and services of interest to you.
             </p>
 
-            <p><strong>5. Data Security</strong></p>
+            <p><strong>5. Account Deletion</strong></p>
+            <p>
+              If you request account deletion, we send a WhatsApp OTP to your registered number. After confirmation, we permanently delete your account, submissions, published posts, comments, WhatsApp-linked data, and associated user records.
+            </p>
+
+            <p><strong>6. Data Security</strong></p>
             <p>
               The security of your data is important to us. We strive to use commercially acceptable means to protect your personal information, but no method of transmission over the Internet or electronic storage is 100% secure.
             </p>
 
-            <p><strong>6. Children&apos;s Privacy</strong></p>
+            <p><strong>7. Children&apos;s Privacy</strong></p>
             <p>
               Our website does not address anyone under the age of 13. We do not knowingly collect personally identifiable information from anyone under the age of 13.
             </p>
 
-            <p><strong>7. Changes to This Privacy Policy</strong></p>
+            <p><strong>8. Changes to This Privacy Policy</strong></p>
             <p>
               We may update our Privacy Policy from time to time. We will notify you of any changes by posting the new Privacy Policy on this page. Changes are effective immediately after they are posted on this page.
             </p>
 
-            <p><strong>8. Contact Us</strong></p>
+            <p><strong>9. Contact Us</strong></p>
             <p>
               If you have questions about this Privacy Policy, please contact us at: <a href="mailto:kerlot4@gmail.com" className="text-[#ffd42a] hover:underline">kerlot4@gmail.com</a>
             </p>

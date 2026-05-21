@@ -4,7 +4,7 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Header from '../components/header';
 import Footer from '../components/footer';
-import { User, Edit, Clock, CheckCircle, XCircle, FileText, Calendar, Tag, Newspaper, Trash2, ExternalLink } from 'lucide-react';
+import { User, Edit, Clock, CheckCircle, XCircle, FileText, Calendar, Tag, Newspaper, Trash2, ExternalLink, ShieldAlert } from 'lucide-react';
 
 type UserSubmission = {
   id: number;
@@ -563,6 +563,10 @@ export default function ProfilePage() {
                   <Link href="/submit?type=classified" className="rounded-lg bg-[#ff69b4]/10 border border-[#ff69b4]/30 px-4 py-2 text-sm font-semibold text-[#ff69b4] hover:bg-[#ff69b4]/20">
                     Submit Classified
                   </Link>
+              <Link href="/delete-account" className="inline-flex items-center gap-2 rounded-lg bg-red-600 px-6 py-3 text-sm font-bold text-white hover:bg-red-500 transition">
+                <ShieldAlert size={16} />
+                Delete Account
+              </Link>
                 </div>
               </div>
             ) : (
@@ -773,6 +777,10 @@ export default function ProfilePage() {
               </Link>
               <Link href="/submit?type=classified" className="rounded-lg bg-pink-900 px-6 py-3 text-sm font-bold text-white hover:bg-pink-800 transition">
                 Submit Classified
+              </Link>
+              <Link href="/delete-account" className="inline-flex items-center gap-2 rounded-lg bg-red-600 px-6 py-3 text-sm font-bold text-white hover:bg-red-500 transition">
+                <ShieldAlert size={16} />
+                Delete Account
               </Link>
             </div>
           </div>
