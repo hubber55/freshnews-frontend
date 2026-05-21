@@ -1,17 +1,31 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { createClient as createSupabaseClient } from '@supabase/supabase-js';
 import { getCurrentUser } from '@/lib/auth';
+import { createClient as createServerClient } from '@/app/utils/supabase/server';
 
 const MAX_UPLOAD_BYTES = 3 * 1024 * 1024; // 3MB
 
 export async function POST(req: Request) {
-  const supabase = createClient(
+  const supabase = createSupabaseClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL || '',
     process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
   );
   
+  let userId: string | number | null = null;
   const user = await getCurrentUser();
-  if (!user) {
+  
+  if (user) {
+    userId = user.id;
+  } else {
+    // Check if it's an admin
+    const serverClient = await createServerClient();
+    const { data: { session } } = await serverClient.auth.getSession();
+    if (session?.user) {
+      userId = 'admin-' + session.user.id.substring(0, 8);
+    }
+  }
+
+  if (!userId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
@@ -36,7 +50,7 @@ export async function POST(req: Request) {
         }
 
         const fileExtension = file.name.split('.').pop() || 'jpg';
-        const fileName = `${user.id}-edit-${Date.now()}-${i}.${fileExtension}`;
+        const fileName = `${userId}-edit-${Date.now()}-${i}.${fileExtension}`;
         
         const { data: uploadData, error: uploadError } = await supabase.storage
           .from('submissions')
