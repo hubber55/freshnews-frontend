@@ -129,13 +129,8 @@ export default function AdminClassifiedsPage() {
                 <div className="flex flex-wrap justify-center gap-2 mb-4">
                   {(() => {
                     let urls: string[] = [];
-                    if (editItem.image_url) {
-                      try {
-                        const parsed = JSON.parse(editItem.image_url);
-                        urls = Array.isArray(parsed) ? parsed : [editItem.image_url];
-                      } catch {
-                        urls = [editItem.image_url];
-                      }
+                    if (editForm.image_url) {
+                      urls = editForm.image_url.split('\n').map(u => u.trim()).filter(Boolean);
                     }
                     
                     if (urls.length === 0) return <div className="text-[var(--text-muted)] text-xs italic">No images uploaded</div>;

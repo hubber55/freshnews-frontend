@@ -12,7 +12,7 @@ export async function PATCH(
   try {
     const { id } = await params;
     const body = await req.json();
-    const { status, title, content, tags, price, contact_phone, image_url } = body;
+    const { status, title, content, tags, price, contact_phone, image_url, expires_at } = body;
 
     if (!id) {
       return NextResponse.json({ error: 'ID is required' }, { status: 400 });
@@ -30,6 +30,7 @@ export async function PATCH(
     if (price !== undefined) updateData.price = price;
     if (contact_phone !== undefined) updateData.contact_phone = contact_phone;
     if (image_url !== undefined) updateData.image_url = image_url;
+    if (expires_at !== undefined) updateData.expires_at = expires_at;
     
     const { error } = await supabase
       .from('submissions')

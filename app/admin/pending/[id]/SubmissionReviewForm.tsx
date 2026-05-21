@@ -123,9 +123,7 @@ export default function SubmissionReviewForm({ submission, id }: { submission: S
     }
   }
 
-  const imageUrls = submission.image_url 
-    ? (submission.image_url.startsWith('["') ? JSON.parse(submission.image_url) : [submission.image_url])
-    : [];
+  const imageUrls = imageUrl ? imageUrl.split('\n').map(u => u.trim()).filter(Boolean) : [];
 
   return (
     <form onSubmit={handleApprove} className="space-y-6">

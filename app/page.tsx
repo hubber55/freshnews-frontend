@@ -119,7 +119,7 @@ export default async function Home({ searchParams }: HomeProps) {
 
   let query = supabase
     .from('posts')
-    .select('id, title, summary, image_url, source_name, published_at, created_at, tags, is_deleted, is_locked, locked_position, locked_until')
+    .select('id, title, summary, image_url, source_name, published_at, tags, is_deleted, is_locked, locked_position, locked_until')
     .eq('is_deleted', false)
     .order('published_at', { ascending: false })
     .range(from, from + overfetch - 1);
@@ -135,7 +135,7 @@ export default async function Home({ searchParams }: HomeProps) {
     query,
     supabase
       .from('posts')
-      .select('id, title, summary, image_url, source_name, published_at, created_at, tags, is_deleted, is_locked, locked_position, locked_until')
+      .select('id, title, summary, image_url, source_name, published_at, tags, is_deleted, is_locked, locked_position, locked_until')
       .eq('is_locked', true)
       .eq('is_deleted', false)
       .gt('locked_until', new Date().toISOString())
@@ -183,7 +183,7 @@ export default async function Home({ searchParams }: HomeProps) {
     // Fallback query without locking fields if they don't exist yet
     const { data: fallbackPosts } = await supabase
       .from('posts')
-      .select('id, title, summary, image_url, source_name, published_at, created_at, tags, is_deleted')
+      .select('id, title, summary, image_url, source_name, published_at, tags, is_deleted')
       .eq('is_deleted', false)
       .order('published_at', { ascending: false })
       .range(from, from + overfetch - 1);
