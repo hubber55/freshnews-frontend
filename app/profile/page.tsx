@@ -209,7 +209,7 @@ export default function ProfilePage() {
         throw new Error('Failed to update submission');
       }
     } catch (err) {
-      setError('Failed to update submission. Please try again.');
+      alert('Failed to update submission. Please check your inputs and try again.');
     } finally {
       setIsSubmittingEdit(false);
     }

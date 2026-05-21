@@ -78,8 +78,8 @@ export async function PATCH(
     if (hyperlink_text !== undefined) updateData.hyperlink_text = hyperlink_text;
     if (location !== undefined) updateData.location = location;
     if (image_url !== undefined) updateData.image_url = image_url;
-    if (event_date !== undefined) updateData.event_date = event_date;
-    if (category !== undefined) updateData.category = category;
+    if (event_date !== undefined) updateData.event_date = event_date || null;
+    if (category !== undefined) updateData.category = category || null;
     
     // Update the submission
     const { data: updatedSubmission, error: updateError } = await supabase
