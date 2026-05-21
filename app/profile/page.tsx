@@ -5,6 +5,7 @@ import Link from 'next/link';
 import Header from '../components/header';
 import Footer from '../components/footer';
 import { User, Edit, Clock, CheckCircle, XCircle, FileText, Calendar, Tag, Newspaper, Trash2, ExternalLink, ShieldAlert } from 'lucide-react';
+import { ImageUploadWidget } from '@/app/components/ImageUploadWidget';
 
 type UserSubmission = {
   id: number;
@@ -61,7 +62,9 @@ export default function ProfilePage() {
     hyperlink_text: '',
     location: '',
     event_date: '',
-    category: ''
+    category: '',
+    existing_urls: [] as string[],
+    new_files: [] as File[]
   });
   const [isSubmittingEdit, setIsSubmittingEdit] = useState(false);
 
@@ -154,7 +157,9 @@ export default function ProfilePage() {
       hyperlink_text: submission.hyperlink_text || '',
       location: submission.location || '',
       event_date: submission.event_date || '',
-      category: submission.category || ''
+      category: submission.category || '',
+      existing_urls: submission.image_url ? (Array.isArray(submission.image_url) ? submission.image_url : (submission.image_url.startsWith('[') ? JSON.parse(submission.image_url) : [submission.image_url])) : [],
+      new_files: []
     });
   };
 
@@ -164,11 +169,27 @@ export default function ProfilePage() {
     
     setIsSubmittingEdit(true);
     try {
+      let finalUrls = [...editFormData.existing_urls];
+
+      if (editFormData.new_files.length > 0) {
+        const formData = new FormData();
+        formData.append('imageCount', editFormData.new_files.length.toString());
+        editFormData.new_files.forEach((file, i) => formData.append(`imageFile_${i}`, file));
+        
+        const uploadRes = await fetch('/api/upload-images', { method: 'POST', body: formData });
+        if (!uploadRes.ok) {
+          throw new Error('Failed to upload new images');
+        }
+        const { urls } = await uploadRes.json();
+        finalUrls = [...finalUrls, ...urls];
+      }
+
       const res = await fetch(`/api/user/edit-submission/${editingSubmission.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...editFormData,
+          image_url: finalUrls.length > 0 ? JSON.stringify(finalUrls) : null,
           status: 'pending' // Reset to pending on edit
         })
       });
@@ -670,6 +691,17 @@ export default function ProfilePage() {
                       onChange={(e) => setEditFormData(prev => ({ ...prev, content: e.target.value }))}
                       rows={6}
                       className="w-full rounded-lg border border-[var(--border)] bg-[var(--bg-primary)] px-4 py-2 text-white focus:border-[#00cfff] focus:outline-none"
+                    />
+                  </div>
+
+                  <div>
+                    <ImageUploadWidget
+                      existingUrls={editFormData.existing_urls}
+                      onExistingUrlsChange={(urls) => setEditFormData(prev => ({ ...prev, existing_urls: urls }))}
+                      newFiles={editFormData.new_files}
+                      onNewFilesChange={(files) => setEditFormData(prev => ({ ...prev, new_files: files }))}
+                      maxImages={5}
+                      onError={alert}
                     />
                   </div>
 

@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { rejectSubmission, updateSubmission, deleteSubmission } from '../actions';
+import { ImageUploadWidget } from '@/app/components/ImageUploadWidget';
 
 interface Submission {
   id: string;
@@ -29,21 +30,37 @@ export default function SubmissionReviewForm({ submission, id }: { submission: S
   const [content, setContent] = useState(submission.content);
   const [price, setPrice] = useState(submission.price || '');
   const [contactPhone, setContactPhone] = useState(submission.contact_phone || '');
-  const [imageUrl, setImageUrl] = useState(() => {
-    if (!submission.image_url) return '';
+  const [existingUrls, setExistingUrls] = useState<string[]>(() => {
+    if (!submission.image_url) return [];
     try {
       const parsed = submission.image_url.startsWith('["') ? JSON.parse(submission.image_url) : submission.image_url;
-      return Array.isArray(parsed) ? parsed.join('\n') : String(parsed);
+      return Array.isArray(parsed) ? parsed : [String(parsed)];
     } catch {
-      return submission.image_url;
+      return [submission.image_url];
     }
   });
+  const [newFiles, setNewFiles] = useState<File[]>([]);
+
+  async function uploadNewImages() {
+    if (newFiles.length === 0) return existingUrls;
+    const formData = new FormData();
+    formData.append('imageCount', newFiles.length.toString());
+    newFiles.forEach((file, i) => formData.append(`imageFile_${i}`, file));
+    
+    const uploadRes = await fetch('/api/upload-images', { method: 'POST', body: formData });
+    if (!uploadRes.ok) {
+      throw new Error('Failed to upload new images');
+    }
+    const { urls } = await uploadRes.json();
+    return [...existingUrls, ...urls];
+  }
 
   async function handleApprove(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
     
     try {
+      const finalUrls = await uploadNewImages();
       const response = await fetch(`/api/admin/submissions/${id}`, {
         method: 'POST',
         headers: {
@@ -55,7 +72,7 @@ export default function SubmissionReviewForm({ submission, id }: { submission: S
           tags: submission.tags || [],
           price,
           contact_phone: contactPhone,
-          image_url: imageUrl ? JSON.stringify(imageUrl.split('\n').map(u => u.trim()).filter(Boolean)) : null
+          image_url: finalUrls.length > 0 ? JSON.stringify(finalUrls) : null
         }),
       });
 
@@ -91,13 +108,14 @@ export default function SubmissionReviewForm({ submission, id }: { submission: S
   async function handleSaveDraft() {
     setSaving(true);
     try {
+      const finalUrls = await uploadNewImages();
       const formData = new FormData();
       formData.set('title', title);
       formData.set('content', content);
       formData.set('price', price);
       formData.set('contact_phone', contactPhone);
-      formData.set('image_url', imageUrl ? JSON.stringify(imageUrl.split('\n').map(u => u.trim()).filter(Boolean)) : '');
-      formData.set('clear_image', imageUrl.trim() ? 'off' : 'on');
+      formData.set('image_url', finalUrls.length > 0 ? JSON.stringify(finalUrls) : '');
+      formData.set('clear_image', finalUrls.length === 0 ? 'on' : 'off');
       
       await updateSubmission(id, formData);
       alert('Changes saved successfully.');
@@ -123,7 +141,7 @@ export default function SubmissionReviewForm({ submission, id }: { submission: S
     }
   }
 
-  const imageUrls = imageUrl ? imageUrl.split('\n').map(u => u.trim()).filter(Boolean) : [];
+
 
   return (
     <form onSubmit={handleApprove} className="space-y-6">
@@ -190,40 +208,15 @@ export default function SubmissionReviewForm({ submission, id }: { submission: S
       )}
 
       <div className="mx-2">
-        <label className="block text-sm font-bold mb-2">Image URLs (One per line)</label>
-        <div className="flex gap-2">
-          <textarea
-            value={imageUrl}
-            onChange={(e) => setImageUrl(e.target.value)}
-            rows={3}
-            placeholder="https://...&#10;https://..."
-            className="flex-1 px-4 py-2 rounded-lg bg-[var(--bg-secondary)] border border-[var(--border)] text-white focus:border-[#00cfff] focus:outline-none"
-          />
-          <button
-            type="button"
-            onClick={() => setImageUrl('')}
-            className="px-4 py-2 rounded-lg border border-[var(--border)] text-[var(--text-secondary)] hover:text-white"
-          >
-            Clear
-          </button>
-        </div>
+        <ImageUploadWidget
+          existingUrls={existingUrls}
+          onExistingUrlsChange={setExistingUrls}
+          newFiles={newFiles}
+          onNewFilesChange={setNewFiles}
+          maxImages={5}
+          onError={alert}
+        />
       </div>
-
-      {imageUrls.length > 0 && (
-        <div>
-          <label className="block text-sm font-bold mb-2">Images</label>
-          <div className="flex flex-wrap gap-4">
-            {imageUrls.map((url: string, idx: number) => (
-              <img 
-                key={idx}
-                src={url} 
-                alt={`${submission.title} - Image ${idx + 1}`}
-                className="max-w-md rounded-lg object-contain border border-[var(--border)]"
-              />
-            ))}
-          </div>
-        </div>
-      )}
 
       <div className="bg-[var(--bg-secondary)] p-4 rounded-lg border border-[var(--border)]">
         <h3 className="font-semibold text-white mb-3">User Information</h3>

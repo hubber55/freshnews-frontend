@@ -7,6 +7,7 @@ import {
   ChevronLeft, Megaphone, Clock, CheckCircle, 
   XCircle, Trash2, RefreshCw, Pencil, X
 } from 'lucide-react';
+import { ImageUploadWidget } from '@/app/components/ImageUploadWidget';
 
 type Classified = {
   id: number;
@@ -27,7 +28,16 @@ export default function AdminClassifiedsPage() {
   const [classifieds, setClassifieds] = useState<Classified[]>([]);
   const [loading, setLoading] = useState(true);
   const [editItem, setEditItem] = useState<Classified | null>(null);
-  const [editForm, setEditForm] = useState({ title: '', content: '', price: '', contact_phone: '', tags: '', image_url: '', expires_at: '' });
+  const [editForm, setEditForm] = useState<{
+    title: string;
+    content: string;
+    price: string;
+    contact_phone: string;
+    tags: string;
+    existing_urls: string[];
+    new_files: File[];
+    expires_at: string;
+  }>({ title: '', content: '', price: '', contact_phone: '', tags: '', existing_urls: [], new_files: [], expires_at: '' });
   const [saving, setSaving] = useState(false);
 
   const fetchClassifieds = async () => {
@@ -70,7 +80,8 @@ export default function AdminClassifiedsPage() {
       price: item.price || '',
       contact_phone: item.contact_phone || '',
       tags: (item.tags || []).join(', '),
-      image_url: Array.isArray(item.image_url) ? item.image_url.join('\n') : (item.image_url?.startsWith('[') ? JSON.parse(item.image_url || '[]').join('\n') : item.image_url || ''),
+      existing_urls: item.image_url ? (Array.isArray(item.image_url) ? item.image_url : (item.image_url.startsWith('[') ? JSON.parse(item.image_url) : [item.image_url])) : [],
+      new_files: [],
       expires_at: item.expires_at ? new Date(item.expires_at).toISOString().split('T')[0] : ''
     });
   };
@@ -83,6 +94,23 @@ export default function AdminClassifiedsPage() {
       return trimmed ? trimmed.charAt(0).toUpperCase() + trimmed.slice(1).toLowerCase() : '';
     }).filter(Boolean);
 
+    let finalUrls = [...editForm.existing_urls];
+
+    if (editForm.new_files.length > 0) {
+      const formData = new FormData();
+      formData.append('imageCount', editForm.new_files.length.toString());
+      editForm.new_files.forEach((file, i) => formData.append(`imageFile_${i}`, file));
+      
+      const uploadRes = await fetch('/api/upload-images', { method: 'POST', body: formData });
+      if (!uploadRes.ok) {
+        alert('Failed to upload new images');
+        setSaving(false);
+        return;
+      }
+      const { urls } = await uploadRes.json();
+      finalUrls = [...finalUrls, ...urls];
+    }
+
     const res = await fetch(`/api/admin/submissions/${editItem.id}`, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
@@ -92,7 +120,7 @@ export default function AdminClassifiedsPage() {
         price: editForm.price || null,
         contact_phone: editForm.contact_phone || null,
         tags: tagsArr,
-        image_url: editForm.image_url ? JSON.stringify(editForm.image_url.split('\n').map(u => u.trim()).filter(Boolean)) : null,
+        image_url: finalUrls.length > 0 ? JSON.stringify(finalUrls) : null,
         expires_at: editForm.expires_at ? new Date(editForm.expires_at).toISOString() : null,
       })
     });
@@ -124,34 +152,14 @@ export default function AdminClassifiedsPage() {
               </button>
             </div>
             <div className="space-y-4">
-              <div>
-                <label className="block text-xs font-bold text-[var(--text-muted)] mb-2 uppercase text-center">Photos</label>
-                <div className="flex flex-wrap justify-center gap-2 mb-4">
-                  {(() => {
-                    let urls: string[] = [];
-                    if (editForm.image_url) {
-                      urls = editForm.image_url.split('\n').map(u => u.trim()).filter(Boolean);
-                    }
-                    
-                    if (urls.length === 0) return <div className="text-[var(--text-muted)] text-xs italic">No images uploaded</div>;
-                    
-                    return urls.map((url, i) => (
-                      <div key={i} className="relative w-20 h-20 rounded-lg overflow-hidden border border-[var(--border)] group">
-                        <img src={url} alt={`Classified ${i+1}`} className="w-full h-full object-cover" />
-                        <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                          <button 
-                            type="button"
-                            onClick={() => window.open(url, '_blank')}
-                            className="text-white text-[10px] font-bold uppercase underline"
-                          >
-                            View
-                          </button>
-                        </div>
-                      </div>
-                    ));
-                  })()}
-                </div>
-              </div>
+                <ImageUploadWidget
+                  existingUrls={editForm.existing_urls}
+                  onExistingUrlsChange={(urls) => setEditForm(f => ({ ...f, existing_urls: urls }))}
+                  newFiles={editForm.new_files}
+                  onNewFilesChange={(files) => setEditForm(f => ({ ...f, new_files: files }))}
+                  maxImages={5}
+                  onError={(err) => alert(err)}
+                />
 
               <div>
                 <label className="block text-xs font-bold text-[var(--text-muted)] mb-1 uppercase">Title</label>
@@ -163,17 +171,7 @@ export default function AdminClassifiedsPage() {
                 <textarea value={editForm.content} onChange={e => setEditForm(f => ({ ...f, content: e.target.value }))} rows={5}
                   className="w-full rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-4 py-2.5 text-white focus:border-[#00ffff] focus:outline-none" />
               </div>
-              <div>
-                <label className="block text-xs font-bold text-[var(--text-muted)] mb-1 uppercase">Image URLs (One per line)</label>
-                <div className="flex gap-2">
-                  <textarea value={editForm.image_url} onChange={e => setEditForm(f => ({ ...f, image_url: e.target.value }))} rows={3}
-                    placeholder="https://...&#10;https://..." className="flex-1 rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-4 py-2.5 text-white focus:border-[#00ffff] focus:outline-none" />
-                  <button type="button" onClick={() => setEditForm(f => ({ ...f, image_url: '' }))}
-                    className="rounded-xl border border-[var(--border)] px-4 py-2.5 text-sm font-semibold text-[var(--text-secondary)] hover:text-white">
-                    Clear
-                  </button>
-                </div>
-              </div>
+
               <div>
                 <label className="block text-xs font-bold text-[var(--text-muted)] mb-1 uppercase">Expiry Date</label>
                 <input type="date" value={editForm.expires_at} onChange={e => setEditForm(f => ({ ...f, expires_at: e.target.value }))}
