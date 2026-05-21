@@ -206,10 +206,11 @@ export default function ProfilePage() {
         setUpdateMessage('Submission updated and sent for admin approval. You will receive a WhatsApp confirmation.');
         setTimeout(() => setUpdateMessage(null), 5000);
       } else {
-        throw new Error('Failed to update submission');
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || 'Failed to update submission');
       }
     } catch (err) {
-      alert('Failed to update submission. Please check your inputs and try again.');
+      alert(err instanceof Error ? err.message : 'Failed to update submission. Please check your inputs and try again.');
     } finally {
       setIsSubmittingEdit(false);
     }

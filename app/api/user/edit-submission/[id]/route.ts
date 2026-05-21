@@ -91,7 +91,7 @@ export async function PATCH(
     
     if (updateError) {
       console.error('Error updating submission:', updateError);
-      return NextResponse.json({ error: 'Failed to update submission' }, { status: 500 });
+      return NextResponse.json({ error: 'Failed to update submission: ' + updateError.message }, { status: 500 });
     }
     
     // Send WhatsApp notification to user
