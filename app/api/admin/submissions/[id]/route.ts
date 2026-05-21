@@ -12,7 +12,7 @@ export async function PATCH(
   try {
     const { id } = await params;
     const body = await req.json();
-    const { status, title, content, tags, price, contact_phone } = body;
+    const { status, title, content, tags, price, contact_phone, image_url } = body;
 
     if (!id) {
       return NextResponse.json({ error: 'ID is required' }, { status: 400 });
@@ -29,6 +29,7 @@ export async function PATCH(
     if (tags !== undefined) updateData.tags = tags;
     if (price !== undefined) updateData.price = price;
     if (contact_phone !== undefined) updateData.contact_phone = contact_phone;
+    if (image_url !== undefined) updateData.image_url = image_url;
     
     const { error } = await supabase
       .from('submissions')
@@ -138,6 +139,7 @@ export async function POST(
     const tags = Array.isArray(body?.tags) ? body.tags.filter(Boolean) : [];
     const price = body?.price || null;
     const contact_phone = body?.contact_phone || null;
+    const image_url = body?.image_url ?? undefined;
 
     if (!id) {
       return NextResponse.json({ error: 'ID is required' }, { status: 400 });
@@ -193,7 +195,8 @@ export async function POST(
       .update({ 
         status: 'approved',
         price,
-        contact_phone
+        contact_phone,
+        ...(image_url !== undefined ? { image_url } : {})
       })
       .eq('id', submissionId);
 

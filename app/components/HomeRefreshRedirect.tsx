@@ -20,7 +20,7 @@ export default function HomeRefreshRedirect({ page, activeTag = '' }: HomeRefres
       (window.performance.navigation && window.performance.navigation.type === 1);
 
     if (isReload && (activeTag || page > 1)) {
-      // Hard reset to main home on refresh if any filter/pagination is active
+      // Refreshing a tag page or paginated home should reset to Latest home
       window.location.replace('/');
     }
   }, [activeTag, page]);

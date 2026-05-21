@@ -141,7 +141,8 @@ export async function updateSubmission(submissionId: string, formData: FormData)
       content,
       tags,
       price: formData.get('price') as string || null,
-      contact_phone: formData.get('contact_phone') as string || null
+      contact_phone: formData.get('contact_phone') as string || null,
+      image_url: formData.get('image_url') as string || null
     })
     .eq('id', submissionId);
 

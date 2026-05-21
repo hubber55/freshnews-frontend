@@ -32,6 +32,24 @@ export function hasMinimumWords(value: string | null | undefined, minWords = 70)
   return clean.split(/\s+/).filter(Boolean).length >= minWords;
 }
 
+import { formatDistanceToNow } from 'date-fns';
+
+export function formatTimeAgo(targetDateString: string | Date | null | undefined): string {
+  if (!targetDateString) return '';
+  const date = new Date(targetDateString);
+  if (isNaN(date.getTime())) return '';
+  
+  const diffInMs = Date.now() - date.getTime();
+  const diffInMinutes = Math.floor(diffInMs / (1000 * 60));
+  
+  if (diffInMinutes < 1) return 'Just now';
+  
+  const diffInHours = diffInMs / (1000 * 60 * 60);
+  if (diffInHours < 24) return formatDistanceToNow(date, { addSuffix: true });
+  
+  return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+}
+
 export function limitWords(value: string | null | undefined, maxWords = 10) {
   const clean = stripHtml(value);
   if (!clean) {

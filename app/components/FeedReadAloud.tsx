@@ -2,7 +2,8 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { Volume2, VolumeX, ChevronLeft, ChevronRight } from 'lucide-react';
-import { format, formatDistanceToNow, isToday } from 'date-fns';
+import { format, isToday } from 'date-fns';
+import { formatTimeAgo } from '../../lib/posts';
 
 interface FeedReadAloudProps {
   tag: string;
@@ -11,6 +12,7 @@ interface FeedReadAloudProps {
     title: string;
     summary: string;
     published_at?: string;
+    created_at?: string;
   }[];
 }
 
@@ -109,12 +111,11 @@ export default function FeedReadAloud({ tag, posts }: FeedReadAloudProps) {
 
     const cleanTitle = rawTitle.replace(/([\u0D00-\u0D7F])\.([\u0D00-\u0D7F])/g, '$1$2');
     
-    // Calculate time text for narration
     let timeText = "";
-    if (posts[index].published_at) {
-      const pDate = new Date(posts[index].published_at);
+    if (posts[index].published_at || posts[index].created_at) {
+      const pDate = new Date(posts[index].created_at || posts[index].published_at!);
       if (isToday(pDate)) {
-        timeText = formatDistanceToNow(pDate, { addSuffix: true }).replace('about ', '');
+        timeText = formatTimeAgo(pDate).replace('about ', '');
       } else {
         timeText = format(pDate, 'MMMM d, yyyy');
       }

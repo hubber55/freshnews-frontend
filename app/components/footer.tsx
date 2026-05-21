@@ -6,15 +6,18 @@ import Image from 'next/image';
 import { useState, useEffect } from 'react';
 
 const GUEST_FOOTER_LINKS = [
+  { href: '/', label: 'Home' },
   { href: '/login', label: 'Login / Sign Up' },
   { href: '/faq', label: 'FAQ' },
   { href: '/about', label: 'About Us' },
   { href: '/privacy', label: 'Privacy Policy' },
+  { href: '/delete-account', label: 'Delete Account' },
   { href: '/tos', label: 'Terms of Service' },
   { href: '/contact', label: 'Contact Us' },
 ];
 
 const AUTHED_FOOTER_LINKS = [
+  { href: '/', label: 'Home' },
   { href: '/faq', label: 'FAQ' },
   { href: '/about', label: 'About Us' },
   { href: '/privacy', label: 'Privacy Policy' },

@@ -27,7 +27,7 @@ export default function AdminClassifiedsPage() {
   const [classifieds, setClassifieds] = useState<Classified[]>([]);
   const [loading, setLoading] = useState(true);
   const [editItem, setEditItem] = useState<Classified | null>(null);
-  const [editForm, setEditForm] = useState({ title: '', content: '', price: '', contact_phone: '', tags: '' });
+  const [editForm, setEditForm] = useState({ title: '', content: '', price: '', contact_phone: '', tags: '', image_url: '', expires_at: '' });
   const [saving, setSaving] = useState(false);
 
   const fetchClassifieds = async () => {
@@ -69,7 +69,9 @@ export default function AdminClassifiedsPage() {
       content: item.content || '',
       price: item.price || '',
       contact_phone: item.contact_phone || '',
-      tags: (item.tags || []).join(', ')
+      tags: (item.tags || []).join(', '),
+      image_url: Array.isArray(item.image_url) ? item.image_url.join('\n') : (item.image_url?.startsWith('[') ? JSON.parse(item.image_url || '[]').join('\n') : item.image_url || ''),
+      expires_at: item.expires_at ? new Date(item.expires_at).toISOString().split('T')[0] : ''
     });
   };
 
@@ -90,6 +92,8 @@ export default function AdminClassifiedsPage() {
         price: editForm.price || null,
         contact_phone: editForm.contact_phone || null,
         tags: tagsArr,
+        image_url: editForm.image_url ? JSON.stringify(editForm.image_url.split('\n').map(u => u.trim()).filter(Boolean)) : null,
+        expires_at: editForm.expires_at ? new Date(editForm.expires_at).toISOString() : null,
       })
     });
     setSaving(false);
@@ -162,6 +166,22 @@ export default function AdminClassifiedsPage() {
               <div>
                 <label className="block text-xs font-bold text-[var(--text-muted)] mb-1 uppercase">Content</label>
                 <textarea value={editForm.content} onChange={e => setEditForm(f => ({ ...f, content: e.target.value }))} rows={5}
+                  className="w-full rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-4 py-2.5 text-white focus:border-[#00ffff] focus:outline-none" />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-[var(--text-muted)] mb-1 uppercase">Image URLs (One per line)</label>
+                <div className="flex gap-2">
+                  <textarea value={editForm.image_url} onChange={e => setEditForm(f => ({ ...f, image_url: e.target.value }))} rows={3}
+                    placeholder="https://...&#10;https://..." className="flex-1 rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-4 py-2.5 text-white focus:border-[#00ffff] focus:outline-none" />
+                  <button type="button" onClick={() => setEditForm(f => ({ ...f, image_url: '' }))}
+                    className="rounded-xl border border-[var(--border)] px-4 py-2.5 text-sm font-semibold text-[var(--text-secondary)] hover:text-white">
+                    Clear
+                  </button>
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-[var(--text-muted)] mb-1 uppercase">Expiry Date</label>
+                <input type="date" value={editForm.expires_at} onChange={e => setEditForm(f => ({ ...f, expires_at: e.target.value }))}
                   className="w-full rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-4 py-2.5 text-white focus:border-[#00ffff] focus:outline-none" />
               </div>
               <div className="grid grid-cols-2 gap-4">

@@ -1,6 +1,11 @@
 import { PostgrestClient } from '@supabase/postgrest-js';
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+const backendUrl =
+  process.env.NEXT_PUBLIC_BACKEND_URL ||
+  process.env.NEXT_PUBLIC_SUPABASE_URL ||
+  process.env.BACKEND_URL ||
+  process.env.SUPABASE_URL ||
+  '';
 
 type StorageObject = ReturnType<typeof createStorageClient>;
 
@@ -43,7 +48,7 @@ function createStorageClient(key: string) {
       return {
         async upload(path: string, file: BodyInit) {
           const res = await fetch(
-            `${supabaseUrl}/storage/v1/object/${bucket}/${encodeStoragePath(path)}`,
+            `${backendUrl}/storage/v1/object/${bucket}/${encodeStoragePath(path)}`,
             {
               method: 'POST',
               headers: {
@@ -73,14 +78,14 @@ function createStorageClient(key: string) {
         getPublicUrl(path: string) {
           return {
             data: {
-              publicUrl: `${supabaseUrl}/storage/v1/object/public/${bucket}/${encodeStoragePath(path)}`,
+              publicUrl: `${backendUrl}/storage/v1/object/public/${bucket}/${encodeStoragePath(path)}`,
             },
           };
         },
         async remove(paths: string[]) {
           for (const path of paths) {
             const res = await fetch(
-              `${supabaseUrl}/storage/v1/object/${bucket}/${encodeStoragePath(path)}`,
+              `${backendUrl}/storage/v1/object/${bucket}/${encodeStoragePath(path)}`,
               {
                 method: 'DELETE',
                 headers: authHeaders(key),
@@ -106,11 +111,11 @@ function createStorageClient(key: string) {
 }
 
 export function createRestClient(key: string): RestClient {
-  if (!supabaseUrl || !key) {
-    return createMissingClient('Supabase environment variables are not configured.');
+  if (!backendUrl || !key) {
+    return createMissingClient('Backend environment variables are not configured.');
   }
 
-  const postgrest = new PostgrestClient(`${supabaseUrl}/rest/v1`, {
+  const postgrest = new PostgrestClient(`${backendUrl}/rest/v1`, {
     headers: authHeaders(key),
     fetch: (input: RequestInfo | URL, init?: RequestInit) => fetch(input, init),
   });
@@ -118,7 +123,7 @@ export function createRestClient(key: string): RestClient {
   return {
     from: postgrest.from.bind(postgrest) as PostgrestClient<any>['from'],
     rpc: async (fn: string, args: Record<string, unknown> = {}) => {
-      const res = await fetch(`${supabaseUrl}/rest/v1/rpc/${fn}`, {
+      const res = await fetch(`${backendUrl}/rest/v1/rpc/${fn}`, {
         method: 'POST',
         headers: {
           ...authHeaders(key),
@@ -140,4 +145,3 @@ export function createRestClient(key: string): RestClient {
     storage: createStorageClient(key),
   };
 }
-

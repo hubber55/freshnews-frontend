@@ -96,7 +96,7 @@ export default function Header() {
     e?.preventDefault();
     const query = (searchQuery + ghostText).trim();
     if (query) {
-      window.location.href = `/?tag=${encodeURIComponent(query)}`;
+      window.location.assign(`/?tag=${encodeURIComponent(query)}`);
     }
   };
 
@@ -223,7 +223,7 @@ export default function Header() {
                         onClick={() => {
                           setSearchQuery(tag);
                           setShowSuggestions(false);
-                          window.location.href = `/?tag=${encodeURIComponent(tag)}`;
+                          window.location.assign(`/?tag=${encodeURIComponent(tag)}`);
                         }}
                         className="w-full text-left px-5 py-2.5 text-[13px] text-white/80 hover:bg-[#ffd42a]/10 hover:text-[#ffd42a] transition-colors border-b border-[var(--border)] last:border-0 flex items-center gap-3"
                       >

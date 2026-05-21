@@ -3,23 +3,29 @@ import { cookies } from "next/headers";
 
 export async function createClient() {
   const cookieStore = await cookies();
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+  const backendUrl =
+    process.env.NEXT_PUBLIC_BACKEND_URL ||
+    process.env.NEXT_PUBLIC_SUPABASE_URL ||
+    '';
+  const backendAnonKey =
+    process.env.NEXT_PUBLIC_BACKEND_ANON_KEY ||
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ||
+    '';
 
-  if (!supabaseUrl || !supabaseAnonKey) {
+  if (!backendUrl || !backendAnonKey) {
     return new Proxy(
       {},
       {
         get() {
-          throw new Error('Supabase environment variables are not configured.');
+          throw new Error('Backend environment variables are not configured.');
         },
       }
     ) as ReturnType<typeof createServerClient>;
   }
 
   return createServerClient(
-    supabaseUrl,
-    supabaseAnonKey,
+    backendUrl,
+    backendAnonKey,
     {
       cookies: {
         getAll() {

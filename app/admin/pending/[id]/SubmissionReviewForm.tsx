@@ -29,6 +29,15 @@ export default function SubmissionReviewForm({ submission, id }: { submission: S
   const [content, setContent] = useState(submission.content);
   const [price, setPrice] = useState(submission.price || '');
   const [contactPhone, setContactPhone] = useState(submission.contact_phone || '');
+  const [imageUrl, setImageUrl] = useState(() => {
+    if (!submission.image_url) return '';
+    try {
+      const parsed = submission.image_url.startsWith('["') ? JSON.parse(submission.image_url) : submission.image_url;
+      return Array.isArray(parsed) ? parsed.join('\n') : String(parsed);
+    } catch {
+      return submission.image_url;
+    }
+  });
 
   async function handleApprove(e: React.FormEvent) {
     e.preventDefault();
@@ -45,7 +54,8 @@ export default function SubmissionReviewForm({ submission, id }: { submission: S
           content, 
           tags: submission.tags || [],
           price,
-          contact_phone: contactPhone
+          contact_phone: contactPhone,
+          image_url: imageUrl ? JSON.stringify(imageUrl.split('\n').map(u => u.trim()).filter(Boolean)) : null
         }),
       });
 
@@ -86,6 +96,8 @@ export default function SubmissionReviewForm({ submission, id }: { submission: S
       formData.set('content', content);
       formData.set('price', price);
       formData.set('contact_phone', contactPhone);
+      formData.set('image_url', imageUrl ? JSON.stringify(imageUrl.split('\n').map(u => u.trim()).filter(Boolean)) : '');
+      formData.set('clear_image', imageUrl.trim() ? 'off' : 'on');
       
       await updateSubmission(id, formData);
       alert('Changes saved successfully.');
@@ -155,27 +167,49 @@ export default function SubmissionReviewForm({ submission, id }: { submission: S
       </div>
 
       {submission.type === 'classified' && (
-        <div className="grid grid-cols-2 gap-4 mx-2">
-          <div>
-            <label className="block text-sm font-bold mb-2">Price</label>
-            <input
-              type="text"
-              value={price}
-              onChange={(e) => setPrice(e.target.value)}
-              className="w-full px-4 py-2 rounded-lg bg-[var(--bg-secondary)] border border-[var(--border)] text-white focus:border-[#00cfff] focus:outline-none"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-bold mb-2">Contact Phone</label>
-            <input
-              type="text"
-              value={contactPhone}
-              onChange={(e) => setContactPhone(e.target.value)}
-              className="w-full px-4 py-2 rounded-lg bg-[var(--bg-secondary)] border border-[var(--border)] text-white focus:border-[#00cfff] focus:outline-none"
-            />
+        <div className="space-y-4 mx-2">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-bold mb-2">Price</label>
+              <input
+                type="text"
+                value={price}
+                onChange={(e) => setPrice(e.target.value)}
+                className="w-full px-4 py-2 rounded-lg bg-[var(--bg-secondary)] border border-[var(--border)] text-white focus:border-[#00cfff] focus:outline-none"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-bold mb-2">Contact Phone</label>
+              <input
+                type="text"
+                value={contactPhone}
+                onChange={(e) => setContactPhone(e.target.value)}
+                className="w-full px-4 py-2 rounded-lg bg-[var(--bg-secondary)] border border-[var(--border)] text-white focus:border-[#00cfff] focus:outline-none"
+              />
+            </div>
           </div>
         </div>
       )}
+
+      <div className="mx-2">
+        <label className="block text-sm font-bold mb-2">Image URLs (One per line)</label>
+        <div className="flex gap-2">
+          <textarea
+            value={imageUrl}
+            onChange={(e) => setImageUrl(e.target.value)}
+            rows={3}
+            placeholder="https://...&#10;https://..."
+            className="flex-1 px-4 py-2 rounded-lg bg-[var(--bg-secondary)] border border-[var(--border)] text-white focus:border-[#00cfff] focus:outline-none"
+          />
+          <button
+            type="button"
+            onClick={() => setImageUrl('')}
+            className="px-4 py-2 rounded-lg border border-[var(--border)] text-[var(--text-secondary)] hover:text-white"
+          >
+            Clear
+          </button>
+        </div>
+      </div>
 
       {imageUrls.length > 0 && (
         <div>

@@ -16,6 +16,8 @@ export async function updatePost(postId: string, prevState: any, formData: FormD
   const title = formData.get('title') as string
   const summary = formData.get('summary') as string
   const tagsString = formData.get('tags') as string
+  const imageUrlInput = (formData.get('image_url') as string || '').trim()
+  const clearImage = String(formData.get('clear_image') || '') === 'on'
   
   const tags = tagsString.split(',').map(t => t.trim()).filter(Boolean)
 
@@ -24,7 +26,8 @@ export async function updatePost(postId: string, prevState: any, formData: FormD
     .update({
       title,
       summary,
-      tags
+      tags,
+      ...(clearImage ? { image_url: null } : imageUrlInput ? { image_url: imageUrlInput } : {})
     })
     .eq('id', postId)
 
@@ -93,6 +96,7 @@ export async function createPost(prevState: any, formData: FormData) {
   const tagsString = (formData.get('tags') as string || '').trim()
   const source_name = (formData.get('source_name') as string || '').trim()
   let image_url = (formData.get('image_url') as string || '').trim()
+  const clearImage = String(formData.get('clear_image') || '') === 'on'
   const image_file = formData.get('image_file') as File | null
 
   const tags = tagsString.split(',').map(t => t.trim()).filter(Boolean)
@@ -117,7 +121,9 @@ export async function createPost(prevState: any, formData: FormData) {
   }
 
   // Handle image upload
-  if (image_file && image_file.size > 0) {
+  if (clearImage) {
+    image_url = ''
+  } else if (image_file && image_file.size > 0) {
     // Validate file type
     const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
     if (!allowedTypes.includes(image_file.type)) {

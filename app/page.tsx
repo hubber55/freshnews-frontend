@@ -5,7 +5,7 @@ import { redirect } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { Clock, Home as HomeIcon } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
-import { hasMinimumWords, limitWords, formatSourceName, getFirstValidTag } from '../lib/posts';
+import { hasMinimumWords, limitWords, formatSourceName, getFirstValidTag, formatTimeAgo } from '../lib/posts';
 import Header from './components/header';
 import Footer from './components/footer';
 import HomeRefreshRedirect from './components/HomeRefreshRedirect';
@@ -119,7 +119,7 @@ export default async function Home({ searchParams }: HomeProps) {
 
   let query = supabase
     .from('posts')
-    .select('id, title, summary, image_url, source_name, published_at, tags, is_deleted, is_locked, locked_position, locked_until')
+    .select('id, title, summary, image_url, source_name, published_at, created_at, tags, is_deleted, is_locked, locked_position, locked_until')
     .eq('is_deleted', false)
     .order('published_at', { ascending: false })
     .range(from, from + overfetch - 1);
@@ -135,7 +135,7 @@ export default async function Home({ searchParams }: HomeProps) {
     query,
     supabase
       .from('posts')
-      .select('id, title, summary, image_url, source_name, published_at, tags, is_deleted, is_locked, locked_position, locked_until')
+      .select('id, title, summary, image_url, source_name, published_at, created_at, tags, is_deleted, is_locked, locked_position, locked_until')
       .eq('is_locked', true)
       .eq('is_deleted', false)
       .gt('locked_until', new Date().toISOString())
@@ -183,7 +183,7 @@ export default async function Home({ searchParams }: HomeProps) {
     // Fallback query without locking fields if they don't exist yet
     const { data: fallbackPosts } = await supabase
       .from('posts')
-      .select('id, title, summary, image_url, source_name, published_at, tags, is_deleted')
+      .select('id, title, summary, image_url, source_name, published_at, created_at, tags, is_deleted')
       .eq('is_deleted', false)
       .order('published_at', { ascending: false })
       .range(from, from + overfetch - 1);
@@ -218,7 +218,7 @@ export default async function Home({ searchParams }: HomeProps) {
     // 2. Sort by score
     finalPosts = scoredPosts.sort((a, b) => {
       if (a._relevance !== b._relevance) return b._relevance - a._relevance;
-      return new Date(b.published_at).getTime() - new Date(a.published_at).getTime();
+      return new Date(b.created_at || b.published_at).getTime() - new Date(a.created_at || a.published_at).getTime();
     });
   }
 
@@ -299,7 +299,8 @@ export default async function Home({ searchParams }: HomeProps) {
                     id: p.id,
                     title: p.title,
                     summary: p.summary,
-                    published_at: p.published_at
+                    published_at: p.published_at,
+                    created_at: p.created_at
                   }))} 
                 />
               )}
@@ -349,12 +350,7 @@ export default async function Home({ searchParams }: HomeProps) {
                           <span className="text-[#ffd42a]/80 font-medium flex items-center gap-1">
                             <span className="w-1 h-1 rounded-full bg-[#ffd42a]/40" />
                             {(() => {
-                              const date = new Date(heroPost.published_at || '');
-                              const diffInMs = Date.now() - date.getTime();
-                              const diffInHours = diffInMs / (1000 * 60 * 60);
-                              if (diffInMs < 60000) return 'Just now';
-                              if (diffInHours < 24) return formatDistanceToNow(date, { addSuffix: true });
-                              return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+                              return formatTimeAgo(heroPost.created_at || heroPost.published_at);
                             })()}
                           </span>
                         </div>
@@ -426,12 +422,7 @@ export default async function Home({ searchParams }: HomeProps) {
                                 <span className="text-[#ffd42a]/80 font-medium flex items-center gap-1">
                                   <span className="w-1 h-1 rounded-full bg-[#ffd42a]/40" />
                                   {(() => {
-                                    const date = new Date(post.published_at || '');
-                                    const diffInMs = Date.now() - date.getTime();
-                                    const diffInHours = diffInMs / (1000 * 60 * 60);
-                                    if (diffInMs < 60000) return 'Just now';
-                                    if (diffInHours < 24) return formatDistanceToNow(date, { addSuffix: true });
-                                    return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
+                                    return formatTimeAgo(post.created_at || post.published_at);
                                   })()}
                                 </span>
                               </div>

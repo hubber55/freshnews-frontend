@@ -56,11 +56,20 @@ export default function CreatePostForm() {
 
         <div>
           <label className="mb-2 block text-sm font-semibold text-[var(--text-secondary)]">Image URL</label>
-          <input
-            type="text"
-            name="image_url"
-            className="w-full rounded-lg bg-[var(--bg-primary)] border border-[var(--border)] px-4 py-2.5 text-[var(--text-primary)] focus:border-[#ffd42a] focus:outline-none focus:ring-1 focus:ring-[#ffd42a]"
-          />
+          <div className="flex gap-2">
+            <input
+              type="text"
+              name="image_url"
+              className="flex-1 rounded-lg bg-[var(--bg-primary)] border border-[var(--border)] px-4 py-2.5 text-[var(--text-primary)] focus:border-[#ffd42a] focus:outline-none focus:ring-1 focus:ring-[#ffd42a]"
+            />
+            <button
+              type="button"
+              onClick={() => { const input = document.querySelector('input[name=image_url]') as HTMLInputElement | null; if (input) input.value = ''; }}
+              className="rounded-lg border border-[var(--border)] px-4 py-2.5 text-sm font-semibold text-[var(--text-secondary)] hover:text-white"
+            >
+              Clear
+            </button>
+          </div>
         </div>
 
         <div>
