@@ -181,7 +181,7 @@ export async function POST(
         title,
         summary: content,
         source_name: 'FRESHNEWS',
-        image_url: submission.image_url || null,
+        image_url: image_url !== undefined ? image_url : (submission.image_url || null),
         tags: submissionTags,
         published_at: new Date().toISOString(),
         is_deleted: false,

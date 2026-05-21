@@ -57,7 +57,10 @@ export async function PATCH(
       external_url, 
       hyperlink_text, 
       location, 
-      status 
+      status,
+      image_url,
+      event_date,
+      category
     } = body;
     
     // Build update object with only provided fields
@@ -74,6 +77,9 @@ export async function PATCH(
     if (external_url !== undefined) updateData.external_url = external_url;
     if (hyperlink_text !== undefined) updateData.hyperlink_text = hyperlink_text;
     if (location !== undefined) updateData.location = location;
+    if (image_url !== undefined) updateData.image_url = image_url;
+    if (event_date !== undefined) updateData.event_date = event_date;
+    if (category !== undefined) updateData.category = category;
     
     // Update the submission
     const { data: updatedSubmission, error: updateError } = await supabase
