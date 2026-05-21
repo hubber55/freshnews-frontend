@@ -52,6 +52,14 @@ export async function GET() {
       .order('published_at', { ascending: false })
       .limit(5);
 
+    // 6. Latest 10 submissions in DB
+    const { data: latestSubmissions, error: submissionErr } = await supabase
+      .from('submissions')
+      .select('id, title, image_url, type, status, created_at')
+      .eq('type', 'classified')
+      .order('created_at', { ascending: false })
+      .limit(10);
+
     return NextResponse.json({
       connection: {
         url: supabaseUrl,
@@ -69,9 +77,11 @@ export async function GET() {
       },
       earliest: earliestPosts || [],
       latest: latestPosts || [],
+      submissions: latestSubmissions || [],
       queryErrors: {
         earliestError: earliestError?.message || null,
-        latestError: latestError?.message || null
+        latestError: latestError?.message || null,
+        submissionError: submissionErr?.message || null
       }
     });
 
