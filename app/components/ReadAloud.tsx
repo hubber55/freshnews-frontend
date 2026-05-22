@@ -12,6 +12,7 @@ interface ReadAloudProps {
 export default function ReadAloud({ title, paragraphs, onProgress }: ReadAloudProps) {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [supported, setSupported] = useState(false);
+  const [hasMalayalamVoice, setHasMalayalamVoice] = useState(true);
   const synthRef = useRef<SpeechSynthesis | null>(null);
   const bellBtnRef = useRef<HTMLButtonElement>(null);
   const wakeLockRef = useRef<any>(null);
@@ -24,9 +25,20 @@ export default function ReadAloud({ title, paragraphs, onProgress }: ReadAloudPr
       setSupported(true);
       
       // Trigger voice loading in desktop browsers
+      const checkVoices = () => {
+        const voices = window.speechSynthesis.getVoices();
+        if (voices.length > 0) {
+          const ml = voices.find(v => v.lang.includes('ml-IN') || v.lang.includes('ml') || v.name.toLowerCase().includes('malayalam'));
+          setHasMalayalamVoice(!!ml);
+        }
+      };
+
       window.speechSynthesis.getVoices();
+      checkVoices();
+      
       window.speechSynthesis.onvoiceschanged = () => {
         window.speechSynthesis.getVoices();
+        checkVoices();
       };
     }
 
@@ -143,6 +155,11 @@ export default function ReadAloud({ title, paragraphs, onProgress }: ReadAloudPr
 
   const handleSpeak = async () => {
     if (!supported || !synthRef.current) return;
+
+    if (!hasMalayalamVoice) {
+      alert("Malayalam voice not installed. Please install to Hear (or use Microsoft Edge / Mobile phone).");
+      return;
+    }
 
     if (isSpeaking) {
       stopSpeaking();
