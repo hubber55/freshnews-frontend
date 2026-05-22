@@ -16,11 +16,18 @@ export default function ReadAloud({ title, paragraphs, onProgress }: ReadAloudPr
   const bellBtnRef = useRef<HTMLButtonElement>(null);
   const wakeLockRef = useRef<any>(null);
   const isReadingRef = useRef(false);
+  const utteranceRef = useRef<SpeechSynthesisUtterance | null>(null);
 
   useEffect(() => {
     if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
       synthRef.current = window.speechSynthesis;
       setSupported(true);
+      
+      // Trigger voice loading in desktop browsers
+      window.speechSynthesis.getVoices();
+      window.speechSynthesis.onvoiceschanged = () => {
+        window.speechSynthesis.getVoices();
+      };
     }
 
     return () => {
@@ -51,6 +58,7 @@ export default function ReadAloud({ title, paragraphs, onProgress }: ReadAloudPr
     }
     isReadingRef.current = false;
     setIsSpeaking(false);
+    utteranceRef.current = null;
     releaseWakeLock();
     onProgress?.({ paragraphIndex: null, wordIndex: null, charIndex: null });
   };
@@ -71,10 +79,19 @@ export default function ReadAloud({ title, paragraphs, onProgress }: ReadAloudPr
     const cleanText = textToRead.replace(/([\u0D00-\u0D7F])\.([\u0D00-\u0D7F])/g, '$1$2');
 
     const utterance = new SpeechSynthesisUtterance(cleanText);
+    utteranceRef.current = utterance; // Prevent garbage collection
     
-    const voices = synthRef.current.getVoices();
-    const mlVoice = voices.find(v => v.lang.includes('ml-IN') || v.lang.includes('ml'));
-    if (mlVoice) utterance.voice = mlVoice;
+    let voices = synthRef.current.getVoices();
+    let mlVoice = voices.find(v => v.lang.includes('ml-IN') || v.lang.includes('ml'));
+    
+    // Fallback logic if Google Malayalam is available but not explicitly ml-IN
+    if (!mlVoice) {
+      mlVoice = voices.find(v => v.name.toLowerCase().includes('malayalam'));
+    }
+    
+    if (mlVoice) {
+      utterance.voice = mlVoice;
+    }
     
     utterance.lang = 'ml-IN';
     utterance.rate = 0.85;
@@ -99,7 +116,10 @@ export default function ReadAloud({ title, paragraphs, onProgress }: ReadAloudPr
       }
     };
 
-    utterance.onerror = () => stopSpeaking();
+    utterance.onerror = (e) => {
+      console.error('SpeechSynthesis error:', e);
+      stopSpeaking();
+    };
 
     synthRef.current.speak(utterance);
   };
@@ -131,6 +151,10 @@ export default function ReadAloud({ title, paragraphs, onProgress }: ReadAloudPr
 
     setIsSpeaking(true);
     isReadingRef.current = true;
+    
+    // Important for desktop: cancel any stuck utterances before starting a new one
+    synthRef.current.cancel();
+
     await requestWakeLock();
     speakSequentially(-1);
   };
