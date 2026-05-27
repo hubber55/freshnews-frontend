@@ -1,18 +1,37 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { format } from 'date-fns';
-import { Trash2, RefreshCw, Pencil, Eye, Link as LinkIcon, MessageCircle, Share2 } from 'lucide-react';
+import { Trash2, RefreshCw, Pencil, Eye, Link as LinkIcon, MessageCircle } from 'lucide-react';
+
+/** Build full page number list with ellipsis markers */
+function buildPageRange(current: number, total: number): (number | '...')[] {
+  if (total <= 10) return Array.from({ length: total }, (_, i) => i + 1);
+
+  const pages: (number | '...')[] = [];
+  const WING = 3; // pages shown on each side of current page
+
+  pages.push(1);
+
+  const leftEdge = Math.max(2, current - WING);
+  const rightEdge = Math.min(total - 1, current + WING);
+
+  if (leftEdge > 2) pages.push('...');
+  for (let i = leftEdge; i <= rightEdge; i++) pages.push(i);
+  if (rightEdge < total - 1) pages.push('...');
+
+  pages.push(total);
+  return pages;
+}
 
 export default function AdminPostsPage() {
   const [posts, setPosts] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
+  const [jumpValue, setJumpValue] = useState('');
   const pageSize = 100;
-  const router = useRouter();
 
   const fetchPosts = async () => {
     setLoading(true);
@@ -31,6 +50,13 @@ export default function AdminPostsPage() {
   useEffect(() => { fetchPosts(); }, [page]);
 
   const totalPages = Math.ceil(totalCount / pageSize);
+  const pageRange = buildPageRange(page, totalPages);
+
+  const goToPage = (p: number) => {
+    const clamped = Math.max(1, Math.min(totalPages, p));
+    setPage(clamped);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
 
   const handleDelete = async (id: number, title: string) => {
     if (!confirm(`Permanently delete "${title}"? This CANNOT be undone.`)) return;
@@ -62,7 +88,7 @@ export default function AdminPostsPage() {
           <button onClick={fetchPosts} className="p-2 rounded-lg bg-[var(--bg-card)] border border-[var(--border)] text-[var(--text-muted)] hover:text-white transition-colors">
             <RefreshCw size={18} />
           </button>
-          <Link href="/admin/posts/new" className="rounded-lg bg-[#e91e63] px-4 py-2 text-sm font-bold text-white hover:bg-[#c2185b] transition-all shadow-lg hover:shadow-[#e91e63]/20">
+          <Link href="/admin/posts/new" className="rounded-lg bg-[#e91e63] px-4 py-2 text-sm font-bold text-white hover:bg-[#c2185b] transition-all">
             Create New Post
           </Link>
         </div>
@@ -76,7 +102,7 @@ export default function AdminPostsPage() {
                 <th className="px-6 py-4">Title</th>
                 <th className="px-6 py-4">Source</th>
                 <th className="px-6 py-4">Date</th>
-                <th className="px-6 py-4">Engagement Stats</th>
+                <th className="px-6 py-4">Stats</th>
                 <th className="px-6 py-4 text-right">Actions</th>
               </tr>
             </thead>
@@ -93,30 +119,23 @@ export default function AdminPostsPage() {
                     {post.published_at ? format(new Date(post.published_at), 'MMM d, yyyy') : 'N/A'}
                   </td>
                   <td className="px-6 py-4">
-                    <div className="flex items-center gap-5 text-[var(--text-muted)]">
-                      {/* Views */}
-                      <div className="flex items-center gap-1.5 group" title="Total Views">
-                        <Eye size={14} className="group-hover:text-white transition-colors" />
+                    <div className="flex items-center gap-4 text-[var(--text-muted)]">
+                      <div className="flex items-center gap-1" title="Views">
+                        <Eye size={13} />
                         <span className="text-xs font-bold text-white/90">{post.stats?.views || 0}</span>
                       </div>
-                      
-                      {/* WhatsApp */}
-                      <div className="flex items-center gap-1.5 group" title="WhatsApp Shares">
-                        <MessageCircle size={14} className="text-[#25D366]" />
+                      <div className="flex items-center gap-1" title="WhatsApp">
+                        <MessageCircle size={13} className="text-[#25D366]" />
                         <span className="text-xs font-bold text-white/90">{post.stats?.whatsapp || 0}</span>
                       </div>
-
-                      {/* Facebook */}
-                      <div className="flex items-center gap-1.5 group" title="Facebook Shares">
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[#1877F2]">
+                      <div className="flex items-center gap-1" title="Facebook">
+                        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-[#1877F2]">
                           <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/>
                         </svg>
                         <span className="text-xs font-bold text-white/90">{post.stats?.facebook || 0}</span>
                       </div>
-
-                      {/* Copy Link / Others */}
-                      <div className="flex items-center gap-1.5 group" title="Link Copies & Others">
-                        <LinkIcon size={14} className="text-[#00ffff]" />
+                      <div className="flex items-center gap-1" title="Link Copies">
+                        <LinkIcon size={13} className="text-[#00ffff]" />
                         <span className="text-xs font-bold text-white/90">{post.stats?.other || 0}</span>
                       </div>
                     </div>
@@ -141,54 +160,80 @@ export default function AdminPostsPage() {
           </table>
         </div>
 
-        {/* PAGINATION CONTROLS */}
+        {/* ── FULL PAGINATION ── */}
         {totalPages > 1 && (
-          <div className="flex items-center justify-between px-6 py-4 bg-[#21262d] border-t border-[var(--border)]">
-            <div className="text-xs font-bold text-[var(--text-muted)]">
-              Page {page} of {totalPages}
+          <div className="px-6 py-4 bg-[#21262d] border-t border-[var(--border)] space-y-3">
+
+            {/* Row 1: Page info + Jump-to-page */}
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <span className="text-xs font-bold text-[var(--text-muted)]">
+                Page <span className="text-white">{page}</span> of <span className="text-[#00ffff]">{totalPages}</span>
+                <span className="ml-2 text-[var(--text-muted)]">({totalCount} posts)</span>
+              </span>
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  const n = parseInt(jumpValue, 10);
+                  if (!isNaN(n)) { goToPage(n); setJumpValue(''); }
+                }}
+                className="flex items-center gap-2"
+              >
+                <span className="text-xs text-[var(--text-muted)] font-bold">Jump to:</span>
+                <input
+                  type="number"
+                  min={1}
+                  max={totalPages}
+                  value={jumpValue}
+                  onChange={e => setJumpValue(e.target.value)}
+                  placeholder="page #"
+                  className="w-20 px-2 py-1 rounded bg-[var(--bg-card)] border border-[var(--border)] text-white text-xs font-bold text-center focus:border-[#00ffff] outline-none [appearance:textfield]"
+                />
+                <button
+                  type="submit"
+                  className="px-3 py-1 rounded bg-[#00ffff]/10 text-[#00ffff] text-xs font-black hover:bg-[#00ffff] hover:text-black transition-all border border-[#00ffff]/30"
+                >
+                  Go
+                </button>
+              </form>
             </div>
-            <div className="flex items-center gap-2">
+
+            {/* Row 2: All page numbers with ellipsis */}
+            <div className="flex flex-wrap items-center gap-1">
               <button
-                onClick={() => setPage(p => Math.max(1, p - 1))}
+                onClick={() => goToPage(page - 1)}
                 disabled={page === 1}
-                className="px-3 py-1.5 rounded bg-[var(--bg-card)] border border-[var(--border)] text-xs font-bold text-white disabled:opacity-30 disabled:cursor-not-allowed hover:border-[#00ffff] transition-all"
+                className="px-3 py-1.5 rounded bg-[var(--bg-card)] border border-[var(--border)] text-xs font-bold text-white disabled:opacity-30 hover:border-[#00ffff] transition-all"
               >
-                Previous
+                ← Prev
               </button>
-              
-              <div className="flex items-center gap-1">
-                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                  let pageNum = page;
-                  if (page <= 3) pageNum = i + 1;
-                  else if (page >= totalPages - 2) pageNum = totalPages - 4 + i;
-                  else pageNum = page - 2 + i;
 
-                  if (pageNum < 1 || pageNum > totalPages) return null;
-
-                  return (
-                    <button
-                      key={pageNum}
-                      onClick={() => setPage(pageNum)}
-                      className={`w-8 h-8 rounded text-xs font-black transition-all ${
-                        page === pageNum 
-                        ? 'bg-[#00ffff] text-black' 
-                        : 'bg-[var(--bg-card)] text-white hover:bg-white/10'
-                      }`}
-                    >
-                      {pageNum}
-                    </button>
-                  );
-                })}
-              </div>
+              {pageRange.map((p, idx) =>
+                p === '...' ? (
+                  <span key={`e-${idx}`} className="px-1 text-[var(--text-muted)] text-sm font-bold select-none">…</span>
+                ) : (
+                  <button
+                    key={p}
+                    onClick={() => goToPage(p as number)}
+                    className={`min-w-[32px] h-8 px-1.5 rounded text-xs font-black transition-all ${
+                      page === p
+                        ? 'bg-[#00ffff] text-black shadow-lg shadow-[#00ffff]/20'
+                        : 'bg-[var(--bg-card)] border border-[var(--border)] text-white hover:bg-white/10 hover:border-[#00ffff]'
+                    }`}
+                  >
+                    {p}
+                  </button>
+                )
+              )}
 
               <button
-                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                onClick={() => goToPage(page + 1)}
                 disabled={page === totalPages}
-                className="px-3 py-1.5 rounded bg-[var(--bg-card)] border border-[var(--border)] text-xs font-bold text-white disabled:opacity-30 disabled:cursor-not-allowed hover:border-[#00ffff] transition-all"
+                className="px-3 py-1.5 rounded bg-[var(--bg-card)] border border-[var(--border)] text-xs font-bold text-white disabled:opacity-30 hover:border-[#00ffff] transition-all"
               >
-                Next
+                Next →
               </button>
             </div>
+
           </div>
         )}
       </div>
