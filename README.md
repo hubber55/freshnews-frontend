@@ -30,6 +30,7 @@ FreshNews is a Malayalam news and classifieds app running on a DigitalOcean drop
 - If tags are selected on the home page, the tag view should remain active until the page is refreshed; refresh returns to Latest home
 
 ## Docs to read first
+- **`SERVER_RECOVERY.md`** (Start here! Complete guide for server crashes, updating code, and DB architecture)
 - `SELF_HOSTING_GUIDE.md`
 - `SETUP_GUIDE.md`
 - `AGENTS.md`
