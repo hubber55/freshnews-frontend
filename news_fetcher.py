@@ -12,17 +12,8 @@ from datetime import datetime, timezone, timedelta
 import logging
 import re
 import base64
-import signal
 from urllib.parse import urlparse
 from config import MALAYALAM_RSS_FEEDS, FETCH_TIMEOUT_SECONDS
-
-
-class PlaywrightTimeout(Exception):
-    pass
-
-
-def _playwright_alarm_handler(signum, frame):
-    raise PlaywrightTimeout("Playwright timed out (hard limit)")
 
 logger = logging.getLogger(__name__)
 IST = timezone(timedelta(hours=5, minutes=30))
@@ -250,13 +241,7 @@ def extract_with_playwright(url):
             logger.warning(f"    ⚠️ PLAYWRIGHT: Skipping non-article URL: {url[:60]}...")
             return None
     
-    # Hard 45-second timeout — prevents the fetcher from hanging forever
-    try:
-        signal.signal(signal.SIGALRM, _playwright_alarm_handler)
-        signal.alarm(45)
-    except (AttributeError, OSError):
-        pass  # Windows doesn't have SIGALRM; safe to skip
-
+    # Use native Playwright timeouts instead of signal.alarm to prevent Node driver zombies
     try:
         # Check if playwright is available
         try:
@@ -311,9 +296,15 @@ def extract_with_playwright(url):
                 'Cache-Control': 'max-age=0',
             })
             
+            # Set default timeout for all page operations
+            page.set_default_timeout(30000)
+            
             # Navigate and wait for redirect
             logger.info(f"    🎭 PLAYWRIGHT: Navigating to {url[:50]}...")
-            page.goto(url, wait_until="domcontentloaded", timeout=30000)
+            try:
+                page.goto(url, wait_until="domcontentloaded", timeout=30000)
+            except Exception as nav_e:
+                logger.warning(f"    ⚠️ Navigation timeout/error, continuing anyway: {nav_e}")
             
             # Wait for either content or cloudflare challenge
             try:
@@ -422,20 +413,9 @@ def extract_with_playwright(url):
                 logger.warning(f"    ❌ Playwright only got {len(full_text)} chars (need >200)")
                 return None
             
-    except PlaywrightTimeout as e:
-        logger.error(f"    ⏰ Playwright HARD TIMEOUT for {url[:60]}: {e}")
-        return None
     except Exception as e:
         logger.error(f"    💥 Playwright extraction failed for {url}: {e}")
-        import traceback
-        logger.debug(traceback.format_exc())
         return None
-    finally:
-        # Always cancel the alarm
-        try:
-            signal.alarm(0)
-        except (AttributeError, OSError):
-            pass
 
 
 def extract_og_image(url):
