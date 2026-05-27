@@ -226,26 +226,37 @@ def prune_oldest_post():
     """
     After a successful insertion, permanently delete the single oldest post that:
       - is NOT locked (is_locked = false or null)
-      - is NOT a classified ad (submission_id IS NULL — classifieds have their own deletion)
+      - is NOT a classified ad (submission_id IS NULL)
       - is NOT already deleted
-    Logs the pruned post ID and title.
+    Uses a local cursor file to instantly find the next eligible ID without scanning.
     """
     if not supabase:
         return
     try:
-        # Fetch the oldest eligible post
+        cursor = 85
+        cursor_file = "prune_cursor.txt"
+        
+        if os.path.exists(cursor_file):
+            with open(cursor_file, 'r') as f:
+                content = f.read().strip()
+                if content.isdigit():
+                    cursor = int(content)
+
+        # Ask Supabase for the FIRST eligible post starting from the cursor
         resp = (
             supabase.table('posts')
             .select('id, title, published_at')
+            .gte('id', cursor)                     # Start looking from cursor
             .eq('is_deleted', False)
             .is_('submission_id', 'null')          # exclude classifieds / user submissions
             .not_.eq('is_locked', True)            # exclude locked/pinned posts
-            .order('published_at', desc=False)     # oldest first
+            .order('id', desc=False)               # Fast Primary Key index scan
             .limit(1)
             .execute()
         )
+        
         if not resp.data:
-            logger.info("  🧹 Prune: no eligible old post found.")
+            logger.info("  🧹 Prune: No eligible old post found from cursor onwards.")
             return
 
         oldest = resp.data[0]
@@ -258,5 +269,10 @@ def prune_oldest_post():
             f"  🧹 PRUNED oldest post | ID: {post_id} | "
             f"Date: {post_date} | Title: {post_title}..."
         )
+        
+        # Save the next ID to the cursor file
+        with open(cursor_file, 'w') as f:
+            f.write(str(post_id + 1))
+            
     except Exception as e:
         logger.error(f"  ❌ Prune failed: {e}")
