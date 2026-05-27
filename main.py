@@ -14,6 +14,7 @@ import sys
 import time
 import re
 import random
+import os
 from datetime import datetime, timezone, timedelta
 
 from config import (
@@ -98,10 +99,15 @@ def run_rotation():
     logger.info(f"   Mode: {mode} | Time: {now_ist.strftime('%I:%M %p')} IST | Delay: {delay}s | Publisher: {pub_method}")
     logger.info("=" * 60)
 
-    # 0. Cleanup broken images from recent posts
+    # 0. Cleanup any zombie Playwright/Chromium processes from previous cycles
+    # This acts as an aggressive garbage collector to keep CPU/Memory low
+    logger.info("  🧹 Running aggressive garbage collection (killing stuck browsers)...")
+    os.system("pkill -f playwright; pkill -f chrome; pkill -f chromium")
+
+    # 1. Cleanup broken images from recent posts
     cleanup_broken_images()
 
-    # 1. Get existing posts for deduplication straight from DB
+    # 2. Get existing posts for deduplication straight from DB
     existing_posts = get_existing_posts()
 
     # Shuffle feeds to randomize the order each rotation
