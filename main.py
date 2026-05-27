@@ -249,8 +249,8 @@ def run_rotation():
                     "image_url": best_article.get("image_url", ""),
                 })
 
-                # Prune the oldest eligible post to keep the DB lean
-                prune_oldest_post()
+                # Temporarily disabled: This query causes a full table scan and crashes the 2GB droplet.
+                # prune_oldest_post()
 
                 # Update recent sources to prevent consecutive posts from same source
                 recent_sources.append(base_source)
