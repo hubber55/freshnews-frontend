@@ -117,6 +117,9 @@ def publish_via_supabase(article):
             logger.warning(f"  🔁 DB duplicate guard: Post with exact title already exists: {title}")
             return False
 
+        # Use the current server time for published_at so "X minutes ago" is accurate
+        now_utc = datetime.now(timezone.utc).isoformat()
+
         # 1. Insert row into the 'posts' table
         post_response = supabase.table('posts').insert({
             "title": title,
@@ -127,7 +130,7 @@ def publish_via_supabase(article):
             "original_url": original_url,
             "original_url_fingerprint": original_url_fingerprint or None,
             "faq": faq if faq else None,
-            "published_at": published_at_str,
+            "published_at": now_utc,   # Server insertion time — keeps "X min ago" accurate
         }).execute()
 
         if not post_response.data or len(post_response.data) == 0:
@@ -217,3 +220,43 @@ def soft_delete_post(post_id, reason="Admin Request"):
     except Exception as e:
         logger.error(f"  ❌ Delete failed for {post_id}: {e}")
         return False
+
+
+def prune_oldest_post():
+    """
+    After a successful insertion, permanently delete the single oldest post that:
+      - is NOT locked (is_locked = false or null)
+      - is NOT a classified ad (submission_id IS NULL — classifieds have their own deletion)
+      - is NOT already deleted
+    Logs the pruned post ID and title.
+    """
+    if not supabase:
+        return
+    try:
+        # Fetch the oldest eligible post
+        resp = (
+            supabase.table('posts')
+            .select('id, title, published_at')
+            .eq('is_deleted', False)
+            .is_('submission_id', 'null')          # exclude classifieds / user submissions
+            .not_.eq('is_locked', True)            # exclude locked/pinned posts
+            .order('published_at', desc=False)     # oldest first
+            .limit(1)
+            .execute()
+        )
+        if not resp.data:
+            logger.info("  🧹 Prune: no eligible old post found.")
+            return
+
+        oldest = resp.data[0]
+        post_id = oldest['id']
+        post_title = (oldest.get('title') or '')[:60]
+        post_date = oldest.get('published_at', 'unknown')
+
+        supabase.table('posts').delete().eq('id', post_id).execute()
+        logger.info(
+            f"  🧹 PRUNED oldest post | ID: {post_id} | "
+            f"Date: {post_date} | Title: {post_title}..."
+        )
+    except Exception as e:
+        logger.error(f"  ❌ Prune failed: {e}")

@@ -24,19 +24,34 @@ from config import (
 from news_fetcher import fetch_feed_articles, enrich_with_images, scrape_full_text_if_needed, is_image_valid
 from deduplicator import deduplicate_articles, rank_articles, is_duplicate_title, ai_semantic_dedup
 from summarizer import summarize_article
-from supabase_publisher import publish_via_supabase, get_existing_posts, get_recent_posts, soft_delete_post
+from supabase_publisher import publish_via_supabase, get_existing_posts, get_recent_posts, soft_delete_post, prune_oldest_post
 
 # --- Logging Setup ---
+LOG_FILE = "freshnews.log"
+MAX_LOG_LINES = 100
+
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
     datefmt="%H:%M:%S",
     handlers=[
         logging.StreamHandler(sys.stdout),
-        logging.FileHandler("freshnews.log", encoding="utf-8"),
+        logging.FileHandler(LOG_FILE, encoding="utf-8"),
     ]
 )
 logger = logging.getLogger(__name__)
+
+
+def trim_log_file():
+    """Keep only the last MAX_LOG_LINES lines in the log file."""
+    try:
+        with open(LOG_FILE, "r", encoding="utf-8", errors="replace") as f:
+            lines = f.readlines()
+        if len(lines) > MAX_LOG_LINES:
+            with open(LOG_FILE, "w", encoding="utf-8") as f:
+                f.writelines(lines[-MAX_LOG_LINES:])
+    except Exception:
+        pass  # Non-critical; never crash the daemon over log trimming
 
 # --- IST Timezone ---
 IST = timezone(timedelta(hours=5, minutes=30))
@@ -227,7 +242,10 @@ def run_rotation():
                     "original_url": best_article.get("link", ""),
                     "image_url": best_article.get("image_url", ""),
                 })
-                
+
+                # Prune the oldest eligible post to keep the DB lean
+                prune_oldest_post()
+
                 # Update recent sources to prevent consecutive posts from same source
                 recent_sources.append(base_source)
                 if len(recent_sources) > 3:
@@ -256,6 +274,9 @@ def daemon_mode():
         except Exception as e:
             logger.error(f"Critical error in rotation: {e}")
             time.sleep(get_current_delay())
+        finally:
+            # Trim log to last 100 lines after every rotation
+            trim_log_file()
 
 
 if __name__ == "__main__":
