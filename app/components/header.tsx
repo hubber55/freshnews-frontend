@@ -338,13 +338,13 @@ export default function Header() {
                       onClick={() => {
                         if (navigator.share) {
                           navigator.share({
-                            title: 'FreshNews.top',
-                            text: 'Read the latest Malayalam news on FreshNews!',
-                            url: 'https://freshnews.top'
+                            title: 'FreshNews.top App',
+                            text: 'Download the FreshNews Malayalam News App!',
+                            url: 'https://play.google.com/store/apps/details?id=top.freshnews.app'
                           }).catch(() => {});
                         } else {
-                          navigator.clipboard.writeText('https://freshnews.top');
-                          setInstallNotice('Link copied to clipboard!');
+                          navigator.clipboard.writeText('https://play.google.com/store/apps/details?id=top.freshnews.app');
+                          setInstallNotice('App Link copied to clipboard!');
                         }
                         setMenuOpen(false);
                       }}

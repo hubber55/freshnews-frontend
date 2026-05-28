@@ -20,12 +20,12 @@ export default function TosPage() {
 
           <div className="article-body text-[var(--text-primary)]">
             <p>
-              Please read these Terms of Service carefully before using FreshNews.top. By accessing or using our website, you agree to be bound by these terms.
+              Please read these Terms of Service carefully before using FreshNews.top. By accessing or using our website or mobile application, you agree to be bound by these terms.
             </p>
 
             <p><strong>1. Acceptance of Terms</strong></p>
             <p>
-              By accessing and using FreshNews.top, you accept and agree to be bound by these Terms of Service and our Privacy Policy. If you do not agree with any part of the terms, you may not access the website.
+              By accessing and using FreshNews.top and its associated mobile application, you accept and agree to be bound by these Terms of Service and our Privacy Policy. If you do not agree with any part of the terms, you may not access the service.
             </p>
 
             <p><strong>2. Description of Service</strong></p>

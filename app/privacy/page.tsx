@@ -20,7 +20,7 @@ export default function PrivacyPage() {
 
           <div className="article-body text-[var(--text-primary)]">
             <p>
-              At FreshNews.top, we are committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you visit our website. You may request permanent account deletion from your profile or the delete-account page.
+              At FreshNews.top, we are committed to protecting your privacy. This Privacy Policy explains how we collect, use, disclose, and safeguard your information when you visit our website or use our mobile application. You may request permanent account deletion from your profile or the delete-account page.
             </p>
 
             <p><strong>1. Information We Collect</strong></p>
@@ -33,9 +33,9 @@ export default function PrivacyPage() {
             <p><strong>2. How We Use Your Information</strong></p>
             <p>
               We use the information we collect to:<br/>
-              • Provide, operate, and maintain our website<br/>
-              • Improve, personalize, and expand our website<br/>
-              • Understand and analyze how you use our website<br/>
+              • Provide, operate, and maintain our website and mobile application<br/>
+              • Improve, personalize, and expand our platform<br/>
+              • Understand and analyze how you use our services<br/>
               • Develop new products, services, features, and functionality
             </p>
 
