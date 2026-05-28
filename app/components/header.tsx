@@ -13,7 +13,8 @@ const GUEST_LINKS = [
   { href: '/classifieds', label: 'View Classifieds', color: '#00cfff' },
   { href: '/faq', label: 'FAQ' },
   { href: '/contact', label: 'Contact Us' },
-  { href: '/install-app', label: 'Install As App', color: '#00cfff', requiresAuth: false, isInstallLink: true },
+  { href: 'https://play.google.com/store/apps/details?id=com.freshnews.app', label: 'Download App', color: '#00cfff', requiresAuth: false, isInstallLink: true },
+  { href: '#share', label: 'Share App', color: '#00ff88', isShareLink: true },
 ];
 
 const USER_MENU_ITEMS = [
@@ -24,7 +25,8 @@ const USER_MENU_ITEMS = [
   { href: '/faq', label: 'FAQ' },
   { href: '/contact', label: 'Contact Us' },
   { href: '/profile', label: 'Profile', color: '#ffd42a' },
-  { href: '/install-app', label: 'Install As App', color: '#00cfff', isInstallLink: true },
+  { href: 'https://play.google.com/store/apps/details?id=com.freshnews.app', label: 'Download App', color: '#00cfff', isInstallLink: true },
+  { href: '#share', label: 'Share App', color: '#00ff88', isShareLink: true },
 ];
 
 // Type for menu items with optional color
@@ -34,6 +36,7 @@ type MenuItem = {
   color?: string;
   requiresAuth?: boolean;
   isInstallLink?: boolean;
+  isShareLink?: boolean;
 };
 
 import { useAuth } from './AuthProvider';
@@ -325,19 +328,25 @@ export default function Header() {
                 // For guest users, dim out items that require auth
                 const isDimmed = !isLoggedIn && link.requiresAuth;
                 const targetHref = isDimmed ? '/signup' : link.href;
-                const isInstallLink = link.href === '/install-app';
+                const isInstallLink = link.isInstallLink;
                 const isInstallDisabled = isInstallLink && isInstalled;
                 
-                // Use button for install link when prompt is available to prevent navigation
-                if (isInstallLink && isInstallable && !isInstalled) {
+                if (link.isShareLink) {
                   return (
                     <button
-                      key={link.href}
-                      onClick={async () => {
-                        const result = await triggerInstall();
-                        if (result) {
-                          setMenuOpen(false);
+                      key={link.label}
+                      onClick={() => {
+                        if (navigator.share) {
+                          navigator.share({
+                            title: 'FreshNews.top',
+                            text: 'Read the latest Malayalam news on FreshNews!',
+                            url: 'https://freshnews.top'
+                          }).catch(() => {});
+                        } else {
+                          navigator.clipboard.writeText('https://freshnews.top');
+                          setInstallNotice('Link copied to clipboard!');
                         }
+                        setMenuOpen(false);
                       }}
                       className="w-full text-left block px-6 py-4 text-[17px] font-semibold transition-colors border-b border-[var(--border)]/30"
                       style={{ color: link.color || 'var(--text-primary)' }}
@@ -358,10 +367,10 @@ export default function Header() {
                 if (isInstallDisabled) {
                   return (
                     <button
-                      key={link.href}
+                      key={link.label}
                       type="button"
                       onClick={() => {
-                        setInstallNotice('Already Installed');
+                        setInstallNotice('Already using the App');
                       }}
                       className="w-full text-left block px-6 py-4 text-[17px] font-semibold border-b border-[var(--border)]/30"
                       style={{
