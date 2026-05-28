@@ -20,7 +20,7 @@ import PollCard from './components/PollCard';
 
 import LockNewsButton from './components/LockNewsButton';
 
-export const revalidate = 10; // Revalidate every 10 seconds to reduce DB egress
+export const revalidate = 120; // Cache for 2 minutes (articles arrive every 10-15 min)
 
 type HeaderInsert = {
   enabled?: boolean;
@@ -131,7 +131,9 @@ export default async function Home({ searchParams }: HomeProps) {
     query = query.or(`tags.cs.{"${searchTerm}"},title.ilike.%${searchTerm}%,tags.ov.{"${searchTerm}"}`);
   }
 
-  const [{ data: posts, error: postsError }, { data: lockedPosts, error: lockedError }] = await Promise.all([
+  const adminSupabase = createAdminClient();
+
+  const [{ data: posts, error: postsError }, { data: lockedPosts, error: lockedError }, { data: adSettings }] = await Promise.all([
     query,
     supabase
       .from('posts')
@@ -139,25 +141,22 @@ export default async function Home({ searchParams }: HomeProps) {
       .eq('is_locked', true)
       .eq('is_deleted', false)
       .gt('locked_until', new Date().toISOString())
-      .limit(10)
+      .limit(10),
+    adminSupabase
+      .from('admin_settings')
+      .select('key, value')
+      .in('key', [
+        'adsterra_code', 
+        'header_inserts', 
+        'ad_networks', 
+        'ad_networks_random', 
+        'admin_added_tags',
+        'lock_rate_pos_2',
+        'lock_rate_pos_8',
+        'lock_rate_pos_16',
+        'lock_rate_pos_24'
+      ])
   ]);
-
-  // Fetch ad-related settings
-  const adminSupabase = createAdminClient();
-  const { data: adSettings } = await adminSupabase
-    .from('admin_settings')
-    .select('key, value')
-    .in('key', [
-      'adsterra_code', 
-      'header_inserts', 
-      'ad_networks', 
-      'ad_networks_random', 
-      'admin_added_tags',
-      'lock_rate_pos_2',
-      'lock_rate_pos_8',
-      'lock_rate_pos_16',
-      'lock_rate_pos_24'
-    ]);
 
   const adSettingsMap = new Map((adSettings ?? []).map((setting) => [setting.key, setting.value]));
   const legacyAdsterra = (adSettingsMap.get('adsterra_code') as string | undefined)?.trim() || '';

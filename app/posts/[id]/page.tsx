@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { cache } from 'react';
 import Link from 'next/link';
 import { notFound, redirect } from 'next/navigation';
 import { Clock, ChevronLeft, ChevronRight, Home } from 'lucide-react';
@@ -75,7 +76,7 @@ type PageProps = {
   }>;
 };
 
-async function getPost(id: string) {
+const getPost = cache(async (id: string) => {
   const { data } = await supabase
     .from('posts')
     .select('*')
@@ -83,31 +84,28 @@ async function getPost(id: string) {
     .single<PostRecord>();
 
   return data;
-}
+});
 
 async function getAdjacentPosts(currentId: number, publishedAt: string | null) {
-  const prevPost: PostRecord | null = null;
-  const nextPost: PostRecord | null = null;
+  if (!publishedAt) return { prevPost: null, nextPost: null };
 
-  if (!publishedAt) return { prevPost, nextPost };
-
-  // Previous post (older)
-  const { data: prev } = await supabase
-    .from('posts')
-    .select('id, title, image_url')
-    .lt('published_at', publishedAt)
-    .order('published_at', { ascending: false })
-    .limit(1)
-    .single<Pick<PostRecord, 'id' | 'title' | 'image_url'>>();
-
-  // Next post (newer)
-  const { data: next } = await supabase
-    .from('posts')
-    .select('id, title, image_url')
-    .gt('published_at', publishedAt)
-    .order('published_at', { ascending: true })
-    .limit(1)
-    .single<Pick<PostRecord, 'id' | 'title' | 'image_url'>>();
+  // Run both queries in PARALLEL instead of sequentially
+  const [{ data: prev }, { data: next }] = await Promise.all([
+    supabase
+      .from('posts')
+      .select('id, title, image_url')
+      .lt('published_at', publishedAt)
+      .order('published_at', { ascending: false })
+      .limit(1)
+      .single<Pick<PostRecord, 'id' | 'title' | 'image_url'>>(),
+    supabase
+      .from('posts')
+      .select('id, title, image_url')
+      .gt('published_at', publishedAt)
+      .order('published_at', { ascending: true })
+      .limit(1)
+      .single<Pick<PostRecord, 'id' | 'title' | 'image_url'>>(),
+  ]);
 
   return { prevPost: prev, nextPost: next };
 }
@@ -192,43 +190,46 @@ export default async function PostPage({ params }: PageProps) {
   const publishedDate = post.published_at ? new Date(post.published_at) : null;
   const articleUrl = `${getSiteUrl()}/posts/${post.id}`;
 
-  const { prevPost, nextPost } = await getAdjacentPosts(post.id, post.published_at ?? null);
+  // Run ALL independent queries in PARALLEL — this is the biggest speedup
+  const adjacentPromise = getAdjacentPosts(post.id, post.published_at ?? null);
 
-  // Related articles: find 4 posts sharing at least one tag
-  let relatedPosts: Pick<PostRecord, 'id' | 'title' | 'image_url'>[] = [];
-  if (post.tags && post.tags.length > 0) {
-    const { data: related } = await supabase
-      .from('posts')
-      .select('id, title, image_url')
-      .neq('id', post.id)
-      .eq('is_deleted', false)
-      .overlaps('tags', post.tags)
-      .order('published_at', { ascending: false })
-      .limit(4);
-      relatedPosts = related ?? [];
-  }
+  const relatedPromise = (post.tags && post.tags.length > 0)
+    ? supabase
+        .from('posts')
+        .select('id, title, image_url')
+        .neq('id', post.id)
+        .eq('is_deleted', false)
+        .overlaps('tags', post.tags)
+        .order('published_at', { ascending: false })
+        .limit(4)
+    : Promise.resolve({ data: [] as Pick<PostRecord, 'id' | 'title' | 'image_url'>[] });
 
-  // More from source: find 3 recent articles from the same source
-  let moreFromSource: Pick<PostRecord, 'id' | 'title' | 'image_url'>[] = [];
-  if (post.source_name) {
-    const { data: fromSource } = await supabase
-      .from('posts')
-      .select('id, title, image_url')
-      .neq('id', post.id)
-      .eq('is_deleted', false)
-      .eq('source_name', post.source_name)
-      .order('published_at', { ascending: false })
-      .limit(3);
-    moreFromSource = fromSource ?? [];
-  }
+  const sourcePromise = post.source_name
+    ? supabase
+        .from('posts')
+        .select('id, title, image_url')
+        .neq('id', post.id)
+        .eq('is_deleted', false)
+        .eq('source_name', post.source_name)
+        .order('published_at', { ascending: false })
+        .limit(3)
+    : Promise.resolve({ data: [] as Pick<PostRecord, 'id' | 'title' | 'image_url'>[] });
 
-  // Fetch Ad Network Code from the server-side admin client so public rendering
-  // does not depend on anon read access to admin_settings.
   const adminSupabase = createAdminClient();
-  const { data: adSettings } = await adminSupabase
+  const adPromise = adminSupabase
     .from('admin_settings')
     .select('key, value')
     .in('key', ['adsterra_code', 'ad_networks', 'ad_networks_random']);
+
+  const [
+    { prevPost, nextPost },
+    { data: related },
+    { data: fromSource },
+    { data: adSettings },
+  ] = await Promise.all([adjacentPromise, relatedPromise, sourcePromise, adPromise]);
+
+  const relatedPosts = related ?? [];
+  const moreFromSource = fromSource ?? [];
 
   const adSettingsMap = new Map((adSettings ?? []).map((s) => [s.key, s.value]));
   const legacyAdsterra = typeof adSettingsMap.get('adsterra_code') === 'string' ? adSettingsMap.get('adsterra_code')!.trim() : '';
