@@ -13,7 +13,7 @@ const GUEST_LINKS = [
   { href: '/classifieds', label: 'View Classifieds', color: '#00cfff' },
   { href: '/faq', label: 'FAQ' },
   { href: '/contact', label: 'Contact Us' },
-  { href: 'https://play.google.com/store/apps/details?id=com.freshnews.app', label: 'Download App', color: '#00cfff', requiresAuth: false, isInstallLink: true },
+  { href: 'https://play.google.com/store/apps/details?id=top.freshnews.app', label: 'Download App', color: '#00cfff', requiresAuth: false, isInstallLink: true },
   { href: '#share', label: 'Share App', color: '#00ff88', isShareLink: true },
 ];
 
@@ -25,7 +25,7 @@ const USER_MENU_ITEMS = [
   { href: '/faq', label: 'FAQ' },
   { href: '/contact', label: 'Contact Us' },
   { href: '/profile', label: 'Profile', color: '#ffd42a' },
-  { href: 'https://play.google.com/store/apps/details?id=com.freshnews.app', label: 'Download App', color: '#00cfff', isInstallLink: true },
+  { href: 'https://play.google.com/store/apps/details?id=top.freshnews.app', label: 'Download App', color: '#00cfff', isInstallLink: true },
   { href: '#share', label: 'Share App', color: '#00ff88', isShareLink: true },
 ];
 
