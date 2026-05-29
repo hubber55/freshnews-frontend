@@ -15,6 +15,7 @@ import time
 import re
 import random
 import os
+import gc
 from datetime import datetime, timezone, timedelta
 
 from config import (
@@ -291,6 +292,8 @@ def daemon_mode():
             logger.error(f"Critical error in rotation: {e}")
             time.sleep(get_current_delay())
         finally:
+            # Force garbage collection to reclaim memory from abandoned threads
+            gc.collect()
             # Trim log to last 100 lines after every rotation
             trim_log_file()
 
