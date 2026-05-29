@@ -232,8 +232,39 @@ def extract_full_article_text(url):
 
 
 def extract_with_playwright(url):
-    """Use Playwright to render JavaScript-heavy pages and extract article text."""
+    """Use Playwright to render JavaScript-heavy pages and extract article text.
+    Has a hard 45-second timeout — if anything hangs, we kill the browser and skip."""
     logger.info(f"    🎭 PLAYWRIGHT: Starting extraction for {url[:60]}...")
+    
+    import threading
+    result_container = [None]
+    error_container = [None]
+    
+    def _do_extract():
+        try:
+            result_container[0] = _playwright_inner(url)
+        except Exception as e:
+            error_container[0] = e
+    
+    thread = threading.Thread(target=_do_extract, daemon=True)
+    thread.start()
+    thread.join(timeout=45)  # Hard 45-second deadline
+    
+    if thread.is_alive():
+        logger.error(f"    💀 PLAYWRIGHT TIMEOUT: Extraction hung for >45s on {url[:60]}. Killing browsers...")
+        os.system("pkill -f chromium; pkill -f chrome")
+        return None
+    
+    if error_container[0]:
+        logger.error(f"    💥 Playwright extraction failed for {url[:60]}: {error_container[0]}")
+        return None
+    
+    return result_container[0]
+
+
+def _playwright_inner(url):
+    """Internal Playwright extraction — called inside a timeout-guarded thread."""
+    logger.info(f"    🎭 PLAYWRIGHT: Inner extraction for {url[:60]}...")
     
     # Skip non-article URLs (photo galleries, cartoons, etc.)
     if "keralakaumudi.com" in url.lower():
@@ -312,8 +343,8 @@ def extract_with_playwright(url):
                 page.wait_for_selector('article, .article-content, .entry-content, .post-content, main', timeout=5000)
                 logger.info(f"    ✅ Content selector found")
             except:
-                logger.info(f"    ⏳ No content selector found, waiting longer...")
-                page.wait_for_timeout(5000)
+                logger.info(f"    ⏳ No content selector found, waiting 3s...")
+                page.wait_for_timeout(3000)
             
             # Check if page loaded successfully
             try:

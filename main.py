@@ -276,7 +276,17 @@ def daemon_mode():
     logger.info(f"   Schedule: DAY ({DAY_START_HOUR}:00-{DAY_END_HOUR}:00 IST) = {DAY_DELAY_SECONDS}s | NIGHT = {NIGHT_DELAY_SECONDS}s")
     while True:
         try:
-            run_rotation()
+            import threading
+            rotation_thread = threading.Thread(target=run_rotation, daemon=True)
+            rotation_start = time.time()
+            rotation_thread.start()
+            rotation_thread.join(timeout=600)  # 10 minute hard limit per rotation
+
+            if rotation_thread.is_alive():
+                elapsed = int(time.time() - rotation_start)
+                logger.critical(f"⚠️ WATCHDOG: Rotation stuck for {elapsed}s! Killing all browsers and moving on...")
+                os.system("pkill -f playwright; pkill -f chrome; pkill -f chromium")
+                time.sleep(5)  # Brief cooldown after force-kill
         except Exception as e:
             logger.error(f"Critical error in rotation: {e}")
             time.sleep(get_current_delay())
