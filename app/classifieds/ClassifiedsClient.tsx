@@ -36,6 +36,7 @@ export default function ClassifiedsClient({
   allTags: string[]
 }) {
   const searchParams = useSearchParams();
+  const [search, setSearch] = useState(searchParams.get('search') || '');
   const [activeTag, setActiveTag] = useState<string | null>(searchParams.get('tag'));
 
   // Sync state when URL params change (e.g. clicking the footer nav icon again)
