@@ -27,7 +27,7 @@ export default function AndroidAppPrompt() {
       if (isAndroid && !isStandalone) {
         setShowPrompt(true);
       }
-    }, 4000); // 4 seconds delay
+    }, 15000); // 15 seconds delay
 
     return () => clearTimeout(timer);
   }, []);

@@ -4,7 +4,6 @@ import './globals.css';
 import AuthHashHandler from './components/AuthHashHandler';
 import SlowNetworkBanner from './components/SlowNetworkBanner';
 import BottomNav from './components/BottomNav';
-import NotificationManager from './components/NotificationManager';
 import ManagedInserts from './components/ManagedInserts';
 import AndroidAppPrompt from './components/AndroidAppPrompt';
 
@@ -143,7 +142,6 @@ export default async function RootLayout({
           <AndroidAppPrompt />
           {children}
           <BottomNav />
-          <NotificationManager />
         </AuthProvider>
       </body>
     </html>
