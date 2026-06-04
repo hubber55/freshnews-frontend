@@ -54,7 +54,9 @@ export default function ClassifiedsClient({
       
       const matchesTag = !activeTag || 
         (item.tags?.some(t => t.toLowerCase() === activeTag.toLowerCase())) ||
-        (item.location?.toLowerCase().includes(activeTag.toLowerCase()));
+        (item.location?.toLowerCase().includes(activeTag.toLowerCase())) ||
+        (item.ad_categories?.name?.toLowerCase() === activeTag.toLowerCase()) ||
+        (item.ad_subcategories?.name?.toLowerCase() === activeTag.toLowerCase());
 
       return matchesSearch && matchesTag;
     });

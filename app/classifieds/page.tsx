@@ -2,6 +2,7 @@ import { createAdminClient } from '@/lib/supabase-admin';
 import Header from '../components/header';
 import Footer from '../components/footer';
 import ClassifiedsClient from './ClassifiedsClient';
+import { Suspense } from 'react';
 
 export const revalidate = 10;
 
@@ -60,10 +61,12 @@ export default async function ClassifiedsPage() {
   return (
     <div className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)]">
       <Header />
-      <ClassifiedsClient 
-        initialClassifieds={classifieds} 
-        allTags={allTags} 
-      />
+      <Suspense fallback={<div className="p-10 text-center text-white">Loading...</div>}>
+        <ClassifiedsClient 
+          initialClassifieds={classifieds} 
+          allTags={allTags} 
+        />
+      </Suspense>
       <Footer />
     </div>
   );
