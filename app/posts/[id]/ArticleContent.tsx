@@ -130,7 +130,7 @@ export default function ArticleContent({ post, bodyItems, readingTime }: Article
       {/* SUMMARY DISCLAIMER - DIRECTLY BELOW IMAGE */}
       <div className="mb-8 px-2">
         <p className="text-[12px] font-bold text-[#00ffff] italic leading-relaxed">
-          Note: This is just a Summary. Read the full article at the source below..
+          Note: This is just a Summary . Full source below
         </p>
       </div>
 

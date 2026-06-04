@@ -224,15 +224,16 @@ def soft_delete_post(post_id, reason="Admin Request"):
 
 def prune_oldest_post():
     """
-    After a successful insertion, permanently delete the single oldest post that:
-      - is NOT locked (is_locked = false or null)
-      - is NOT a classified ad (submission_id IS NULL)
-      - is NOT already deleted
+    After a successful insertion, randomly permanently delete 1 or 2 of the oldest posts that:
+      - are NOT locked (is_locked = false or null)
+      - are NOT a classified ad (submission_id IS NULL)
+      - are NOT already deleted
     Uses a local cursor file to instantly find the next eligible ID without scanning.
     """
     if not supabase:
         return
     try:
+        import random
         cursor = 85
         cursor_file = "prune_cursor.txt"
         
@@ -242,37 +243,38 @@ def prune_oldest_post():
                 if content.isdigit():
                     cursor = int(content)
 
-        # Ask Supabase for the FIRST eligible post starting from the cursor
+        num_to_delete = random.choice([1, 2])
+
+        # Ask Supabase for eligible posts starting from the cursor
         resp = (
             supabase.table('posts')
             .select('id, title, published_at')
             .gte('id', cursor)                     # Start looking from cursor
             .eq('is_deleted', False)
-            .is_('submission_id', 'null')          # exclude classifieds / user submissions
-            .not_.eq('is_locked', True)            # exclude locked/pinned posts
-            .order('id', desc=False)               # Fast Primary Key index scan
-            .limit(1)
+            .is_('submission_id', 'null')          # Exclude classifieds
+            .or_("is_locked.is.false,is_locked.is.null") # Exclude locked posts
+            .order('id', desc=False)
+            .limit(num_to_delete)
             .execute()
         )
         
-        if not resp.data:
-            logger.info("  🧹 Prune: No eligible old post found from cursor onwards.")
+        data = resp.data
+        if not data:
+            logger.info("  🧹 Prune: No eligible old posts found.")
             return
-
-        oldest = resp.data[0]
-        post_id = oldest['id']
-        post_title = (oldest.get('title') or '')[:60]
-        post_date = oldest.get('published_at', 'unknown')
-
-        supabase.table('posts').delete().eq('id', post_id).execute()
-        logger.info(
-            f"  🧹 PRUNED oldest post | ID: {post_id} | "
-            f"Date: {post_date} | Title: {post_title}..."
-        )
-        
-        # Save the next ID to the cursor file
-        with open(cursor_file, 'w') as f:
-            f.write(str(post_id + 1))
+            
+        for post in data:
+            target_id = post['id']
+            # Hard delete
+            del_resp = supabase.table('posts').delete().eq('id', target_id).execute()
+            
+            if del_resp.data:
+                logger.info(f"  🧹 Auto-pruned old post {target_id}: '{post.get('title', '')[:40]}...'")
+                
+                # Advance cursor past this deleted item
+                next_cursor = target_id + 1
+                with open(cursor_file, 'w') as f:
+                    f.write(str(next_cursor))
             
     except Exception as e:
         logger.error(f"  ❌ Prune failed: {e}")

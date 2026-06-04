@@ -45,7 +45,7 @@ export function formatTimeAgo(targetDateString: string | Date | null | undefined
   if (diffInMinutes < 1) return 'Just now';
   
   const diffInHours = diffInMs / (1000 * 60 * 60);
-  if (diffInHours < 24) return formatDistanceToNow(date, { addSuffix: true });
+  if (diffInHours < 24) return formatDistanceToNow(date, { addSuffix: true }).replace('about ', '').replace('About ', '');
   
   return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
 }

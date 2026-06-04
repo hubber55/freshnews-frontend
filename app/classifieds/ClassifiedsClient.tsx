@@ -4,7 +4,7 @@ import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { formatDistanceToNow } from 'date-fns';
-import { CalendarDays, Clock, MapPin, Megaphone, Home, Phone, Banknote } from 'lucide-react';
+import { CalendarDays, Clock, MapPin, Megaphone, Home, Phone, Banknote, Building, Briefcase } from 'lucide-react';
 import ImageGallery from '../components/ImageGallery';
 import ClassifiedsFilter from './ClassifiedsFilter';
 import ClassifiedsRefreshRedirect from '../components/ClassifiedsRefreshRedirect';
@@ -117,7 +117,31 @@ export default function ClassifiedsClient({
         />
       </div>
 
-      {filteredClassifieds.length === 0 ? (
+      {!activeTag && !search ? (
+        <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-6">
+          <button 
+            onClick={() => setActiveTag('Real Estate')}
+            className="flex flex-col items-center justify-center gap-4 rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] p-12 hover:border-[#00ffff]/50 hover:bg-[#00ffff]/5 transition-all shadow-lg active:scale-95"
+          >
+            <div className="rounded-full bg-[#00ffff]/10 p-5 text-[#00ffff]">
+              <Building size={48} strokeWidth={1.5} />
+            </div>
+            <h2 className="text-2xl font-extrabold text-white" style={{ fontFamily: 'var(--font-en)' }}>Real Estate</h2>
+            <p className="text-sm text-[var(--text-secondary)] text-center">Buy, sell, or rent properties</p>
+          </button>
+          
+          <button 
+            onClick={() => setActiveTag('Jobs')}
+            className="flex flex-col items-center justify-center gap-4 rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] p-12 hover:border-[#ffd42a]/50 hover:bg-[#ffd42a]/5 transition-all shadow-lg active:scale-95"
+          >
+            <div className="rounded-full bg-[#ffd42a]/10 p-5 text-[#ffd42a]">
+              <Briefcase size={48} strokeWidth={1.5} />
+            </div>
+            <h2 className="text-2xl font-extrabold text-white" style={{ fontFamily: 'var(--font-en)' }}>Jobs</h2>
+            <p className="text-sm text-[var(--text-secondary)] text-center">Find your next career opportunity</p>
+          </button>
+        </div>
+      ) : filteredClassifieds.length === 0 ? (
         <div className="rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] p-8 text-center mt-8">
           <h1 className="text-2xl font-bold text-white">No classifieds found</h1>
           <p className="mt-2 text-[var(--text-secondary)]">

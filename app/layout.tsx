@@ -6,6 +6,7 @@ import SlowNetworkBanner from './components/SlowNetworkBanner';
 import BottomNav from './components/BottomNav';
 import NotificationManager from './components/NotificationManager';
 import ManagedInserts from './components/ManagedInserts';
+import AndroidAppPrompt from './components/AndroidAppPrompt';
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://freshnews.top'),
@@ -139,6 +140,7 @@ export default async function RootLayout({
         <AuthProvider>
           <AuthHashHandler />
           <SlowNetworkBanner />
+          <AndroidAppPrompt />
           {children}
           <BottomNav />
           <NotificationManager />

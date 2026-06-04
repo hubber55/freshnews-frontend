@@ -513,11 +513,15 @@ function SubmitContent() {
             {(type === 'classified' || type === 'ad') && (
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="mb-2 block text-sm font-bold text-[var(--text-secondary)]">Price (optional)</label>
+                  <label className="mb-2 block text-sm font-bold text-[var(--text-secondary)]">
+                    {subcategories.find(s => s.id.toString() === selectedSubcategory)?.name.toLowerCase().includes('job') 
+                      ? 'Salary (optional)' 
+                      : 'Price (optional)'}
+                  </label>
                   <input
                     value={price}
                     onChange={(e) => setPrice(e.target.value)}
-                    placeholder="e.g. ₹ 5,000 or Negotiable"
+                    placeholder={subcategories.find(s => s.id.toString() === selectedSubcategory)?.name.toLowerCase().includes('job') ? 'e.g. ₹ 25,000/month or Negotiable' : 'e.g. ₹ 5,000 or Negotiable'}
                     className="w-full rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-4 py-3 text-white focus:border-[#00cfff] focus:outline-none focus:ring-1 focus:ring-[#00cfff]"
                   />
                 </div>
