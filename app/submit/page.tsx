@@ -59,6 +59,10 @@ function SubmitContent() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [allApprovedTags, setAllApprovedTags] = useState<string[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  
+  // Dummy images for classifieds
+  const [dummyImages, setDummyImages] = useState<string[]>([]);
+  const [selectedDummyImage, setSelectedDummyImage] = useState<string>('');
 
   // Fetch approved tags for predictive input from both submissions and main posts
   useEffect(() => {
@@ -106,11 +110,22 @@ function SubmitContent() {
     t.toLowerCase().includes(tagInput.toLowerCase())
   ).slice(0, 5) : [];
 
-  // Fetch max upload images setting
+  // Fetch max upload images and dummy images
   useEffect(() => {
     async function fetchSettings() {
-      const { data } = await supabase.from('admin_settings').select('key, value').eq('key', 'max_upload_images').single();
-      if (data?.value) setMaxImages(parseInt(data.value, 10));
+      const { data } = await supabase.from('admin_settings').select('key, value').in('key', ['max_upload_images', 'classified_dummy_images']);
+      
+      const maxImagesValue = data?.find(d => d.key === 'max_upload_images')?.value;
+      if (maxImagesValue) setMaxImages(parseInt(maxImagesValue, 10));
+
+      const dummyImagesValue = data?.find(d => d.key === 'classified_dummy_images')?.value;
+      if (dummyImagesValue) {
+        try {
+          setDummyImages(JSON.parse(dummyImagesValue));
+        } catch {
+          // ignore parse errors
+        }
+      }
     }
     fetchSettings();
   }, [supabase]);
@@ -251,8 +266,8 @@ function SubmitContent() {
       return;
     }
 
-    if (imageFiles.length === 0) {
-      setError('Please upload at least one image.');
+    if (imageFiles.length === 0 && !selectedDummyImage) {
+      setError('Please upload at least one image or choose a default image.');
       setIsSubmitting(false);
       return;
     }
@@ -272,6 +287,9 @@ function SubmitContent() {
       formData.append(`imageFile_${index}`, file);
     });
     formData.append('imageCount', imageFiles.length.toString());
+    if (selectedDummyImage) {
+      formData.append('dummyImageUrl', selectedDummyImage);
+    }
     formData.append('externalUrl', externalUrl);
     formData.append('hyperlinkText', hyperlinkText);
     formData.append('isPremium', String(type === 'ad'));
@@ -560,9 +578,39 @@ function SubmitContent() {
               </div>
             )}
 
+            {(type === 'classified' || type === 'ad') && dummyImages.length > 0 && (
+              <div className="rounded-xl border border-[var(--border)] bg-[#161b22] p-4">
+                <label className="mb-2 block text-sm font-bold text-[var(--text-secondary)]">
+                  Default Images
+                </label>
+                <div className="flex flex-wrap gap-3">
+                  {dummyImages.map((url, i) => (
+                    <button
+                      type="button"
+                      key={i}
+                      onClick={() => setSelectedDummyImage(url)}
+                      className={`relative w-20 h-20 rounded-lg overflow-hidden border-2 transition-all ${selectedDummyImage === url ? 'border-[#00cfff] scale-105 shadow-[0_0_15px_rgba(0,207,255,0.4)]' : 'border-[var(--border)] hover:border-white/30'}`}
+                    >
+                      <img src={url} alt={`Dummy ${i}`} className="w-full h-full object-cover" />
+                      {selectedDummyImage === url && (
+                        <div className="absolute inset-0 bg-[#00cfff]/20 flex items-center justify-center">
+                          <div className="bg-[#00cfff] text-black rounded-full p-1 shadow-lg">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path></svg>
+                          </div>
+                        </div>
+                      )}
+                    </button>
+                  ))}
+                </div>
+                <p className="mt-3 text-[11px] text-[var(--text-muted)] italic font-medium">
+                  Note: "If you do not have custom images, choose any one from above"
+                </p>
+              </div>
+            )}
+
             <div>
               <label className="mb-2 block text-sm font-bold text-[var(--text-secondary)]">
-                Photos (Up to {maxImages})
+                Custom Photos (Up to {maxImages})
               </label>
               <div className="flex flex-wrap gap-3">
                 {imageFiles.map((file, i) => (
@@ -595,6 +643,9 @@ function SubmitContent() {
                         const picked = e.target.files ? Array.from(e.target.files) : [];
                         if (picked.length === 0) return;
                         
+                        // Clear selected dummy image if user uploads custom photo
+                        setSelectedDummyImage('');
+
                         const remaining = maxImages - imageFiles.length;
                         const toProcess = picked.slice(0, remaining);
                         

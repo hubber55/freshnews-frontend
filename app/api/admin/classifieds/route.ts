@@ -9,7 +9,7 @@ export async function GET() {
       .from('submissions')
       .select(`
         *,
-        wa_users (name, whatsapp_number),
+        wa_users (name, username, whatsapp_number),
         ad_categories (name),
         ad_subcategories (name)
       `)

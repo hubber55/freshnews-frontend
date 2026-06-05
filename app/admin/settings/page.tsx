@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react';
 import { ChevronLeft, Settings, Save, Info, Image } from 'lucide-react';
 import Link from 'next/link';
 import PlaceholderAdManager from '../components/PlaceholderAdManager';
+import { ImageUploadWidget } from '@/app/components/ImageUploadWidget';
 
 type HeaderInsert = {
   id: string;
@@ -87,6 +88,10 @@ export default function AdminSettingsPage() {
   const [headerInserts, setHeaderInserts] = useState<HeaderInsert[]>([]);
   const [adNetworks, setAdNetworks] = useState<AdNetwork[]>([]);
   const [randomAdsEnabled, setRandomAdsEnabled] = useState(false);
+  
+  // Dummy Images State
+  const [dummyExistingUrls, setDummyExistingUrls] = useState<string[]>([]);
+  const [dummyNewFiles, setDummyNewFiles] = useState<File[]>([]);
 
   useEffect(() => {
     async function fetchSettings() {
@@ -148,6 +153,15 @@ export default function AdminSettingsPage() {
           }
 
           setRandomAdsEnabled(String(randomAdsValue ?? '').toLowerCase() === 'true');
+
+          const dummyImagesValue = data.settings.find((s: { key: string; value: string }) => s.key === 'classified_dummy_images')?.value;
+          if (dummyImagesValue) {
+            try {
+              setDummyExistingUrls(JSON.parse(dummyImagesValue));
+            } catch {
+              // Ignore parse errors
+            }
+          }
         }
       } catch (error) {
         console.error('Error fetching admin settings:', error);
@@ -192,6 +206,36 @@ export default function AdminSettingsPage() {
     await updateSetting('ad_networks_random', randomAdsEnabled ? 'true' : 'false');
     // Clear legacy key to prevent it from coming back
     await updateSetting('adsterra_code', '');
+  }
+
+  async function saveDummyImages() {
+    setSaving('classified_dummy_images');
+    try {
+      let finalUrls = [...dummyExistingUrls];
+
+      if (dummyNewFiles.length > 0) {
+        const formData = new FormData();
+        formData.append('imageCount', dummyNewFiles.length.toString());
+        dummyNewFiles.forEach((file, i) => formData.append(`imageFile_${i}`, file));
+        
+        const uploadRes = await fetch('/api/upload-images', { method: 'POST', body: formData });
+        if (!uploadRes.ok) {
+          alert('Failed to upload new dummy images');
+          setSaving(null);
+          return;
+        }
+        const { urls } = await uploadRes.json();
+        finalUrls = [...finalUrls, ...urls];
+      }
+
+      await updateSetting('classified_dummy_images', JSON.stringify(finalUrls));
+      setDummyExistingUrls(finalUrls);
+      setDummyNewFiles([]);
+    } catch (err) {
+      console.error(err);
+      alert('Error saving dummy images');
+    }
+    setSaving(null);
   }
 
   if (loading) {
@@ -529,6 +573,40 @@ export default function AdminSettingsPage() {
               Each ad can have a custom CTA button that opens in a new tab.
             </div>
             <PlaceholderAdManager />
+          </div>
+        </div>
+
+        {/* Dummy Images Section */}
+        <div className="rounded-2xl border border-[var(--border)] bg-[#161b22] overflow-hidden">
+          <div className="px-6 py-4 bg-[#21262d] border-b border-[var(--border)] flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <Image size={20} className="text-[#ffd42a]" />
+              <h2 className="text-sm font-bold text-white uppercase tracking-wider">Classified Dummy Images</h2>
+            </div>
+            <button
+              onClick={saveDummyImages}
+              disabled={saving === 'classified_dummy_images'}
+              className={`rounded-lg px-3 py-1.5 text-xs font-bold ${
+                saving === 'classified_dummy_images'
+                  ? 'bg-yellow-500/20 text-yellow-500 animate-pulse'
+                  : 'bg-green-500/10 text-green-500 hover:bg-green-500/20'
+              }`}
+            >
+              Save Images
+            </button>
+          </div>
+          <div className="p-6">
+            <div className="text-xs text-[var(--text-muted)] leading-relaxed mb-6">
+              Upload default images that users can choose from when submitting a classified ad if they do not have their own photos.
+            </div>
+            <ImageUploadWidget
+              existingUrls={dummyExistingUrls}
+              onExistingUrlsChange={setDummyExistingUrls}
+              newFiles={dummyNewFiles}
+              onNewFilesChange={setDummyNewFiles}
+              maxImages={10}
+              onError={(err) => setError(err)}
+            />
           </div>
         </div>
 

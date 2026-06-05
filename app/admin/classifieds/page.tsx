@@ -256,7 +256,7 @@ export default function AdminClassifiedsPage() {
                     )}
                   </td>
                   <td className="px-6 py-4 text-[var(--text-muted)]">
-                    <div className="font-semibold text-white">{item.wa_users?.name || 'Anonymous'}</div>
+                    <div className="font-semibold text-white">{item.wa_users?.username || item.wa_users?.name || 'Anonymous'}</div>
                     <div className="text-xs">{item.wa_users?.whatsapp_number}</div>
                   </td>
                   <td className="px-6 py-4">

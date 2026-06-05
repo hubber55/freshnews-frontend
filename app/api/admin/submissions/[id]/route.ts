@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase-admin';
+import { sendMessage } from '@/lib/whatsapp';
 
 function getErrorMessage(error: unknown) {
   return error instanceof Error ? error.message : 'Unexpected error';
@@ -48,35 +49,28 @@ export async function PATCH(
         .single();
 
       if (submission) {
-        // 1. Create entry in posts table so it shows on homepage
-        const submissionTags = Array.from(new Set([
-          ...(Array.isArray(submission.tags) ? submission.tags.filter(Boolean) : []),
-          ...(submission.type === 'classified' ? ['Classifieds'] : []),
-        ]));
+        // 1. Create entry in posts table so it shows on homepage, BUT SKIP for classifieds
+        if (submission.type !== 'classified') {
+          const submissionTags = Array.from(new Set([
+            ...(Array.isArray(submission.tags) ? submission.tags.filter(Boolean) : []),
+          ]));
 
-        // Include price/phone in summary for homepage view if it's a classified
-        let displaySummary = submission.content;
-        if (submission.type === 'classified') {
-          const pricePart = submission.price ? `Price: ${submission.price}` : '';
-          const phonePart = submission.contact_phone ? `Phone: ${submission.contact_phone}` : '';
-          if (pricePart || phonePart) {
-            displaySummary = `${displaySummary}\n\n${[pricePart, phonePart].filter(Boolean).join(' | ')}`;
-          }
+          let displaySummary = submission.content;
+
+          await supabase
+            .from('posts')
+            .insert({
+              title: submission.title,
+              summary: displaySummary,
+              source_name: 'FRESHNEWS',
+              image_url: submission.image_url || null,
+              tags: submissionTags,
+              published_at: new Date().toISOString(),
+              is_deleted: false,
+              // Store submission_id so we can link back or avoid duplicates if needed
+              submission_id: numericId 
+            });
         }
-
-        await supabase
-          .from('posts')
-          .insert({
-            title: submission.title,
-            summary: displaySummary,
-            source_name: 'FRESHNEWS',
-            image_url: submission.image_url || null,
-            tags: submissionTags,
-            published_at: new Date().toISOString(),
-            is_deleted: false,
-            // Store submission_id so we can link back or avoid duplicates if needed
-            submission_id: numericId 
-          });
 
         // 2. Send WhatsApp notification
         const { data: waUser } = await supabase
@@ -93,11 +87,7 @@ export async function PATCH(
           else if (type === 'news') liveMsg = `✅ Your News is Live Now!\n"${submission.title}"\nView: ${baseUrl}`;
           else if (type === 'event') liveMsg = `✅ Your Event is Live Now!\n"${submission.title}"\nView: ${baseUrl}`;
 
-          await fetch(`${baseUrl}/api/send-whatsapp`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ to: waUser.whatsapp_number, message: liveMsg }),
-          }).catch(() => {});
+          await sendMessage(waUser.whatsapp_number, liveMsg).catch(() => {});
         }
       }
     }
@@ -170,26 +160,30 @@ export async function POST(
       .eq('id', submission.user_id)
       .single();
 
-    const submissionTags = Array.from(new Set([
-      ...(Array.isArray(submission.tags) ? submission.tags.filter(Boolean) : tags),
-      ...(submission.type === 'classified' ? ['Classifieds'] : []),
-    ]));
+    let newPostId = null;
 
-    const { data: newPost, error: insertError } = await supabase
-      .from('posts')
-      .insert({
-        title,
-        summary: content,
-        source_name: 'FRESHNEWS',
-        image_url: image_url !== undefined ? image_url : (submission.image_url || null),
-        tags: submissionTags,
-        published_at: new Date().toISOString(),
-        is_deleted: false,
-      })
-      .select()
-      .single();
+    if (submission.type !== 'classified') {
+      const submissionTags = Array.from(new Set([
+        ...(Array.isArray(submission.tags) ? submission.tags.filter(Boolean) : tags),
+      ]));
 
-    if (insertError) throw insertError;
+      const { data: newPost, error: insertError } = await supabase
+        .from('posts')
+        .insert({
+          title,
+          summary: content,
+          source_name: 'FRESHNEWS',
+          image_url: image_url !== undefined ? image_url : (submission.image_url || null),
+          tags: submissionTags,
+          published_at: new Date().toISOString(),
+          is_deleted: false,
+        })
+        .select()
+        .single();
+
+      if (insertError) throw insertError;
+      newPostId = newPost.id;
+    }
 
     const { error: statusError } = await supabase
       .from('submissions')
@@ -207,17 +201,13 @@ export async function POST(
       const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'https://freshnews.top';
       const postUrl = submission.type === 'classified' || submission.type === 'ad' 
         ? `${baseUrl}/classifieds/${submissionId}`
-        : `${baseUrl}/posts/${newPost.id}`;
+        : `${baseUrl}/posts/${newPostId}`;
       const message = `✅ Your ${submission.type} "${title}" has been approved!\nView it here: ${postUrl}`;
 
-      await fetch(`${baseUrl}/api/send-whatsapp`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ to: user.whatsapp_number, message }),
-      }).catch((error) => console.error('Failed to send whatsapp:', error));
+      await sendMessage(user.whatsapp_number, message).catch((error) => console.error('Failed to send whatsapp:', error));
     }
 
-    return NextResponse.json({ ok: true, postId: newPost.id });
+    return NextResponse.json({ ok: true, postId: newPostId });
   } catch (error: unknown) {
     return NextResponse.json({ error: getErrorMessage(error) }, { status: 500 });
   }

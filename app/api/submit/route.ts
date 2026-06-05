@@ -2,6 +2,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { getCurrentUser } from '@/lib/auth';
+import { sendMessage } from '@/lib/whatsapp';
 
 const MAX_UPLOAD_BYTES = 3 * 1024 * 1024; // 3MB
 
@@ -97,7 +98,10 @@ export async function POST(req: Request) {
     // --- Image Upload (Multiple) ---
     let finalImageUrl: string | undefined;
 
-    if (imageCount > 0) {
+    const dummyImageUrl = formData.get('dummyImageUrl') as string;
+    if (dummyImageUrl) {
+      finalImageUrl = dummyImageUrl;
+    } else if (imageCount > 0) {
       const imageUrls: string[] = [];
       
       for (let i = 0; i < imageCount; i++) {
@@ -263,11 +267,7 @@ export async function POST(req: Request) {
     const userName = waUser?.name || 'User';
 
     const userMessage = `Your ${type} submission "${title}" has been received and will be published after Admin Approval.`;
-    await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/send-whatsapp`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ to: user.whatsapp_number, message: userMessage }),
-    }).catch(() => {});
+    await sendMessage(user.whatsapp_number, userMessage).catch(() => {});
 
     const { data: adminSettings } = await supabase.from('admin_settings').select('value').eq('key', 'admin_whatsapp_number').single();
     const adminWhatsappNumber = adminSettings?.value;
@@ -275,11 +275,7 @@ export async function POST(req: Request) {
     if (adminWhatsappNumber) {
         const typeLabel = type.charAt(0).toUpperCase() + type.slice(1);
         const adminMessage = `📢 Pending ${typeLabel} from *${userName}* (${user.whatsapp_number}):\n"${title}"\nPlease review: ${process.env.NEXT_PUBLIC_BASE_URL}/admin/classifieds`;
-        await fetch(`${process.env.NEXT_PUBLIC_BASE_URL}/api/send-whatsapp`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ to: adminWhatsappNumber, message: adminMessage }),
-        }).catch(() => {});
+        await sendMessage(adminWhatsappNumber, adminMessage).catch(() => {});
     }
 
     return NextResponse.json({ ok: true, submissionId: submissionData.id });
