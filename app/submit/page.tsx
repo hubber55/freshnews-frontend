@@ -689,7 +689,7 @@ function SubmitContent() {
                 </div>
               )}
 
-              <p className="mt-2 text-[11px] text-[var(--text-muted)]">
+              <p className="mt-2 text-[11px] text-white">
                 First photo will be your main featured image.
               </p>
             </div>
@@ -764,7 +764,7 @@ function SubmitContent() {
               </>
             )}
 
-            <p className="text-center text-sm text-[var(--text-muted)] italic">
+            <p className="text-center text-sm text-white italic">
               ( All submissions -subject to Editor approval )
             </p>
 

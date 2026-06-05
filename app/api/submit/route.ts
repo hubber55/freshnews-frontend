@@ -91,7 +91,7 @@ export async function POST(req: Request) {
     if (contentWordCount > 500) {
       return NextResponse.json({ error: 'Content exceeds 500 words' }, { status: 400 });
     }
-    if (imageCount === 0 && (!formData.get('imageFile'))) {
+    if (imageCount === 0 && (!formData.get('imageFile')) && !formData.get('dummyImageUrl')) {
       return NextResponse.json({ error: 'At least one image is required' }, { status: 400 });
     }
 
