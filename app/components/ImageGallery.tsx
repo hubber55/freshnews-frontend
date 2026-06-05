@@ -32,20 +32,31 @@ export default function ImageGallery({ images, alt = 'Image' }: ImageGalleryProp
   if (!images || images.length === 0) return null;
 
   return (
-    <div className="relative w-full group overflow-hidden rounded-xl bg-black/20">
+    <div className="relative w-full rounded-xl overflow-hidden bg-black/10">
+      {/* Scroll container */}
       <div
         ref={scrollRef}
         onScroll={handleScroll}
-        className="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide"
+        className="flex overflow-x-auto snap-x snap-mandatory"
         style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
       >
         {images.map((url, idx) => (
-          <div key={idx} className="w-full flex-shrink-0 snap-center relative aspect-video">
-            <LazyImage
+          <div
+            key={idx}
+            className="w-full flex-shrink-0 snap-center flex items-center justify-center bg-black/5"
+            style={{ minHeight: '200px', maxHeight: '520px' }}
+          >
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
               src={url}
               alt={`${alt} - ${idx + 1}`}
-              className="w-full h-full max-h-[500px] object-contain rounded-xl"
-              eager={idx === 0}
+              loading={idx === 0 ? 'eager' : 'lazy'}
+              style={{
+                width: '100%',
+                maxHeight: '520px',
+                objectFit: 'contain',
+                display: 'block',
+              }}
             />
           </div>
         ))}
@@ -53,27 +64,28 @@ export default function ImageGallery({ images, alt = 'Image' }: ImageGalleryProp
 
       {images.length > 1 && (
         <>
-          {/* Desktop Navigation Arrows */}
+          {/* Left Arrow — always visible on desktop, not just on hover */}
           <button
             onClick={() => scrollToImage(currentIndex - 1)}
             disabled={currentIndex === 0}
-            className={`absolute left-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/40 text-white backdrop-blur-sm border border-white/10 transition-all duration-300 opacity-0 group-hover:opacity-100 hidden md:flex hover:bg-black/60 disabled:hidden z-20`}
+            className="absolute left-2 top-1/2 -translate-y-1/2 p-2.5 rounded-full bg-black/60 text-white border border-white/20 hover:bg-black/80 transition-all z-20 disabled:opacity-20 disabled:cursor-not-allowed hidden md:flex items-center justify-center"
             aria-label="Previous image"
           >
-            <ChevronLeft size={20} />
+            <ChevronLeft size={22} />
           </button>
 
+          {/* Right Arrow — always visible on desktop */}
           <button
             onClick={() => scrollToImage(currentIndex + 1)}
             disabled={currentIndex === images.length - 1}
-            className={`absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/40 text-white backdrop-blur-sm border border-white/10 transition-all duration-300 opacity-0 group-hover:opacity-100 hidden md:flex hover:bg-black/60 disabled:hidden z-20`}
+            className="absolute right-2 top-1/2 -translate-y-1/2 p-2.5 rounded-full bg-black/60 text-white border border-white/20 hover:bg-black/80 transition-all z-20 disabled:opacity-20 disabled:cursor-not-allowed hidden md:flex items-center justify-center"
             aria-label="Next image"
           >
-            <ChevronRight size={20} />
+            <ChevronRight size={22} />
           </button>
 
-          {/* Navigation Dots */}
-          <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-2 z-10 pointer-events-none">
+          {/* Dot indicators */}
+          <div className="absolute bottom-3 left-0 right-0 flex justify-center gap-2 z-10 pointer-events-none">
             {images.map((_, idx) => (
               <div
                 key={idx}
@@ -83,9 +95,9 @@ export default function ImageGallery({ images, alt = 'Image' }: ImageGalleryProp
               />
             ))}
           </div>
-          
-          {/* Index Indicator */}
-          <div className="absolute top-4 right-4 bg-black/60 backdrop-blur-md text-white text-[11px] px-2.5 py-1 rounded-full font-bold uppercase tracking-wider z-10 border border-white/10">
+
+          {/* Counter badge */}
+          <div className="absolute top-3 right-3 bg-black/60 backdrop-blur-md text-white text-[11px] px-2.5 py-1 rounded-full font-bold z-10 border border-white/10">
             {currentIndex + 1} / {images.length}
           </div>
         </>
