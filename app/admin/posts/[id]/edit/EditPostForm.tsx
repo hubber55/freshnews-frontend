@@ -66,8 +66,8 @@ export default function EditPostForm({ post }: { post: Post }) {
             />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+            <div className="md:col-span-2">
               <label className="mb-2 block text-sm font-semibold text-[var(--text-secondary)]">Image URL</label>
               <input
                 type="text"
@@ -76,29 +76,17 @@ export default function EditPostForm({ post }: { post: Post }) {
                 className="w-full rounded-lg bg-[var(--bg-primary)] border border-[var(--border)] px-4 py-2.5 text-[var(--text-primary)] focus:border-[#ffd42a] focus:outline-none focus:ring-1 focus:ring-[#ffd42a]"
               />
             </div>
-            <label className="flex items-center gap-2 mt-7 text-sm text-[var(--text-secondary)]">
-              <input type="checkbox" name="clear_image" className="accent-red-500" />
-              Clear current image
-            </label>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div>
-              <label className="mb-2 block text-sm font-semibold text-[var(--text-secondary)]">Image URL</label>
-              <input
-                type="text"
-                name="image_url"
-                defaultValue={post.image_url || ''}
-                className="w-full rounded-lg bg-[var(--bg-primary)] border border-[var(--border)] px-4 py-2.5 text-[var(--text-primary)] focus:border-[#ffd42a] focus:outline-none focus:ring-1 focus:ring-[#ffd42a]"
-              />
-            </div>
-            <div className="flex items-end">
+            <div className="flex gap-4 mb-1">
+              <label className="flex items-center gap-2 text-sm text-[var(--text-secondary)] cursor-pointer">
+                <input type="checkbox" name="clear_image" className="accent-red-500" />
+                Clear image
+              </label>
               <button
                 type="button"
                 onClick={() => { const el = document.querySelector('input[name=image_url]') as HTMLInputElement | null; if (el) el.value = ''; }}
-                className="mb-0.5 rounded-lg border border-[var(--border)] px-4 py-2.5 text-sm font-semibold text-[var(--text-secondary)] hover:text-white"
+                className="rounded-lg border border-[var(--border)] px-3 py-1.5 text-xs font-semibold text-[var(--text-secondary)] hover:text-white"
               >
-                Clear Image
+                Clear Input
               </button>
             </div>
           </div>
@@ -176,7 +164,7 @@ export default function EditPostForm({ post }: { post: Post }) {
             <button
               type="submit"
               disabled={isDeletePending}
-              onClick={() => { if (!confirm('⚠️ Permanently delete this post? This cannot be undone.')) return false; }}
+              onClick={(e) => { if (!confirm('⚠️ Permanently delete this post? This cannot be undone.')) e.preventDefault(); }}
               className="w-full rounded-lg bg-red-600 px-4 py-2 font-bold text-white hover:bg-red-700 disabled:opacity-50"
             >
               {isDeletePending ? 'Deleting...' : '🗑️ Permanently Delete'}

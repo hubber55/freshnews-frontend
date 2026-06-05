@@ -16,12 +16,31 @@ export async function DELETE(
     // Verify ownership before delete
     const { data: submission } = await supabase
       .from('submissions')
-      .select('user_id')
+      .select('id, user_id, title, status')
       .eq('id', parseInt(id))
       .single();
 
     if (!submission || submission.user_id !== user.id) {
       return NextResponse.json({ error: 'Unauthorized or not found' }, { status: 401 });
+    }
+
+    // If approved/published, also delete corresponding post from posts table
+    if (submission.status === 'approved' || submission.status === 'published') {
+      try {
+        await supabase
+          .from('posts')
+          .delete()
+          .eq('submission_id', submission.id);
+
+        // Fallback cleanup by title & user_id
+        await supabase
+          .from('posts')
+          .delete()
+          .eq('title', submission.title)
+          .eq('user_id', user.id);
+      } catch (err) {
+        console.error('Error deleting associated post during submission deletion:', err);
+      }
     }
 
     const { error } = await supabase

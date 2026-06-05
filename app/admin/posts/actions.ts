@@ -58,12 +58,20 @@ export async function deletePostWithRedirect(postId: string, prevState: any, for
 
   // Also delete any linked submission rows so user profile updates correctly (best-effort)
   try {
-    await supabaseAdmin
-      .from('submissions')
-      .delete()
-      .eq('post_id', postId)
-  } catch {
-    // post_id column may not exist — safe to ignore
+    const { data: post } = await supabaseAdmin
+      .from('posts')
+      .select('submission_id')
+      .eq('id', postId)
+      .single()
+
+    if (post && post.submission_id) {
+      await supabaseAdmin
+        .from('submissions')
+        .delete()
+        .eq('id', post.submission_id)
+    }
+  } catch (err) {
+    console.error('Error cleaning up submission during admin post action delete:', err)
   }
 
   // Hard delete from posts table — permanently removed

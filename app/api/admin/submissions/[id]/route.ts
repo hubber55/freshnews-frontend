@@ -67,8 +67,8 @@ export async function PATCH(
               tags: submissionTags,
               published_at: new Date().toISOString(),
               is_deleted: false,
-              // Store submission_id so we can link back or avoid duplicates if needed
-              submission_id: numericId 
+              submission_id: numericId,
+              user_id: submission.user_id // Link post to submitting user
             });
         }
 
@@ -163,10 +163,6 @@ export async function POST(
     let newPostId = null;
 
     if (submission.type !== 'classified') {
-      const submissionTags = Array.from(new Set([
-        ...(Array.isArray(submission.tags) ? submission.tags.filter(Boolean) : tags),
-      ]));
-
       const { data: newPost, error: insertError } = await supabase
         .from('posts')
         .insert({
@@ -174,9 +170,11 @@ export async function POST(
           summary: content,
           source_name: 'FRESHNEWS',
           image_url: image_url !== undefined ? image_url : (submission.image_url || null),
-          tags: submissionTags,
+          tags: tags,
           published_at: new Date().toISOString(),
           is_deleted: false,
+          submission_id: submissionId,
+          user_id: submission.user_id
         })
         .select()
         .single();
@@ -189,6 +187,9 @@ export async function POST(
       .from('submissions')
       .update({ 
         status: 'approved',
+        title,
+        content,
+        tags,
         price,
         contact_phone,
         ...(image_url !== undefined ? { image_url } : {})

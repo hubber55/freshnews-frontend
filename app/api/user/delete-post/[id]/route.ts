@@ -1,4 +1,4 @@
-import { createClient } from '@/app/utils/supabase/server';
+import { getCurrentUser } from '@/lib/auth';
 import { createAdminClient } from '@/lib/supabase-admin';
 import { NextRequest, NextResponse } from 'next/server';
 
@@ -6,10 +6,7 @@ export async function DELETE(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
-  const supabase = await createClient();
-
-  // Get current user
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await getCurrentUser();
 
   if (!user) {
     return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
@@ -23,7 +20,7 @@ export async function DELETE(
   // Verify the post belongs to the user
   const { data: post, error: fetchError } = await supabaseAdmin
     .from('posts')
-    .select('id, title, user_id')
+    .select('id, title, user_id, submission_id')
     .eq('id', postId)
     .single();
   
@@ -33,13 +30,20 @@ export async function DELETE(
   
   // Also clean up the submission row so user profile updates
   try {
-    await supabaseAdmin
-      .from('submissions')
-      .delete()
-      .eq('user_id', user.id)
-      .eq('title', post.title);
-  } catch {
-    // best-effort
+    if (post.submission_id) {
+      await supabaseAdmin
+        .from('submissions')
+        .delete()
+        .eq('id', post.submission_id);
+    } else {
+      await supabaseAdmin
+        .from('submissions')
+        .delete()
+        .eq('user_id', user.id)
+        .eq('title', post.title);
+    }
+  } catch (err) {
+    console.error('Error cleaning up submission during user post delete:', err);
   }
 
   // Hard delete the post permanently
