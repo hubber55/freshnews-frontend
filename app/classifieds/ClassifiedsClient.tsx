@@ -55,7 +55,8 @@ export default function ClassifiedsClient({
         (item.location?.toLowerCase().includes(search.toLowerCase()));
       
       const matchesCategory = !activeCategory || 
-        (item.ad_categories?.name?.toLowerCase() === activeCategory.toLowerCase());
+        (item.ad_categories?.name?.toLowerCase() === activeCategory.toLowerCase()) ||
+        (item.ad_subcategories?.name?.toLowerCase() === activeCategory.toLowerCase());
 
       const matchesTag = !activeTag || 
         (item.tags?.some(t => t.toLowerCase() === activeTag.toLowerCase())) ||
@@ -104,7 +105,7 @@ export default function ClassifiedsClient({
           <div>
             <div className="flex items-center gap-2 text-[15px] font-extrabold uppercase tracking-wide text-[var(--text-primary)]" style={{ fontFamily: 'var(--font-en)' }}>
               <Megaphone size={18} className="text-[#ffd42a]" />
-              {activeTag ? `#${activeTag}` : 'Classifieds'}
+              {activeTag ? `#${activeTag}` : (activeCategory ? activeCategory : 'Classifieds')}
             </div>
             <div className="mt-1.5 h-[3px] w-10 rounded-full bg-[var(--accent)]" />
           </div>
@@ -112,7 +113,7 @@ export default function ClassifiedsClient({
           {/* CLASSIFIEDS READ ALOUD */}
           {filteredClassifieds.length > 0 && (
             <FeedReadAloud 
-              tag={activeTag || 'Classifieds'} 
+              tag={activeTag || activeCategory || 'Classifieds'} 
               posts={filteredClassifieds.map(p => ({
                 id: p.id,
                 title: p.title,
