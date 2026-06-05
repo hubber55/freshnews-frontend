@@ -63,6 +63,7 @@ function SubmitContent() {
   // Dummy images for classifieds
   const [dummyImagesAll, setDummyImagesAll] = useState<Record<string, string[]>>({});
   const [selectedDummyImage, setSelectedDummyImage] = useState<string>('');
+  const [showDummyImages, setShowDummyImages] = useState<boolean>(false);
 
   // Fetch approved tags for predictive input from both submissions and main posts
   useEffect(() => {
@@ -581,35 +582,7 @@ function SubmitContent() {
               </div>
             )}
 
-            {(type === 'classified' || type === 'ad') && dummyImagesAll[selectedSubcategory] && dummyImagesAll[selectedSubcategory].length > 0 && (
-              <div className="rounded-xl border border-[var(--border)] bg-[#161b22] p-4">
-                <label className="mb-2 block text-sm font-bold text-[var(--text-secondary)]">
-                  Default Images
-                </label>
-                <div className="flex flex-wrap gap-3">
-                  {dummyImagesAll[selectedSubcategory].map((url, i) => (
-                    <button
-                      type="button"
-                      key={i}
-                      onClick={() => setSelectedDummyImage(url)}
-                      className={`relative w-20 h-20 rounded-lg overflow-hidden border-2 transition-all ${selectedDummyImage === url ? 'border-[#00cfff] scale-105 shadow-[0_0_15px_rgba(0,207,255,0.4)]' : 'border-[var(--border)] hover:border-white/30'}`}
-                    >
-                      <img src={url} alt={`Dummy ${i}`} className="w-full h-full object-cover" />
-                      {selectedDummyImage === url && (
-                        <div className="absolute inset-0 bg-[#00cfff]/20 flex items-center justify-center">
-                          <div className="bg-[#00cfff] text-black rounded-full p-1 shadow-lg">
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path></svg>
-                          </div>
-                        </div>
-                      )}
-                    </button>
-                  ))}
-                </div>
-                <p className="mt-3 text-[11px] text-[var(--text-muted)] italic font-medium">
-                  Note: "If you do not have custom images, choose any one from above"
-                </p>
-              </div>
-            )}
+
 
             <div>
               <label className="mb-2 block text-sm font-bold text-[var(--text-secondary)]">
@@ -634,37 +607,80 @@ function SubmitContent() {
                 ))}
                 
                 {imageFiles.length < maxImages && (
-                  <label className="flex flex-col items-center justify-center w-24 h-24 border-2 border-dashed border-[#00cfff] rounded-lg cursor-pointer bg-[var(--bg-primary)] hover:bg-[#00cfff]/10 transition-colors">
-                    <svg className="w-8 h-8 text-[#00cfff] mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"></path>
-                    </svg>
-                    <span className="text-[10px] font-bold text-[#00cfff] uppercase">Add Photo</span>
-                    <input
-                      type="file"
-                      multiple
-                      onChange={async (e) => {
-                        const picked = e.target.files ? Array.from(e.target.files) : [];
-                        if (picked.length === 0) return;
-                        
-                        // Clear selected dummy image if user uploads custom photo
-                        setSelectedDummyImage('');
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                    <label className="flex flex-col items-center justify-center w-24 h-24 border-2 border-dashed border-[#00cfff] rounded-lg cursor-pointer bg-[var(--bg-primary)] hover:bg-[#00cfff]/10 transition-colors shrink-0">
+                      <svg className="w-8 h-8 text-[#00cfff] mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"></path>
+                      </svg>
+                      <span className="text-[10px] font-bold text-[#00cfff] uppercase">Add Photo</span>
+                      <input
+                        type="file"
+                        multiple
+                        onChange={async (e) => {
+                          const picked = e.target.files ? Array.from(e.target.files) : [];
+                          if (picked.length === 0) return;
+                          
+                          // Clear selected dummy image if user uploads custom photo
+                          setSelectedDummyImage('');
 
-                        const remaining = maxImages - imageFiles.length;
-                        const toProcess = picked.slice(0, remaining);
-                        
-                        try {
-                          const compressed = await Promise.all(toProcess.map(f => compressImageFile(f)));
-                          setImageFiles(prev => [...prev, ...compressed]);
-                          setError(null);
-                        } catch (error: unknown) {
-                          setError(getErrorMessage(error, 'Image processing failed'));
-                        }
-                      }}
-                      accept="image/*"
-                      className="hidden"
-                    />
-                  </label>
+                          const remaining = maxImages - imageFiles.length;
+                          const toProcess = picked.slice(0, remaining);
+                          
+                          try {
+                            const compressed = await Promise.all(toProcess.map(f => compressImageFile(f)));
+                            setImageFiles(prev => [...prev, ...compressed]);
+                            setError(null);
+                          } catch (error: unknown) {
+                            setError(getErrorMessage(error, 'Image processing failed'));
+                          }
+                        }}
+                        accept="image/*"
+                        className="hidden"
+                      />
+                    </label>
+
+                    {(type === 'classified' || type === 'ad') && dummyImagesAll[selectedSubcategory] && dummyImagesAll[selectedSubcategory].length > 0 && (
+                      <button
+                        type="button"
+                        onClick={() => setShowDummyImages(!showDummyImages)}
+                        className="text-[14px] font-bold text-[#ffd42a] hover:underline text-left"
+                      >
+                        If you do not have an Image click here to choose one
+                      </button>
+                    )}
+                  </div>
                 )}
+              </div>
+              
+              {showDummyImages && (type === 'classified' || type === 'ad') && dummyImagesAll[selectedSubcategory] && dummyImagesAll[selectedSubcategory].length > 0 && (
+                <div className="mt-4 p-4 rounded-xl border border-[var(--border)] bg-[#161b22] animate-in slide-in-from-top-2 duration-300">
+                  <div className="flex flex-wrap gap-3">
+                    {dummyImagesAll[selectedSubcategory].map((url, i) => (
+                      <button
+                        type="button"
+                        key={i}
+                        onClick={() => {
+                          setSelectedDummyImage(url);
+                          setImageFiles([]); // Clear custom files when selecting dummy
+                        }}
+                        className={`relative w-20 h-20 rounded-lg overflow-hidden border-2 transition-all ${selectedDummyImage === url ? 'border-[#00cfff] scale-105 shadow-[0_0_15px_rgba(0,207,255,0.4)]' : 'border-[var(--border)] hover:border-white/30'}`}
+                      >
+                        <img src={url} alt={`Dummy ${i}`} className="w-full h-full object-cover" />
+                        {selectedDummyImage === url && (
+                          <div className="absolute inset-0 bg-[#00cfff]/20 flex items-center justify-center">
+                            <div className="bg-[#00cfff] text-black rounded-full p-1 shadow-lg">
+                              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M5 13l4 4L19 7"></path></svg>
+                            </div>
+                          </div>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                  <p className="mt-3 text-[11px] text-[var(--text-muted)] italic font-medium">
+                    (Only one default image can be selected)
+                  </p>
+                </div>
+              )}
               </div>
               <p className="mt-2 text-[11px] text-[var(--text-muted)]">
                 First photo will be your main featured image.
