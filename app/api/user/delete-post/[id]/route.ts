@@ -32,12 +32,15 @@ export async function DELETE(
   }
   
   // Also clean up the submission row so user profile updates
-  await supabaseAdmin
-    .from('submissions')
-    .delete()
-    .eq('user_id', user.id)
-    .eq('title', post.title)
-    .catch(() => {}); // best-effort
+  try {
+    await supabaseAdmin
+      .from('submissions')
+      .delete()
+      .eq('user_id', user.id)
+      .eq('title', post.title);
+  } catch {
+    // best-effort
+  }
 
   // Hard delete the post permanently
   const { error: deleteError } = await supabaseAdmin

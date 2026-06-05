@@ -23,11 +23,14 @@ export async function DELETE(
 
     // Clean up submission row if it exists (best-effort)
     if (post?.title) {
-      await supabase
-        .from('submissions')
-        .delete()
-        .eq('title', post.title)
-        .catch(() => {});
+      try {
+        await supabase
+          .from('submissions')
+          .delete()
+          .eq('title', post.title);
+      } catch {
+        // safe to ignore
+      }
     }
 
     const { error } = await supabase
