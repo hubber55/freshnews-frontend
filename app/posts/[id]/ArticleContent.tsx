@@ -5,6 +5,7 @@ import ReadAloud from '../../components/ReadAloud';
 import { format } from 'date-fns';
 import { Clock } from 'lucide-react';
 import { formatSourceName } from '../../../lib/posts';
+import ImageGallery from '../../components/ImageGallery';
 
 interface BodyItem {
   text: string;
@@ -110,16 +111,12 @@ export default function ArticleContent({ post, bodyItems, readingTime }: Article
 
       {/* IMAGE */}
       {/* IMAGE */}
-      <div className="mb-8 w-full overflow-hidden rounded-xl">
+      <div className="mb-8 w-full overflow-hidden rounded-xl relative bg-black/20 min-h-[280px]">
         {post.image_url ? (
-          (post.image_url.startsWith('["') ? JSON.parse(post.image_url) : [post.image_url]).map((url: string, idx: number) => (
-            <img
-              key={idx}
-              src={url}
-              alt={`${post.title} - Image ${idx + 1}`}
-              className="w-full max-h-[500px] object-cover object-center rounded-lg shadow-lg"
-            />
-          ))
+          <ImageGallery
+            images={post.image_url.startsWith('["') ? JSON.parse(post.image_url) : [post.image_url]}
+            alt={post.title}
+          />
         ) : (
           <div className="flex h-48 w-full items-center justify-center bg-[#21262d] text-sm text-[var(--text-muted)] rounded-lg">
             No Image Available

@@ -101,6 +101,23 @@ function AdSlot({ code }: { code: string }) {
   );
 }
 
+function getPrimaryImage(imageUrl: string | null | undefined): string | null {
+  if (!imageUrl) return null;
+  const trimmed = imageUrl.trim();
+  if (!trimmed) return null;
+  if (trimmed.startsWith('[')) {
+    try {
+      const parsed = JSON.parse(trimmed);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return typeof parsed[0] === 'string' ? parsed[0] : null;
+      }
+    } catch {
+      return trimmed;
+    }
+  }
+  return trimmed;
+}
+
 type HomeProps = {
   searchParams: Promise<{ tag?: string; page?: string }>;
 };
@@ -323,10 +340,10 @@ export default async function Home({ searchParams }: HomeProps) {
                   
                   <TrackedLink href={`/posts/${heroPost.id}`} className="block" trackEvent={{ postId: heroPost.id, eventType: 'click' }}>
                     <div className="relative w-full overflow-hidden" style={{ paddingTop: '56.25%' }}>
-                      {heroPost.image_url ? (
+                      {getPrimaryImage(heroPost.image_url) ? (
                         <>
                           <LazyImage
-                            src={heroPost.image_url}
+                            src={getPrimaryImage(heroPost.image_url)!}
                             alt={heroPost.title}
                             eager={true}
                             className="absolute inset-0 w-full h-full object-cover"
@@ -396,10 +413,10 @@ export default async function Home({ searchParams }: HomeProps) {
   
                       <TrackedLink href={`/posts/${post.id}`} className="block" trackEvent={{ postId: post.id, eventType: 'click' }}>
                         <div className="relative w-full overflow-hidden" style={{ paddingTop: '56.25%' }}>
-                          {post.image_url ? (
+                          {getPrimaryImage(post.image_url) ? (
                             <>
                             <LazyImage
-                              src={post.image_url}
+                              src={getPrimaryImage(post.image_url)!}
                               alt={post.title}
                               eager={index < 3}
                               className="absolute inset-0 w-full h-full object-cover"
