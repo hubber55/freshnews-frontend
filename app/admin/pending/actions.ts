@@ -58,10 +58,10 @@ export async function approveSubmission(submissionId: string, formData: FormData
 
   const { data: user } = await supabase
     .from('wa_users')
-    .select('whatsapp_number')
+    .select('name, whatsapp_number')
     .eq('id', submission.user_id)
     .single();
-  const sourceName = 'FRESHNEWS';
+  const sourceName = user?.name || 'FreshNews';
 
   // Insert into posts table
   const { data: newPost, error: insertError } = await supabase

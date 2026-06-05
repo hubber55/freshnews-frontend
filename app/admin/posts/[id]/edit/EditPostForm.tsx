@@ -12,6 +12,9 @@ type Post = {
   redirect_to?: string | null
   source_name?: string | null
   image_url?: string | null
+  is_locked?: boolean
+  locked_position?: number | null
+  locked_until?: string | null
 }
 
 export default function EditPostForm({ post }: { post: Post }) {
@@ -110,8 +113,53 @@ export default function EditPostForm({ post }: { post: Post }) {
         </form>
       </div>
 
-      {/* DELETE METADATA FORM */}
+      {/* RIGHT COLUMN */}
       <div className="space-y-6">
+        {/* LOCK SETTINGS FORM */}
+        <div className="rounded-2xl bg-[var(--bg-card)] border border-[var(--border)] p-6">
+          <h2 className="mb-4 text-lg font-bold text-[#ffd42a]">Lock Settings</h2>
+          <form action={updateAction} className="space-y-4">
+            {/* hidden inputs to carry over existing data */}
+            <input type="hidden" name="title" value={post.title} />
+            <input type="hidden" name="summary" value={post.summary} />
+            <input type="hidden" name="tags" value={post.tags?.join(', ')} />
+            <input type="hidden" name="image_url" value={post.image_url || ''} />
+
+            <label className="flex items-center gap-2 text-sm font-semibold text-white">
+              <input type="checkbox" name="is_locked" defaultChecked={post.is_locked} className="w-4 h-4 accent-[#ffd42a]" />
+              Lock this News Item
+            </label>
+            <div>
+              <label className="mb-1 block text-xs font-semibold text-[var(--text-secondary)]">Position (e.g. 1, 2, 3)</label>
+              <input
+                type="number"
+                name="locked_position"
+                min="1"
+                max="10"
+                defaultValue={post.locked_position || ''}
+                className="w-full rounded-lg bg-[var(--bg-primary)] border border-[var(--border)] px-3 py-2 text-sm text-[var(--text-primary)] focus:border-[#ffd42a] focus:outline-none"
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-semibold text-[var(--text-secondary)]">Locked Until</label>
+              <input
+                type="datetime-local"
+                name="locked_until"
+                defaultValue={post.locked_until ? new Date(new Date(post.locked_until).getTime() - (new Date().getTimezoneOffset() * 60000)).toISOString().slice(0, 16) : ''}
+                className="w-full rounded-lg bg-[var(--bg-primary)] border border-[var(--border)] px-3 py-2 text-sm text-[var(--text-primary)] focus:border-[#ffd42a] focus:outline-none"
+              />
+            </div>
+            <button
+              type="submit"
+              disabled={isUpdatePending}
+              className="w-full mt-2 rounded-lg bg-[#ffd42a] px-4 py-2 font-bold text-black hover:bg-[#ffdf66] disabled:opacity-50"
+            >
+              {isUpdatePending ? 'Saving...' : 'Update Lock Rules'}
+            </button>
+          </form>
+        </div>
+
+        {/* DELETE METADATA FORM */}
         <div className="rounded-2xl bg-red-500/5 border border-red-500/20 p-6">
           <h2 className="mb-2 text-lg font-bold text-red-500">Delete & Redirect</h2>
           <p className="mb-4 text-xs text-[var(--text-muted)]">
@@ -150,7 +198,6 @@ export default function EditPostForm({ post }: { post: Post }) {
           <p className="mb-1"><strong>Source:</strong> {post.source_name}</p>
           <p className="mb-1"><strong>Image:</strong> {post.image_url ? 'Yes' : 'No'}</p>
           <a href={`/posts/${post.id}`} target="_blank" className="mt-2 inline-block text-[#ffd42a] hover:underline">View Live Post ↗</a>
-        </div>
       </div>
 
     </div>

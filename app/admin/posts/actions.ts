@@ -27,6 +27,9 @@ export async function updatePost(postId: string, prevState: any, formData: FormD
       title,
       summary,
       tags,
+      is_locked: formData.get('is_locked') === 'on',
+      locked_position: formData.get('locked_position') ? Number(formData.get('locked_position')) : null,
+      locked_until: formData.get('locked_until') ? String(formData.get('locked_until')) : null,
       ...(clearImage ? { image_url: null } : imageUrlInput ? { image_url: imageUrlInput } : {})
     })
     .eq('id', postId)
