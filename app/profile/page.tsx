@@ -61,6 +61,8 @@ export default function ProfilePage() {
     external_url: '',
     hyperlink_text: '',
     location: '',
+    price: '',
+    contact_phone: '',
     event_date: '',
     category: '',
     existing_urls: [] as string[],
@@ -156,6 +158,8 @@ export default function ProfilePage() {
       external_url: submission.external_url || '',
       hyperlink_text: submission.hyperlink_text || '',
       location: submission.location || '',
+      price: submission.price || '',
+      contact_phone: submission.contact_phone || '',
       event_date: submission.event_date || '',
       category: submission.category || '',
       existing_urls: submission.image_url ? (Array.isArray(submission.image_url) ? submission.image_url : (submission.image_url.startsWith('[') ? JSON.parse(submission.image_url) : [submission.image_url])) : [],
@@ -706,16 +710,38 @@ export default function ProfilePage() {
                     />
                   </div>
 
-                  {editingSubmission.type === 'classified' && (
-                    <div>
-                      <label className="block text-sm font-medium text-white mb-2">Location</label>
-                      <input
-                        type="text"
-                        value={editFormData.location}
-                        onChange={(e) => setEditFormData(prev => ({ ...prev, location: e.target.value }))}
-                        className="w-full rounded-lg border border-[var(--border)] bg-[var(--bg-primary)] px-4 py-2 text-white focus:border-[#00cfff] focus:outline-none"
-                      />
-                    </div>
+                  {(editingSubmission.type === 'classified' || editingSubmission.type === 'ad') && (
+                    <>
+                      <div>
+                        <label className="block text-sm font-medium text-white mb-2">Location</label>
+                        <input
+                          type="text"
+                          value={editFormData.location}
+                          onChange={(e) => setEditFormData(prev => ({ ...prev, location: e.target.value }))}
+                          className="w-full rounded-lg border border-[var(--border)] bg-[var(--bg-primary)] px-4 py-2 text-white focus:border-[#00cfff] focus:outline-none"
+                        />
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-white mb-2">Price</label>
+                          <input
+                            type="text"
+                            value={editFormData.price}
+                            onChange={(e) => setEditFormData(prev => ({ ...prev, price: e.target.value }))}
+                            className="w-full rounded-lg border border-[var(--border)] bg-[var(--bg-primary)] px-4 py-2 text-white focus:border-[#00cfff] focus:outline-none"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-white mb-2">Contact Phone</label>
+                          <input
+                            type="text"
+                            value={editFormData.contact_phone}
+                            onChange={(e) => setEditFormData(prev => ({ ...prev, contact_phone: e.target.value }))}
+                            className="w-full rounded-lg border border-[var(--border)] bg-[var(--bg-primary)] px-4 py-2 text-white focus:border-[#00cfff] focus:outline-none"
+                          />
+                        </div>
+                      </div>
+                    </>
                   )}
 
                   {editingSubmission.type === 'event' && (

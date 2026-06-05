@@ -182,7 +182,7 @@ export default function SubmissionReviewForm({ submission, id }: { submission: S
         </p>
       </div>
 
-      {submission.type === 'classified' && (
+      {(submission.type === 'classified' || submission.type === 'ad') && (
         <div className="space-y-4 mx-2">
           <div className="grid grid-cols-2 gap-4">
             <div>

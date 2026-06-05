@@ -305,7 +305,7 @@ export async function POST(req: Request) {
 
     if (adminWhatsappNumber) {
         const typeLabel = type.charAt(0).toUpperCase() + type.slice(1);
-        const adminMessage = `📢 Pending ${typeLabel} from *${userName}* (${user.whatsapp_number}):\n"${title}"\nPlease review: ${process.env.NEXT_PUBLIC_BASE_URL}/admin/classifieds`;
+        const adminMessage = `📢 Pending ${typeLabel} from *${userName}* (${user.whatsapp_number}):\n"${title}"\nPlease review: ${process.env.NEXT_PUBLIC_BASE_URL}/admin/pending`;
         await sendMessage(adminWhatsappNumber, adminMessage).catch(() => {});
     }
 
