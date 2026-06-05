@@ -8,6 +8,8 @@ import Header from '../../components/header';
 import Footer from '../../components/footer';
 import ImageGallery from '../../components/ImageGallery';
 import { createAdminClient } from '@/lib/supabase-admin';
+import ShareButtons from '../../posts/[id]/share-buttons';
+import { getSiteUrl } from '@/lib/posts';
 
 type ClassifiedSubmission = {
   id: number;
@@ -82,6 +84,7 @@ export default async function ClassifiedDetailPage({ params }: { params: Promise
 
   const item = data as ClassifiedSubmission;
   const image = getPrimaryImage(item.image_url);
+  const articleUrl = `${getSiteUrl()}/classifieds/${item.id}`;
 
   return (
     <div className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)]">
@@ -196,6 +199,11 @@ export default async function ClassifiedDetailPage({ params }: { params: Promise
                     </a>
                   </div>
                 ) : null}
+              </div>
+
+              {/* SHARE BUTTONS */}
+              <div className="mt-8">
+                <ShareButtons postId={item.id} title={item.title} url={articleUrl} />
               </div>
             </div>
           </div>
