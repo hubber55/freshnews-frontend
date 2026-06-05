@@ -72,6 +72,31 @@ export default function ProfilePage() {
   });
   const [isSubmittingEdit, setIsSubmittingEdit] = useState(false);
 
+  // Custom confirmation dialog state
+  const [confirmDialog, setConfirmDialog] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    confirmText?: string;
+    cancelText?: string;
+    isWarning?: boolean;
+    onConfirm: () => void;
+  } | null>(null);
+
+  const showConfirm = (options: {
+    title: string;
+    message: string;
+    confirmText?: string;
+    cancelText?: string;
+    isWarning?: boolean;
+    onConfirm: () => void;
+  }) => {
+    setConfirmDialog({
+      isOpen: true,
+      ...options
+    });
+  };
+
   useEffect(() => {
     // Fetch user profile and submissions
     fetch('/api/auth/me')
@@ -131,23 +156,27 @@ export default function ProfilePage() {
   }, []);
 
   async function handleDeletePost(postId: number) {
-    if (!confirm('Are you sure you want to delete this post?')) return;
-    
-    try {
-      const res = await fetch(`/api/user/delete-post/${postId}`, {
-        method: 'DELETE'
-      });
-      
-      if (res.ok) {
-        setPublishedPosts(prev => prev.filter(p => p.id !== postId));
-        setUpdateMessage('Post deleted successfully');
-        setTimeout(() => setUpdateMessage(null), 3000);
-      } else {
-        throw new Error('Failed to delete post');
+    showConfirm({
+      title: 'Delete Post',
+      message: 'Are you sure you want to permanently delete this published post? This action cannot be undone.',
+      onConfirm: async () => {
+        try {
+          const res = await fetch(`/api/user/delete-post/${postId}`, {
+            method: 'DELETE'
+          });
+          
+          if (res.ok) {
+            setPublishedPosts(prev => prev.filter(p => p.id !== postId));
+            setUpdateMessage('Post deleted successfully');
+            setTimeout(() => setUpdateMessage(null), 3000);
+          } else {
+            throw new Error('Failed to delete post');
+          }
+        } catch (err) {
+          setError('Failed to delete post');
+        }
       }
-    } catch (err) {
-      setError('Failed to delete post');
-    }
+    });
   }
 
   // Handle edit submission click
@@ -216,7 +245,8 @@ export default function ProfilePage() {
         throw new Error(errData.error || 'Failed to update submission');
       }
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Failed to update submission. Please check your inputs and try again.');
+      setError(err instanceof Error ? err.message : 'Failed to update submission. Please check your inputs and try again.');
+      setTimeout(() => setError(null), 5000);
     } finally {
       setIsSubmittingEdit(false);
     }
@@ -224,14 +254,21 @@ export default function ProfilePage() {
 
   const handleStartEditUsername = () => {
     if (usernameEditCount >= 3) {
-      alert('You have reached the maximum limit of 3 username changes for this account.');
+      setError('You have reached the maximum limit of 3 username changes for this account.');
+      setTimeout(() => setError(null), 5000);
       return;
     }
     
     const remaining = 3 - usernameEditCount;
-    if (confirm(`To prevent abuse, Username can only be edited a maximum of 3 times in a lifetime.\n\nYou have ${remaining} ${remaining === 1 ? 'change' : 'changes'} remaining.\n\nDo you want to proceed?`)) {
-      setIsEditingUsername(true);
-    }
+    showConfirm({
+      title: 'Edit Username',
+      message: `To prevent abuse, Username can only be edited a maximum of 3 times in a lifetime.\n\nYou have ${remaining} ${remaining === 1 ? 'change' : 'changes'} remaining.\n\nDo you want to proceed?`,
+      confirmText: 'Proceed',
+      isWarning: true,
+      onConfirm: () => {
+        setIsEditingUsername(true);
+      }
+    });
   };
 
   const handleUpdateUsername = async () => {
@@ -291,14 +328,21 @@ export default function ProfilePage() {
 
   const handleStartEditEmail = () => {
     if (emailEditCount >= 3) {
-      alert('You have reached the maximum limit of 3 email changes for this account.');
+      setError('You have reached the maximum limit of 3 email changes for this account.');
+      setTimeout(() => setError(null), 5000);
       return;
     }
     
     const remaining = 3 - emailEditCount;
-    if (confirm(`To prevent abuse, Email can only be edited a maximum of 3 times in a lifetime.\n\nYou have ${remaining} ${remaining === 1 ? 'change' : 'changes'} remaining.\n\nDo you want to proceed?`)) {
-      setIsEditingEmail(true);
-    }
+    showConfirm({
+      title: 'Edit Email',
+      message: `To prevent abuse, Email can only be edited a maximum of 3 times in a lifetime.\n\nYou have ${remaining} ${remaining === 1 ? 'change' : 'changes'} remaining.\n\nDo you want to proceed?`,
+      confirmText: 'Proceed',
+      isWarning: true,
+      onConfirm: () => {
+        setIsEditingEmail(true);
+      }
+    });
   };
 
   const getStatusIcon = (status: string) => {
@@ -633,9 +677,16 @@ export default function ProfilePage() {
                         onClick={() => {
                           console.log('Edit clicked for submission:', submission);
                           if (submission.status === 'approved' || submission.status === 'published') {
-                            if (!confirm('⚠️ Warning: Editing your listing will remove it from public view until admin re-approves it.\n\nAre you sure you want to proceed?')) return;
+                            showConfirm({
+                              title: 'Edit Approved Listing',
+                              message: '⚠️ Warning: Editing your listing will remove it from public view until admin re-approves it.\n\nAre you sure you want to proceed?',
+                              confirmText: 'Proceed',
+                              isWarning: true,
+                              onConfirm: () => handleEditClick(submission)
+                            });
+                          } else {
+                            handleEditClick(submission);
                           }
-                          handleEditClick(submission);
                         }}
                         className="p-2 rounded-lg bg-[var(--bg-card)] text-[#00cfff] hover:bg-[#00cfff] hover:text-white transition-all pointer-events-auto cursor-pointer"
                         style={{ position: 'relative', zIndex: 10 }}
@@ -645,22 +696,28 @@ export default function ProfilePage() {
                       </button>
                       <button
                         type="button"
-                        onClick={async () => {
+                        onClick={() => {
                           console.log('Delete clicked for submission:', submission.id);
-                          if (!confirm('Are you sure you want to delete this submission?')) return;
-                          try {
-                            const res = await fetch(`/api/user/delete-submission/${submission.id}`, { method: 'DELETE' });
-                            if (res.ok) {
-                              setSubmissions(prev => prev.filter(s => s.id !== submission.id));
-                              setUpdateMessage('Submission deleted');
-                              setTimeout(() => setUpdateMessage(null), 3000);
-                            } else {
-                              console.error('Delete request failed:', res.status);
+                          showConfirm({
+                            title: 'Delete Submission',
+                            message: 'Are you sure you want to permanently delete this submission? This action cannot be undone.',
+                            onConfirm: async () => {
+                              try {
+                                const res = await fetch(`/api/user/delete-submission/${submission.id}`, { method: 'DELETE' });
+                                if (res.ok) {
+                                  setSubmissions(prev => prev.filter(s => s.id !== submission.id));
+                                  setUpdateMessage('Submission deleted');
+                                  setTimeout(() => setUpdateMessage(null), 3000);
+                                } else {
+                                  console.error('Delete request failed:', res.status);
+                                  setError('Failed to delete submission');
+                                }
+                              } catch (err) {
+                                console.error('Delete request error:', err);
+                                setError('Failed to delete submission');
+                              }
                             }
-                          } catch (err) {
-                            console.error('Delete request error:', err);
-                            setError('Failed to delete submission');
-                          }
+                          });
                         }}
                         className="p-2 rounded-lg bg-[var(--bg-card)] text-red-400 hover:bg-red-400 hover:text-white transition-all pointer-events-auto cursor-pointer"
                         style={{ position: 'relative', zIndex: 10 }}
@@ -852,6 +909,39 @@ export default function ProfilePage() {
               </Link>
             </div>
           </div>
+
+          {/* Custom Confirmation Modal */}
+          {confirmDialog && confirmDialog.isOpen && (
+            <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 p-4 animate-in fade-in duration-200">
+              <div className="w-full max-w-md rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] p-6 shadow-2xl animate-in zoom-in-95 duration-200">
+                <h3 className={`text-lg font-bold mb-3 ${confirmDialog.isWarning ? 'text-yellow-400' : 'text-white'}`}>
+                  {confirmDialog.title}
+                </h3>
+                <p className="text-[var(--text-secondary)] text-sm mb-6 whitespace-pre-line leading-relaxed">
+                  {confirmDialog.message}
+                </p>
+                <div className="flex justify-end gap-3">
+                  <button
+                    onClick={() => setConfirmDialog(null)}
+                    className="px-4 py-2 rounded-lg border border-[var(--border)] text-white hover:bg-[var(--border)] transition-colors text-sm font-semibold"
+                  >
+                    {confirmDialog.cancelText || 'Cancel'}
+                  </button>
+                  <button
+                    onClick={() => {
+                      confirmDialog.onConfirm();
+                      setConfirmDialog(null);
+                    }}
+                    className={`px-4 py-2 rounded-lg text-white font-semibold transition-colors text-sm ${
+                      confirmDialog.isWarning ? 'bg-yellow-500 hover:bg-yellow-600 text-black' : 'bg-red-600 hover:bg-red-700'
+                    }`}
+                  >
+                    {confirmDialog.confirmText || 'Confirm'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </main>
       
