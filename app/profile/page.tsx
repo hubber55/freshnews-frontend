@@ -629,19 +629,24 @@ export default function ProfilePage() {
                       </div>
                       {/* Edit Button - always show but warn if approved */}
                       <button
+                        type="button"
                         onClick={() => {
+                          console.log('Edit clicked for submission:', submission);
                           if (submission.status === 'approved' || submission.status === 'published') {
                             if (!confirm('⚠️ Warning: Editing your listing will remove it from public view until admin re-approves it.\n\nAre you sure you want to proceed?')) return;
                           }
                           handleEditClick(submission);
                         }}
-                        className="p-2 rounded-lg bg-[var(--bg-card)] text-[#00cfff] hover:bg-[#00cfff] hover:text-white transition-all"
+                        className="p-2 rounded-lg bg-[var(--bg-card)] text-[#00cfff] hover:bg-[#00cfff] hover:text-white transition-all pointer-events-auto cursor-pointer"
+                        style={{ position: 'relative', zIndex: 10 }}
                         title="Edit Submission"
                       >
                         <Edit size={16} />
                       </button>
                       <button
+                        type="button"
                         onClick={async () => {
+                          console.log('Delete clicked for submission:', submission.id);
                           if (!confirm('Are you sure you want to delete this submission?')) return;
                           try {
                             const res = await fetch(`/api/user/delete-submission/${submission.id}`, { method: 'DELETE' });
@@ -649,12 +654,16 @@ export default function ProfilePage() {
                               setSubmissions(prev => prev.filter(s => s.id !== submission.id));
                               setUpdateMessage('Submission deleted');
                               setTimeout(() => setUpdateMessage(null), 3000);
+                            } else {
+                              console.error('Delete request failed:', res.status);
                             }
                           } catch (err) {
+                            console.error('Delete request error:', err);
                             setError('Failed to delete submission');
                           }
                         }}
-                        className="p-2 rounded-lg bg-[var(--bg-card)] text-red-400 hover:bg-red-400 hover:text-white transition-all"
+                        className="p-2 rounded-lg bg-[var(--bg-card)] text-red-400 hover:bg-red-400 hover:text-white transition-all pointer-events-auto cursor-pointer"
+                        style={{ position: 'relative', zIndex: 10 }}
                         title="Delete Submission"
                       >
                         <Trash2 size={16} />
