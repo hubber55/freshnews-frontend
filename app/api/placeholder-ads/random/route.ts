@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase-admin';
 
+export const dynamic = 'force-dynamic';
+
 // GET - Get a random active placeholder ad
 export async function GET() {
   try {
@@ -39,7 +41,7 @@ export async function GET() {
 
     return NextResponse.json({ ad: selectedAd }, {
       headers: {
-        'Cache-Control': 's-maxage=60, stale-while-revalidate=30'
+        'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate'
       }
     });
   } catch (error) {
