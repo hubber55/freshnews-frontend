@@ -31,6 +31,7 @@ export default function SubmissionReviewForm({ submission, id }: { submission: S
   const [content, setContent] = useState(submission.content);
   const [price, setPrice] = useState(submission.price || '');
   const [contactPhone, setContactPhone] = useState(submission.contact_phone || '');
+  const [tags, setTags] = useState(submission.tags?.join(', ') || '');
   const [existingUrls, setExistingUrls] = useState<string[]>(() => {
     if (!submission.image_url) return [];
     try {
@@ -70,7 +71,7 @@ export default function SubmissionReviewForm({ submission, id }: { submission: S
         body: JSON.stringify({ 
           title, 
           content, 
-          tags: submission.tags || [],
+          tags: tags.split(',').map(t => t.trim()).filter(Boolean),
           price,
           contact_phone: contactPhone,
           image_url: finalUrls.length > 0 ? JSON.stringify(finalUrls) : null
@@ -115,6 +116,7 @@ export default function SubmissionReviewForm({ submission, id }: { submission: S
       formData.set('content', content);
       formData.set('price', price);
       formData.set('contact_phone', contactPhone);
+      formData.set('tags', tags);
       formData.set('image_url', finalUrls.length > 0 ? JSON.stringify(finalUrls) : '');
       formData.set('clear_image', finalUrls.length === 0 ? 'on' : 'off');
       
@@ -209,6 +211,17 @@ export default function SubmissionReviewForm({ submission, id }: { submission: S
           </div>
         </div>
       )}
+
+      <div className="mx-2">
+        <label className="block text-sm font-bold mb-2">Tags (comma-separated)</label>
+        <input
+          type="text"
+          value={tags}
+          onChange={(e) => setTags(e.target.value)}
+          className="w-full px-4 py-2 rounded-lg bg-[var(--bg-secondary)] border border-[var(--border)] text-white focus:border-[#00cfff] focus:outline-none"
+          placeholder="e.g. Ernakulam, Hotel, General Manager"
+        />
+      </div>
 
       <div className="mx-2">
         <ImageUploadWidget

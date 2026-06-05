@@ -44,7 +44,7 @@ export default function ImageGallery({ images, alt = 'Image' }: ImageGalleryProp
             <LazyImage
               src={url}
               alt={`${alt} - ${idx + 1}`}
-              className="w-full h-full max-h-[500px] object-cover rounded-xl"
+              className="w-full h-full max-h-[500px] object-contain rounded-xl"
               eager={idx === 0}
             />
           </div>
@@ -57,7 +57,7 @@ export default function ImageGallery({ images, alt = 'Image' }: ImageGalleryProp
           <button
             onClick={() => scrollToImage(currentIndex - 1)}
             disabled={currentIndex === 0}
-            className={`absolute left-2 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/40 text-white backdrop-blur-sm border border-white/10 transition-all duration-300 opacity-0 group-hover:opacity-100 hidden md:flex hover:bg-black/60 disabled:hidden z-10`}
+            className={`absolute left-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/40 text-white backdrop-blur-sm border border-white/10 transition-all duration-300 opacity-0 group-hover:opacity-100 hidden md:flex hover:bg-black/60 disabled:hidden z-20`}
             aria-label="Previous image"
           >
             <ChevronLeft size={20} />
@@ -66,7 +66,7 @@ export default function ImageGallery({ images, alt = 'Image' }: ImageGalleryProp
           <button
             onClick={() => scrollToImage(currentIndex + 1)}
             disabled={currentIndex === images.length - 1}
-            className={`absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/40 text-white backdrop-blur-sm border border-white/10 transition-all duration-300 opacity-0 group-hover:opacity-100 hidden md:flex hover:bg-black/60 disabled:hidden z-10`}
+            className={`absolute right-4 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/40 text-white backdrop-blur-sm border border-white/10 transition-all duration-300 opacity-0 group-hover:opacity-100 hidden md:flex hover:bg-black/60 disabled:hidden z-20`}
             aria-label="Next image"
           >
             <ChevronRight size={20} />
