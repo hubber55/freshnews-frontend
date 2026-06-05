@@ -61,7 +61,7 @@ export async function approveSubmission(submissionId: string, formData: FormData
     .select('name, whatsapp_number')
     .eq('id', submission.user_id)
     .single();
-  const sourceName = user?.name || 'FreshNews';
+  const sourceName = 'Freshnews';
 
   // Insert into posts table
   const { data: newPost, error: insertError } = await supabase

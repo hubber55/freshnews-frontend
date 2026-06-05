@@ -198,6 +198,7 @@ export default function EditPostForm({ post }: { post: Post }) {
           <p className="mb-1"><strong>Source:</strong> {post.source_name}</p>
           <p className="mb-1"><strong>Image:</strong> {post.image_url ? 'Yes' : 'No'}</p>
           <a href={`/posts/${post.id}`} target="_blank" className="mt-2 inline-block text-[#ffd42a] hover:underline">View Live Post ↗</a>
+        </div>
       </div>
 
     </div>
