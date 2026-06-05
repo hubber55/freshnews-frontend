@@ -203,7 +203,7 @@ def get_recent_posts(limit=20):
     if not supabase:
         return []
     try:
-        response = supabase.table('posts').select('id, title, image_url').eq('is_deleted', False).order('published_at', desc=True).limit(limit).execute()
+        response = supabase.table('posts').select('id, title, image_url, submission_id').eq('is_deleted', False).order('published_at', desc=True).limit(limit).execute()
         return response.data
     except Exception as e:
         logger.error(f"  ❌ Failed to fetch recent posts: {e}")

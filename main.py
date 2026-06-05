@@ -86,6 +86,11 @@ def cleanup_broken_images():
     logger.info("  🔍 Checking for accidentally posted broken images...")
     recent = get_recent_posts(limit=15)
     for p in recent:
+        # Exclude user submissions from automated broken image cleanup
+        if p.get('submission_id') is not None:
+            logger.info(f"    Skipping image cleanup for user submission: {p.get('title')}")
+            continue
+
         if not is_image_valid(p.get('image_url')):
             soft_delete_post(p['id'], reason="Broken Image cleanup")
 

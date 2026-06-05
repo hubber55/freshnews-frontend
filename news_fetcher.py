@@ -816,14 +816,27 @@ def is_image_valid(url):
     """Check if the image URL is accessible and returns a valid image content type."""
     if not url:
         return False
-    if is_placeholder_image_url(url):
+    
+    url_str = str(url).strip()
+    if url_str.startswith('['):
+        import json
+        try:
+            parsed = json.loads(url_str)
+            if isinstance(parsed, list) and len(parsed) > 0:
+                url_str = parsed[0]
+            else:
+                return False
+        except Exception:
+            pass
+
+    if is_placeholder_image_url(url_str):
         return False
     try:
         headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
-        response = http_request("HEAD", url, headers=headers, timeout=10, allow_redirects=True)
+        response = http_request("HEAD", url_str, headers=headers, timeout=10, allow_redirects=True)
         if response.status_code != 200:
             # Fallback to GET if HEAD is not allowed
-            response = http_request("GET", url, headers=headers, stream=True, timeout=10)
+            response = http_request("GET", url_str, headers=headers, stream=True, timeout=10)
         if response.status_code == 200:
             content_type = response.headers.get("Content-Type", "")
             if "image" not in content_type:
@@ -833,13 +846,13 @@ def is_image_valid(url):
             if content_length > 0 and content_length < 5000: # Less than 5KB is likely a placeholder/icon
                 return False
                 
-            final_url = str(getattr(response, "url", url) or url)
+            final_url = str(getattr(response, "url", url_str) or url_str)
             if is_placeholder_image_url(final_url):
                 return False
             return True
         return False
     except Exception as e:
-        logger.debug(f"Image validation failed for {url}: {e}")
+        logger.debug(f"Image validation failed for {url_str}: {e}")
         return False
 
 
