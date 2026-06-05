@@ -179,7 +179,9 @@ export default function AdminClassifiedsPage() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-bold text-[var(--text-muted)] mb-1 uppercase">Price</label>
+                  <label className="block text-xs font-bold text-[var(--text-muted)] mb-1 uppercase">
+                    {editItem?.ad_subcategories?.name?.toLowerCase().includes('job') ? 'Salary' : 'Price'}
+                  </label>
                   <input value={editForm.price} onChange={e => setEditForm(f => ({ ...f, price: e.target.value }))}
                     placeholder="e.g. ₹5,000" className="w-full rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-4 py-2.5 text-white focus:border-[#ffd42a] focus:outline-none" />
                 </div>
@@ -231,7 +233,7 @@ export default function AdminClassifiedsPage() {
             <tr>
               <th className="px-6 py-4">Title / Category</th>
               <th className="px-6 py-4">User</th>
-              <th className="px-6 py-4">Price / Phone</th>
+              <th className="px-6 py-4">Price/Salary / Phone</th>
               <th className="px-6 py-4">Status</th>
               <th className="px-6 py-4">Expiry</th>
               <th className="px-6 py-4 text-right">Actions</th>

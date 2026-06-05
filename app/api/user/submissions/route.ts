@@ -17,7 +17,11 @@ export async function GET() {
 
     const { data: submissions, error } = await supabase
       .from('submissions')
-      .select('id, title, content, type, status, created_at, expires_at, image_url, external_url, hyperlink_text, location, price, contact_phone, tags')
+      .select(`
+        id, title, content, type, status, created_at, expires_at, 
+        image_url, external_url, hyperlink_text, location, price, contact_phone, tags,
+        ad_subcategories (name)
+      `)
       .eq('user_id', user.id)
       .order('created_at', { ascending: false });
 
@@ -37,7 +41,8 @@ export async function GET() {
       location: s.location,
       price: s.price,
       contact_phone: s.contact_phone,
-      tags: s.tags || []
+      tags: s.tags || [],
+      category: s.ad_subcategories?.name || ''
     }));
 
     return NextResponse.json({ submissions: formattedSubmissions });

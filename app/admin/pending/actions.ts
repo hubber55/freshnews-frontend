@@ -9,7 +9,7 @@ export async function getSubmission(submissionId: string) {
   
   const { data: submission, error } = await supabase
     .from('submissions')
-    .select('*')
+    .select(`*, ad_subcategories(name)`)
     .eq('id', submissionId)
     .single();
 

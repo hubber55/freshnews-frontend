@@ -21,6 +21,8 @@ type UserSubmission = {
   external_url?: string;
   hyperlink_text?: string;
   location?: string;
+  price?: string;
+  contact_phone?: string;
   event_date?: string;
   category?: string;
 };
@@ -723,7 +725,9 @@ export default function ProfilePage() {
                       </div>
                       <div className="grid grid-cols-2 gap-4">
                         <div>
-                          <label className="block text-sm font-medium text-white mb-2">Price</label>
+                          <label className="block text-sm font-medium text-white mb-2">
+                            {editingSubmission.category?.toLowerCase().includes('job') ? 'Salary' : 'Price'}
+                          </label>
                           <input
                             type="text"
                             value={editFormData.price}

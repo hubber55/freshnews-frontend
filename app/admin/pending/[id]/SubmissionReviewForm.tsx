@@ -17,6 +17,7 @@ interface Submission {
   tags?: string[];
   price?: string | null;
   contact_phone?: string | null;
+  ad_subcategories?: { name: string } | null;
 }
 
 function getErrorMessage(err: unknown) {
@@ -186,7 +187,9 @@ export default function SubmissionReviewForm({ submission, id }: { submission: S
         <div className="space-y-4 mx-2">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-bold mb-2">Price</label>
+              <label className="block text-sm font-bold mb-2">
+                {submission.ad_subcategories?.name?.toLowerCase().includes('job') ? 'Salary' : 'Price'}
+              </label>
               <input
                 type="text"
                 value={price}
