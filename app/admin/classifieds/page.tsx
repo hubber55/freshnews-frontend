@@ -19,7 +19,7 @@ type Classified = {
   contact_phone: string | null;
   tags: string[] | null;
   image_url: string | null;
-  wa_users?: { name?: string; whatsapp_number?: string } | null;
+  wa_users?: { name?: string; username?: string; whatsapp_number?: string } | null;
   ad_categories?: { name?: string } | null;
   ad_subcategories?: { name?: string } | null;
 };
