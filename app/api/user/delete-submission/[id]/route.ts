@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@/app/utils/supabase/server';
+import { createAdminClient } from '@/lib/supabase-admin';
 import { getCurrentUser } from '@/lib/auth';
 
 export async function DELETE(
@@ -11,7 +11,7 @@ export async function DELETE(
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
     const { id } = await params;
-    const supabase = await createClient();
+    const supabase = createAdminClient();
 
     // Verify ownership before delete
     const { data: submission } = await supabase
@@ -36,3 +36,4 @@ export async function DELETE(
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
+
