@@ -61,7 +61,7 @@ function SubmitContent() {
   const [showSuggestions, setShowSuggestions] = useState(false);
   
   // Dummy images for classifieds
-  const [dummyImages, setDummyImages] = useState<string[]>([]);
+  const [dummyImagesAll, setDummyImagesAll] = useState<Record<string, string[]>>({});
   const [selectedDummyImage, setSelectedDummyImage] = useState<string>('');
 
   // Fetch approved tags for predictive input from both submissions and main posts
@@ -121,7 +121,10 @@ function SubmitContent() {
       const dummyImagesValue = data?.find(d => d.key === 'classified_dummy_images')?.value;
       if (dummyImagesValue) {
         try {
-          setDummyImages(JSON.parse(dummyImagesValue));
+          const parsed = JSON.parse(dummyImagesValue);
+          if (!Array.isArray(parsed)) {
+            setDummyImagesAll(parsed);
+          }
         } catch {
           // ignore parse errors
         }
@@ -578,13 +581,13 @@ function SubmitContent() {
               </div>
             )}
 
-            {(type === 'classified' || type === 'ad') && dummyImages.length > 0 && (
+            {(type === 'classified' || type === 'ad') && dummyImagesAll[selectedSubcategory] && dummyImagesAll[selectedSubcategory].length > 0 && (
               <div className="rounded-xl border border-[var(--border)] bg-[#161b22] p-4">
                 <label className="mb-2 block text-sm font-bold text-[var(--text-secondary)]">
                   Default Images
                 </label>
                 <div className="flex flex-wrap gap-3">
-                  {dummyImages.map((url, i) => (
+                  {dummyImagesAll[selectedSubcategory].map((url, i) => (
                     <button
                       type="button"
                       key={i}

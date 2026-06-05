@@ -33,6 +33,20 @@ export async function DELETE(req: Request) {
     const { error } = await supabase.from('ad_subcategories').delete().eq('id', id);
     if (error) throw error;
 
+    // Clean up dummy images for this subcategory
+    const { data: settingsData } = await supabase.from('admin_settings').select('value').eq('key', 'classified_dummy_images').single();
+    if (settingsData?.value) {
+      try {
+        const parsed = JSON.parse(settingsData.value);
+        if (!Array.isArray(parsed) && parsed[id]) {
+          delete parsed[id];
+          await supabase.from('admin_settings').update({ value: JSON.stringify(parsed) }).eq('key', 'classified_dummy_images');
+        }
+      } catch (err) {
+        console.error('Failed to parse dummy images during cleanup', err);
+      }
+    }
+
     return NextResponse.json({ ok: true });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });

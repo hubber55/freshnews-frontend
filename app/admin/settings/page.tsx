@@ -90,8 +90,13 @@ export default function AdminSettingsPage() {
   const [randomAdsEnabled, setRandomAdsEnabled] = useState(false);
   
   // Dummy Images State
-  const [dummyExistingUrls, setDummyExistingUrls] = useState<string[]>([]);
+  const [dummyImagesAll, setDummyImagesAll] = useState<Record<string, string[]>>({});
   const [dummyNewFiles, setDummyNewFiles] = useState<File[]>([]);
+  
+  // Categories State for Dummy Images
+  const [categories, setCategories] = useState<{ id: number; name: string }[]>([]);
+  const [subcategories, setSubcategories] = useState<{ id: number; name: string; category_id: number }[]>([]);
+  const [selectedSubcategoryId, setSelectedSubcategoryId] = useState<string>('');
 
   useEffect(() => {
     async function fetchSettings() {
@@ -157,11 +162,25 @@ export default function AdminSettingsPage() {
           const dummyImagesValue = data.settings.find((s: { key: string; value: string }) => s.key === 'classified_dummy_images')?.value;
           if (dummyImagesValue) {
             try {
-              setDummyExistingUrls(JSON.parse(dummyImagesValue));
+              const parsed = JSON.parse(dummyImagesValue);
+              if (Array.isArray(parsed)) {
+                // Migrate legacy array format to an empty object
+                setDummyImagesAll({});
+              } else {
+                setDummyImagesAll(parsed);
+              }
             } catch {
               // Ignore parse errors
             }
           }
+        }
+        
+        // Fetch Categories and Subcategories for the Dummy Images UI
+        const catRes = await fetch('/api/admin/categories');
+        if (catRes.ok) {
+          const catData = await catRes.json();
+          setCategories(catData.categories || []);
+          setSubcategories(catData.subcategories || []);
         }
       } catch (error) {
         console.error('Error fetching admin settings:', error);
@@ -209,9 +228,14 @@ export default function AdminSettingsPage() {
   }
 
   async function saveDummyImages() {
+    if (!selectedSubcategoryId) {
+      alert('Please select a Subcategory first.');
+      return;
+    }
+    
     setSaving('classified_dummy_images');
     try {
-      let finalUrls = [...dummyExistingUrls];
+      let finalUrls = dummyImagesAll[selectedSubcategoryId] ? [...dummyImagesAll[selectedSubcategoryId]] : [];
 
       if (dummyNewFiles.length > 0) {
         const formData = new FormData();
@@ -228,8 +252,10 @@ export default function AdminSettingsPage() {
         finalUrls = [...finalUrls, ...urls];
       }
 
-      await updateSetting('classified_dummy_images', JSON.stringify(finalUrls));
-      setDummyExistingUrls(finalUrls);
+      const updatedAll = { ...dummyImagesAll, [selectedSubcategoryId]: finalUrls };
+
+      await updateSetting('classified_dummy_images', JSON.stringify(updatedAll));
+      setDummyImagesAll(updatedAll);
       setDummyNewFiles([]);
     } catch (err) {
       console.error(err);
@@ -578,35 +604,61 @@ export default function AdminSettingsPage() {
 
         {/* Dummy Images Section */}
         <div className="rounded-2xl border border-[var(--border)] bg-[#161b22] overflow-hidden">
-          <div className="px-6 py-4 bg-[#21262d] border-b border-[var(--border)] flex items-center justify-between gap-4">
+          <div className="px-6 py-4 bg-[#21262d] border-b border-[var(--border)] flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <Image size={20} className="text-[#ffd42a]" />
               <h2 className="text-sm font-bold text-white uppercase tracking-wider">Classified Dummy Images</h2>
             </div>
-            <button
-              onClick={saveDummyImages}
-              disabled={saving === 'classified_dummy_images'}
-              className={`rounded-lg px-3 py-1.5 text-xs font-bold ${
-                saving === 'classified_dummy_images'
-                  ? 'bg-yellow-500/20 text-yellow-500 animate-pulse'
-                  : 'bg-green-500/10 text-green-500 hover:bg-green-500/20'
-              }`}
-            >
-              Save Images
-            </button>
+            <div className="flex items-center gap-3">
+              <select 
+                value={selectedSubcategoryId} 
+                onChange={(e) => {
+                  setSelectedSubcategoryId(e.target.value);
+                  setDummyNewFiles([]); // clear new files when changing category
+                }}
+                className="rounded-lg border border-[var(--border)] bg-[var(--bg-primary)] px-3 py-1.5 text-white text-xs focus:border-[#ffd42a] focus:outline-none"
+              >
+                <option value="">Select Subcategory</option>
+                {categories.map(cat => (
+                  <optgroup key={cat.id} label={cat.name}>
+                    {subcategories.filter(sub => sub.category_id === cat.id).map(sub => (
+                      <option key={sub.id} value={sub.id.toString()}>{sub.name}</option>
+                    ))}
+                  </optgroup>
+                ))}
+              </select>
+              <button
+                onClick={saveDummyImages}
+                disabled={saving === 'classified_dummy_images' || !selectedSubcategoryId}
+                className={`rounded-lg px-3 py-1.5 text-xs font-bold ${
+                  saving === 'classified_dummy_images'
+                    ? 'bg-yellow-500/20 text-yellow-500 animate-pulse'
+                    : 'bg-green-500/10 text-green-500 hover:bg-green-500/20 disabled:opacity-50 disabled:hover:bg-green-500/10'
+                }`}
+              >
+                Save Images
+              </button>
+            </div>
           </div>
           <div className="p-6">
             <div className="text-xs text-[var(--text-muted)] leading-relaxed mb-6">
-              Upload default images that users can choose from when submitting a classified ad if they do not have their own photos.
+              Upload default images that users can choose from when submitting a classified ad if they do not have their own photos. Select a Subcategory first.
             </div>
-            <ImageUploadWidget
-              existingUrls={dummyExistingUrls}
-              onExistingUrlsChange={setDummyExistingUrls}
-              newFiles={dummyNewFiles}
-              onNewFilesChange={setDummyNewFiles}
-              maxImages={10}
-              onError={(err) => setError(err)}
-            />
+            
+            {!selectedSubcategoryId ? (
+              <div className="text-sm text-[var(--text-muted)] p-8 border-2 border-dashed border-[var(--border)] rounded-xl text-center">
+                Please select a subcategory from the dropdown above to manage its dummy images.
+              </div>
+            ) : (
+              <ImageUploadWidget
+                existingUrls={dummyImagesAll[selectedSubcategoryId] || []}
+                onExistingUrlsChange={(urls) => setDummyImagesAll(prev => ({ ...prev, [selectedSubcategoryId]: urls }))}
+                newFiles={dummyNewFiles}
+                onNewFilesChange={setDummyNewFiles}
+                maxImages={10}
+                onError={(err) => setError(err)}
+              />
+            )}
           </div>
         </div>
 

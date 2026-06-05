@@ -45,8 +45,35 @@ export async function DELETE(req: Request) {
     if (!id) return NextResponse.json({ error: 'ID is required' }, { status: 400 });
 
     const supabase = getSupabaseAdmin();
+    // Fetch subcategories for this category to clean up dummy images
+    const { data: subcats } = await supabase.from('ad_subcategories').select('id').eq('category_id', id);
+
     const { error } = await supabase.from('ad_categories').delete().eq('id', id);
     if (error) throw error;
+
+    if (subcats && subcats.length > 0) {
+      // Clean up dummy images for these subcategories
+      const { data: settingsData } = await supabase.from('admin_settings').select('value').eq('key', 'classified_dummy_images').single();
+      if (settingsData?.value) {
+        try {
+          const parsed = JSON.parse(settingsData.value);
+          if (!Array.isArray(parsed)) {
+            let modified = false;
+            for (const sub of subcats) {
+              if (parsed[sub.id]) {
+                delete parsed[sub.id];
+                modified = true;
+              }
+            }
+            if (modified) {
+              await supabase.from('admin_settings').update({ value: JSON.stringify(parsed) }).eq('key', 'classified_dummy_images');
+            }
+          }
+        } catch (err) {
+          console.error('Failed to parse dummy images during cleanup', err);
+        }
+      }
+    }
 
     return NextResponse.json({ ok: true });
   } catch (error: any) {
