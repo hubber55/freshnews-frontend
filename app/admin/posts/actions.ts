@@ -56,16 +56,15 @@ export async function deletePostWithRedirect(postId: string, prevState: any, for
   // Use service role key for delete to bypass RLS issues
   const supabaseAdmin = createAdminClient()
 
-  // Also delete any linked submission rows so user profile updates correctly
-  await supabaseAdmin
-    .from('submissions')
-    .delete()
-    .eq('post_id', postId)
-    .throwOnError()
-    .then(() => {})  // ignore if post_id column doesn't exist or no rows
-    .catch(() => {
-      // Also try matching by title fallback (best-effort cleanup)
-    })
+  // Also delete any linked submission rows so user profile updates correctly (best-effort)
+  try {
+    await supabaseAdmin
+      .from('submissions')
+      .delete()
+      .eq('post_id', postId)
+  } catch {
+    // post_id column may not exist — safe to ignore
+  }
 
   // Hard delete from posts table — permanently removed
   const { error } = await supabaseAdmin
