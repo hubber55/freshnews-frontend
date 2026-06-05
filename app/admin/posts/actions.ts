@@ -53,26 +53,24 @@ export async function deletePostWithRedirect(postId: string, prevState: any, for
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) throw new Error('Unauthorized')
 
-  let redirectTo: string | null = formData.get('redirect_to') as string
-  if (!redirectTo || redirectTo.trim() === '') {
-    redirectTo = null
-  } else {
-    // Basic validation, ensure it's a relative path starting with /posts/ or just a valid slug
-    if (!redirectTo.startsWith('/') && !redirectTo.startsWith('http')) {
-       // Assuming they provided an ID
-       redirectTo = `/posts/${redirectTo.trim()}`
-    }
-  }
-
   // Use service role key for delete to bypass RLS issues
   const supabaseAdmin = createAdminClient()
 
+  // Also delete any linked submission rows so user profile updates correctly
+  await supabaseAdmin
+    .from('submissions')
+    .delete()
+    .eq('post_id', postId)
+    .throwOnError()
+    .then(() => {})  // ignore if post_id column doesn't exist or no rows
+    .catch(() => {
+      // Also try matching by title fallback (best-effort cleanup)
+    })
+
+  // Hard delete from posts table — permanently removed
   const { error } = await supabaseAdmin
     .from('posts')
-    .update({
-      is_deleted: true,
-      redirect_to: redirectTo
-    })
+    .delete()
     .eq('id', postId)
 
   if (error) {

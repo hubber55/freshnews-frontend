@@ -159,11 +159,11 @@ export default function EditPostForm({ post }: { post: Post }) {
           </form>
         </div>
 
-        {/* DELETE METADATA FORM */}
+        {/* DELETE FORM */}
         <div className="rounded-2xl bg-red-500/5 border border-red-500/20 p-6">
-          <h2 className="mb-2 text-lg font-bold text-red-500">Delete & Redirect</h2>
+          <h2 className="mb-2 text-lg font-bold text-red-500">Delete Post</h2>
           <p className="mb-4 text-xs text-[var(--text-muted)]">
-            Deleting a post marks it as inactive. Provide a redirect URL or Post ID to preserve SEO.
+            ⚠️ This will permanently delete the post. This cannot be undone.
           </p>
           
           {deleteState?.error && (
@@ -172,23 +172,14 @@ export default function EditPostForm({ post }: { post: Post }) {
             </div>
           )}
 
-          <form action={deleteAction} className="space-y-4">
-            <div>
-              <label className="mb-2 block text-xs font-semibold text-[var(--text-secondary)]">Redirect Target</label>
-              <input
-                type="text"
-                name="redirect_to"
-                placeholder="/posts/1234..."
-                defaultValue={post.redirect_to || ''}
-                className="w-full rounded bg-[var(--bg-primary)] border border-red-500/20 px-3 py-2 text-sm text-[var(--text-primary)] focus:border-red-500 focus:outline-none"
-              />
-            </div>
+          <form action={deleteAction}>
             <button
               type="submit"
               disabled={isDeletePending}
+              onClick={() => { if (!confirm('⚠️ Permanently delete this post? This cannot be undone.')) return false; }}
               className="w-full rounded-lg bg-red-600 px-4 py-2 font-bold text-white hover:bg-red-700 disabled:opacity-50"
             >
-              {isDeletePending ? 'Deleting...' : 'Confirm Delete'}
+              {isDeletePending ? 'Deleting...' : '🗑️ Permanently Delete'}
             </button>
           </form>
         </div>

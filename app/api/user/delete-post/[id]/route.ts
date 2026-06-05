@@ -1,4 +1,5 @@
 import { createClient } from '@/app/utils/supabase/server';
+import { createAdminClient } from '@/lib/supabase-admin';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function DELETE(
@@ -17,20 +18,29 @@ export async function DELETE(
   const { id } = await params;
   const postId = parseInt(id);
   
+  const supabaseAdmin = createAdminClient();
+
   // Verify the post belongs to the user
-  const { data: post, error: fetchError } = await supabase
+  const { data: post, error: fetchError } = await supabaseAdmin
     .from('posts')
-    .select('id')
+    .select('id, title, user_id')
     .eq('id', postId)
-    .eq('user_id', user.id)
     .single();
   
-  if (fetchError || !post) {
+  if (fetchError || !post || post.user_id !== user.id) {
     return NextResponse.json({ error: 'Post not found or not authorized' }, { status: 404 });
   }
   
-  // Delete the post
-  const { error: deleteError } = await supabase
+  // Also clean up the submission row so user profile updates
+  await supabaseAdmin
+    .from('submissions')
+    .delete()
+    .eq('user_id', user.id)
+    .eq('title', post.title)
+    .catch(() => {}); // best-effort
+
+  // Hard delete the post permanently
+  const { error: deleteError } = await supabaseAdmin
     .from('posts')
     .delete()
     .eq('id', postId);
@@ -42,3 +52,4 @@ export async function DELETE(
   
   return NextResponse.json({ success: true });
 }
+
