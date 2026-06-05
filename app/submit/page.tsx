@@ -681,7 +681,7 @@ function SubmitContent() {
                   </p>
                 </div>
               )}
-              </div>
+
               <p className="mt-2 text-[11px] text-[var(--text-muted)]">
                 First photo will be your main featured image.
               </p>
