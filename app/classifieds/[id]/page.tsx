@@ -165,11 +165,13 @@ export default async function ClassifiedDetailPage({ params }: { params: Promise
               {item.tags && item.tags.length > 0 && (
                 <div className="mt-6 flex flex-wrap gap-2 pt-6 border-t border-white/5">
                   {item.tags.map((tag, idx) => {
+                    if (['jobs', 'job', 'classifieds', 'classified', 'real estate'].includes(tag.toLowerCase())) return null;
                     const formattedTag = tag.charAt(0).toUpperCase() + tag.slice(1).toLowerCase();
+                    const categoryParam = item.ad_categories?.name ? `&category=${encodeURIComponent(item.ad_categories.name)}` : '';
                     return (
                       <Link 
                         key={idx} 
-                        href={`/classifieds?tag=${encodeURIComponent(tag)}`}
+                        href={`/classifieds?tag=${encodeURIComponent(tag)}${categoryParam}`}
                         className="text-[11px] font-bold text-[#00ffff] bg-[#00ffff]/5 px-3 py-1 rounded-full border border-[#00ffff]/10 tracking-wide hover:bg-[#00ffff]/10 transition-all"
                       >
                         {formattedTag}

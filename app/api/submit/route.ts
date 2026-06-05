@@ -43,9 +43,14 @@ export async function POST(req: Request) {
       
       // Add Location tags
       if (location) {
-        const parts = location.split(',').map(p => p.trim());
+        const parts = location.split(',').map(p => p.trim()).filter(p => p && p.toLowerCase() !== 'kerala');
         parts.forEach(p => {
-          if (p && p !== 'Kerala') autoTags.add(p);
+          // Add p only if there isn't another part that contains p and is longer than p
+          // (e.g., "Ernakulam City" contains "Ernakulam", so we skip "Ernakulam")
+          const isRedundant = parts.some(other => other !== p && other.toLowerCase().includes(p.toLowerCase()));
+          if (!isRedundant) {
+            autoTags.add(p);
+          }
         });
       }
 
@@ -54,6 +59,32 @@ export async function POST(req: Request) {
       const { data: subData } = await supabase.from('ad_subcategories').select('name').eq('id', subcategoryId).single();
       if (catData?.name) autoTags.add(catData.name);
       if (subData?.name) autoTags.add(subData.name);
+
+      // Extract title tags (e.g., "General Manager", "Hotel")
+      const stopWords = new Set(['for', 'a', 'an', 'the', 'in', 'on', 'at', 'to', 'of', 'and', 'with', 'is', 'are', 'need', 'wanted', 'required', 'looking', 'urgent', 'urgently']);
+      const words = title.split(/\s+/).map(w => w.replace(/[^a-zA-Z0-9-]/g, '')).filter(Boolean);
+      let currentPhrase: string[] = [];
+      words.forEach(w => {
+         if (stopWords.has(w.toLowerCase()) || /^\d+$/.test(w)) {
+            if (currentPhrase.length > 0) {
+               autoTags.add(currentPhrase.join(' '));
+               currentPhrase = [];
+            }
+         } else {
+            if (/^[A-Z]/.test(w)) {
+               currentPhrase.push(w);
+            } else {
+               if (currentPhrase.length > 0) {
+                  autoTags.add(currentPhrase.join(' '));
+                  currentPhrase = [];
+               }
+               if (w.length >= 5) {
+                  autoTags.add(w);
+               }
+            }
+         }
+      });
+      if (currentPhrase.length > 0) autoTags.add(currentPhrase.join(' '));
 
       // Simple keyword matching for "Movies"
       const content_to_check = (title + " " + content).toLowerCase();
@@ -72,10 +103,10 @@ export async function POST(req: Request) {
        }
     }
 
-    const submissionTags = Array.from(new Set([
-      ...finalTags,
-      ...(type === 'classified' ? ['Classifieds'] : []),
-    ])).slice(0, 8); // Allow more tags for better SEO
+    const excludedTags = new Set(['jobs', 'job', 'classifieds', 'classified', 'real estate']);
+    const submissionTags = Array.from(new Set(finalTags))
+      .filter(t => !excludedTags.has(t.toLowerCase()))
+      .slice(0, 8); // Allow more tags for better SEO
 
     const imageCount = parseInt(formData.get('imageCount') as string || '0');
 

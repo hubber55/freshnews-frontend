@@ -38,11 +38,13 @@ export default function ClassifiedsClient({
   const searchParams = useSearchParams();
   const [search, setSearch] = useState(searchParams.get('search') || '');
   const [activeTag, setActiveTag] = useState<string | null>(searchParams.get('tag'));
+  const [activeCategory, setActiveCategory] = useState<string | null>(searchParams.get('category'));
 
   // Sync state when URL params change (e.g. clicking the footer nav icon again)
   useEffect(() => {
     setSearch(searchParams.get('search') || '');
     setActiveTag(searchParams.get('tag'));
+    setActiveCategory(searchParams.get('category'));
   }, [searchParams]);
 
   const filteredClassifieds = useMemo(() => {
@@ -52,15 +54,17 @@ export default function ClassifiedsClient({
         (item.content?.toLowerCase().includes(search.toLowerCase())) ||
         (item.location?.toLowerCase().includes(search.toLowerCase()));
       
+      const matchesCategory = !activeCategory || 
+        (item.ad_categories?.name?.toLowerCase() === activeCategory.toLowerCase());
+
       const matchesTag = !activeTag || 
         (item.tags?.some(t => t.toLowerCase() === activeTag.toLowerCase())) ||
         (item.location?.toLowerCase().includes(activeTag.toLowerCase())) ||
-        (item.ad_categories?.name?.toLowerCase() === activeTag.toLowerCase()) ||
         (item.ad_subcategories?.name?.toLowerCase() === activeTag.toLowerCase());
 
-      return matchesSearch && matchesTag;
+      return matchesSearch && matchesCategory && matchesTag;
     });
-  }, [initialClassifieds, search, activeTag]);
+  }, [initialClassifieds, search, activeTag, activeCategory]);
 
   return (
     <main className="mx-auto w-full max-w-[1100px] px-5 py-6 sm:px-6">
@@ -72,11 +76,17 @@ export default function ClassifiedsClient({
             <Home size={14} /> Home
           </Link>
           <span>-</span>
-          <span className="text-[var(--text-primary)] font-bold">Classifieds</span>
+          <Link href="/classifieds" className="text-[var(--text-primary)] font-bold hover:text-[#00ffff] transition-colors">Classifieds</Link>
+          {activeCategory && (
+            <>
+              <span>-</span>
+              <span className="capitalize text-[var(--accent)] font-bold">{activeCategory}</span>
+            </>
+          )}
           {activeTag && (
             <>
               <span>-</span>
-              <span className="capitalize text-[var(--accent)] font-bold">{activeTag.replace(/-/g, ' ')}</span>
+              <span className="capitalize text-[var(--text-secondary)] font-bold">#{activeTag.replace(/-/g, ' ')}</span>
             </>
           )}
         </div>
@@ -125,10 +135,10 @@ export default function ClassifiedsClient({
         />
       </div>
 
-      {!activeTag && !search ? (
+      {!activeTag && !search && !activeCategory ? (
         <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-4">
           <button 
-            onClick={() => setActiveTag('Real Estate')}
+            onClick={() => setActiveCategory('Real Estate')}
             className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] p-6 hover:border-[#00ffff]/50 hover:bg-[#00ffff]/5 transition-all shadow-lg active:scale-95"
           >
             <div className="rounded-full bg-[#00ffff]/10 p-3 text-[#00ffff]">
@@ -139,7 +149,7 @@ export default function ClassifiedsClient({
           </button>
           
           <button 
-            onClick={() => setActiveTag('Jobs')}
+            onClick={() => setActiveCategory('Jobs')}
             className="flex flex-col items-center justify-center gap-3 rounded-2xl border border-[var(--border)] bg-[var(--bg-card)] p-6 hover:border-[#ffd42a]/50 hover:bg-[#ffd42a]/5 transition-all shadow-lg active:scale-95"
           >
             <div className="rounded-full bg-[#ffd42a]/10 p-3 text-[#ffd42a]">
@@ -237,6 +247,7 @@ export default function ClassifiedsClient({
                     {item.tags && item.tags.length > 0 && (
                       <div className="mt-4 flex flex-wrap gap-2">
                         {item.tags.map((tag, idx) => {
+                          if (['jobs', 'job', 'classifieds', 'classified', 'real estate'].includes(tag.toLowerCase())) return null;
                           const formattedTag = tag.charAt(0).toUpperCase() + tag.slice(1).toLowerCase();
                           return (
                             <span key={idx} className="text-[10px] font-bold text-[#00ffff]/60 px-2 py-0.5 rounded border border-[#00ffff]/20 uppercase tracking-tighter">
