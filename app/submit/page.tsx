@@ -114,25 +114,32 @@ function SubmitContent() {
   // Fetch max upload images and dummy images
   useEffect(() => {
     async function fetchSettings() {
-      const { data } = await supabase.from('admin_settings').select('key, value').in('key', ['max_upload_images', 'classified_dummy_images']);
-      
-      const maxImagesValue = data?.find(d => d.key === 'max_upload_images')?.value;
-      if (maxImagesValue) setMaxImages(parseInt(maxImagesValue, 10));
+      try {
+        const res = await fetch('/api/site-settings/public');
+        if (!res.ok) return;
+        const { settings } = await res.json();
+        const data = settings;
 
-      const dummyImagesValue = data?.find(d => d.key === 'classified_dummy_images')?.value;
-      if (dummyImagesValue) {
-        try {
-          const parsed = JSON.parse(dummyImagesValue);
-          if (!Array.isArray(parsed)) {
-            setDummyImagesAll(parsed);
+        const maxImagesValue = data?.find((d: any) => d.key === 'max_upload_images')?.value;
+        if (maxImagesValue) setMaxImages(parseInt(maxImagesValue, 10));
+
+        const dummyImagesValue = data?.find((d: any) => d.key === 'classified_dummy_images')?.value;
+        if (dummyImagesValue) {
+          try {
+            const parsed = JSON.parse(dummyImagesValue);
+            if (!Array.isArray(parsed)) {
+              setDummyImagesAll(parsed);
+            }
+          } catch {
+            // ignore parse errors
           }
-        } catch {
-          // ignore parse errors
         }
+      } catch (e) {
+        console.error('Failed to fetch settings:', e);
       }
     }
     fetchSettings();
-  }, [supabase]);
+  }, []);
 
   // Check auth status using same API as header
   useEffect(() => {
