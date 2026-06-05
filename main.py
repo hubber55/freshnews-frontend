@@ -23,10 +23,10 @@ from config import (
     DAY_START_HOUR, DAY_END_HOUR,
     DAY_DELAY_SECONDS, NIGHT_DELAY_SECONDS,
 )
-from news_fetcher import fetch_feed_articles, enrich_with_images, scrape_full_text_if_needed, is_image_valid
+from news_fetcher import fetch_feed_articles, enrich_with_images, scrape_full_text_if_needed
 from deduplicator import deduplicate_articles, rank_articles, is_duplicate_title, ai_semantic_dedup
 from summarizer import summarize_article
-from supabase_publisher import publish_via_supabase, get_existing_posts, get_recent_posts, soft_delete_post, prune_oldest_post
+from supabase_publisher import publish_via_supabase, get_existing_posts, prune_oldest_post
 
 # --- Logging Setup ---
 LOG_FILE = "freshnews.log"
@@ -81,20 +81,6 @@ def get_current_delay():
         return NIGHT_DELAY_SECONDS
 
 
-def cleanup_broken_images():
-    """Verify images of recent posts and delete if broken."""
-    logger.info("  🔍 Checking for accidentally posted broken images...")
-    recent = get_recent_posts(limit=15)
-    for p in recent:
-        # Exclude user submissions from automated broken image cleanup
-        if p.get('submission_id') is not None:
-            logger.info(f"    Skipping image cleanup for user submission: {p.get('title')}")
-            continue
-
-        if not is_image_valid(p.get('image_url')):
-            soft_delete_post(p['id'], reason="Broken Image cleanup")
-
-
 def run_rotation():
     logger.info("=" * 60)
     logger.info("FreshNews (Supabase) -- Starting Source Rotation...")
@@ -109,9 +95,6 @@ def run_rotation():
     # This acts as an aggressive garbage collector to keep CPU/Memory low
     logger.info("  🧹 Running aggressive garbage collection (killing stuck browsers)...")
     os.system("pkill -f playwright; pkill -f chrome; pkill -f chromium")
-
-    # 1. Cleanup broken images from recent posts
-    cleanup_broken_images()
 
     # 2. Get existing posts for deduplication straight from DB
     existing_posts = get_existing_posts()
