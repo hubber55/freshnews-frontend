@@ -48,9 +48,9 @@ function SubmitContent() {
   const [selectedSubcategory, setSelectedSubcategory] = useState('');
   const [filteredSubcategories, setFilteredSubcategories] = useState<Subcategory[]>([]);
   
-  // Location States
   const [selectedDistrict, setSelectedDistrict] = useState('');
   const [selectedTown, setSelectedTown] = useState('');
+  const [customTown, setCustomTown] = useState('');
   const [price, setPrice] = useState('');
   const [contactPhone, setContactPhone] = useState('');
   const [isLocating, setIsLocating] = useState(false);
@@ -271,7 +271,7 @@ function SubmitContent() {
       }
     }
 
-    if ((type === 'ad' || type === 'classified') && (!selectedDistrict || !selectedTown)) {
+    if ((type === 'ad' || type === 'classified') && (!selectedDistrict || !selectedTown || (selectedTown === 'Enter Custom' && !customTown.trim()))) {
       setError('Please select a district and town for your listing.');
       setIsSubmitting(false);
       return;
@@ -307,7 +307,11 @@ function SubmitContent() {
     formData.append('newsForAd', String(newsForAd));
 
     if (type === 'ad' || type === 'classified') {
-      formData.append('location', `Kerala, ${selectedDistrict}, ${selectedTown}`);
+      const finalTown = selectedTown === 'Enter Custom' ? customTown.trim() : selectedTown;
+      const finalLocation = selectedDistrict.includes('Outside') 
+        ? `${selectedDistrict}, ${finalTown}` 
+        : `Kerala, ${selectedDistrict}, ${finalTown}`;
+      formData.append('location', finalLocation);
     }
 
     if (newsForAd) {
@@ -397,6 +401,7 @@ function SubmitContent() {
                     onChange={(e) => {
                       setSelectedDistrict(e.target.value);
                       setSelectedTown('');
+                      setCustomTown('');
                     }}
                     required
                     className="w-full rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-4 py-3 text-white focus:border-[#00cfff] focus:outline-none focus:ring-1 focus:ring-[#00cfff]"
@@ -405,6 +410,8 @@ function SubmitContent() {
                     {Object.keys(locations).map(d => (
                       <option key={d} value={d}>{d}</option>
                     ))}
+                    <option value="Outside Kerala">Outside Kerala</option>
+                    <option value="Outside India">Outside India</option>
                   </select>
                 </div>
                 <div>
@@ -416,8 +423,13 @@ function SubmitContent() {
                   </label>
                   <select
                     value={selectedTown}
-                    onChange={(e) => setSelectedTown(e.target.value)}
-                    required
+                    onChange={(e) => {
+                      setSelectedTown(e.target.value);
+                      if (e.target.value !== 'Enter Custom') {
+                        setCustomTown('');
+                      }
+                    }}
+                    required={selectedTown !== 'Enter Custom' || !customTown}
                     disabled={!selectedDistrict}
                     className="w-full rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-4 py-3 text-white focus:border-[#00cfff] focus:outline-none focus:ring-1 focus:ring-[#00cfff] disabled:opacity-50"
                   >
@@ -425,7 +437,19 @@ function SubmitContent() {
                     {selectedDistrict && locations[selectedDistrict]?.map((t: string) => (
                       <option key={t} value={t}>{t}</option>
                     ))}
+                    <option value="Enter Custom">Enter Custom</option>
                   </select>
+                  {selectedTown === 'Enter Custom' && (
+                    <input
+                      type="text"
+                      value={customTown}
+                      onChange={(e) => setCustomTown(e.target.value.slice(0, 20))}
+                      placeholder="Enter town/city name"
+                      maxLength={20}
+                      required
+                      className="mt-3 w-full rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-4 py-3 text-white focus:border-[#00cfff] focus:outline-none focus:ring-1 focus:ring-[#00cfff]"
+                    />
+                  )}
                 </div>
               </div>
             )}
