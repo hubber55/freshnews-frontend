@@ -346,8 +346,8 @@ export default async function Home({ searchParams }: HomeProps) {
                             src={getPrimaryImage(heroPost.image_url)!}
                             alt={heroPost.title}
                             eager={true}
-                            className="absolute inset-0 w-full h-full object-cover"
-                            imgStyle={{ aspectRatio: '16/9' }}
+                            className="absolute inset-0 w-full h-full object-contain bg-black"
+                            imgStyle={{ aspectRatio: '16/9', objectFit: 'contain', backgroundColor: '#000000' }}
                           />
                         </>
                       ) : (
@@ -419,7 +419,8 @@ export default async function Home({ searchParams }: HomeProps) {
                               src={getPrimaryImage(post.image_url)!}
                               alt={post.title}
                               eager={index < 3}
-                              className="absolute inset-0 w-full h-full object-cover"
+                              className="absolute inset-0 w-full h-full object-contain bg-black"
+                              imgStyle={{ objectFit: 'contain', backgroundColor: '#000000' }}
                             />
                             </>
                           ) : (

@@ -37,7 +37,8 @@ export default function ProgressivePostList({ posts }: ProgressivePostListProps)
                       src={post.image_url}
                       alt={post.title}
                       eager={index < 3}
-                      className="absolute inset-0 w-full h-full object-cover"
+                      className="absolute inset-0 w-full h-full object-contain bg-black"
+                      imgStyle={{ objectFit: 'contain', backgroundColor: '#000000' }}
                     />
                   </>
                 ) : (
