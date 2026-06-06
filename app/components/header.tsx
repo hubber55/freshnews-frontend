@@ -195,9 +195,15 @@ export default function Header() {
               searchOpen ? 'translate-y-0 opacity-100' : '-translate-y-full opacity-0'
             }`}
           >
-            <div className="w-full max-w-[500px] flex items-center gap-2">
+            <form onSubmit={handleSearchSubmit} className="w-full max-w-[500px] flex items-center gap-2">
               <div className="flex-1 relative group">
-                <Search size={18} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#ffd42a]" />
+                <button 
+                  type="submit"
+                  aria-label="Submit Search"
+                  className="absolute left-4 top-1/2 -translate-y-1/2 text-[#ffd42a] hover:scale-110 active:scale-95 transition-all p-1 z-10"
+                >
+                  <Search size={18} />
+                </button>
                 
                 {/* Ghost Text Overlay */}
                 <div className="absolute left-11 right-4 top-1/2 -translate-y-1/2 text-[14px] pointer-events-none whitespace-pre overflow-hidden">
@@ -223,6 +229,7 @@ export default function Header() {
                     {suggestions.map((tag) => (
                       <button
                         key={tag}
+                        type="button"
                         onClick={() => {
                           setSearchQuery(tag);
                           setShowSuggestions(false);
@@ -244,7 +251,7 @@ export default function Header() {
               >
                 <X size={20} />
               </button>
-            </div>
+            </form>
           </div>
 
           {/* Animated Menu Button */}

@@ -163,8 +163,11 @@ export default async function Home({ searchParams }: HomeProps) {
   // If a tag is selected, search both tags and titles for better results
   if (activeTag) {
     const searchTerm = activeTag.trim();
-    // Use a more flexible search: exact tag OR title match
-    query = query.or(`tags.cs.{"${searchTerm}"},title.ilike.%${searchTerm}%,tags.ov.{"${searchTerm}"}`);
+    const searchLower = searchTerm.toLowerCase();
+    const searchUpper = searchTerm.toUpperCase();
+    const searchCapitalized = searchTerm.charAt(0).toUpperCase() + searchTerm.slice(1).toLowerCase();
+    const filterStr = `tags.cs.{"${searchTerm}"},tags.cs.{"${searchLower}"},tags.cs.{"${searchUpper}"},tags.cs.{"${searchCapitalized}"},title.ilike.%${searchTerm}%`;
+    query = query.or(filterStr);
   }
 
   // Check if there is a next page by checking if any post exists at range (from + pageSize)
@@ -178,7 +181,11 @@ export default async function Home({ searchParams }: HomeProps) {
 
   if (activeTag) {
     const searchTerm = activeTag.trim();
-    nextPageQuery = nextPageQuery.or(`tags.cs.{"${searchTerm}"},title.ilike.%${searchTerm}%,tags.ov.{"${searchTerm}"}`);
+    const searchLower = searchTerm.toLowerCase();
+    const searchUpper = searchTerm.toUpperCase();
+    const searchCapitalized = searchTerm.charAt(0).toUpperCase() + searchTerm.slice(1).toLowerCase();
+    const filterStr = `tags.cs.{"${searchTerm}"},tags.cs.{"${searchLower}"},tags.cs.{"${searchUpper}"},tags.cs.{"${searchCapitalized}"},title.ilike.%${searchTerm}%`;
+    nextPageQuery = nextPageQuery.or(filterStr);
   }
 
   const adminSupabase = createAdminClient();
@@ -390,18 +397,12 @@ export default async function Home({ searchParams }: HomeProps) {
                             })()}
                           </span>
                         </div>
-                        <LockNewsButton postId={heroPost.id} />
+                        <LockNewsButton postId={heroPost.id} isLocked={heroPost.is_locked} />
                       </div>
   
                       <h2 className="card-title-hero mb-2 text-white">
                         {limitWords(heroPost.title, 10)}
                       </h2>
-
-                      {heroPost.is_locked && (
-                        <div className="text-[#00ffff] text-[11px] font-bold uppercase tracking-wider mb-2">
-                          LOCKED
-                        </div>
-                      )}
                     </div>
                   </TrackedLink>
                 </article>

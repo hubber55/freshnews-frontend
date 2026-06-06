@@ -17,7 +17,11 @@ export async function GET(req: NextRequest) {
       .range(from, to);
 
     if (activeTag) {
-      query = query.or(`tags.cs.{"${activeTag}"},title.ilike.%${activeTag}%,tags.ov.{"${activeTag}"}`);
+      const searchTerm = activeTag.trim();
+      const searchLower = searchTerm.toLowerCase();
+      const searchUpper = searchTerm.toUpperCase();
+      const searchCapitalized = searchTerm.charAt(0).toUpperCase() + searchTerm.slice(1).toLowerCase();
+      query = query.or(`tags.cs.{"${searchTerm}"},tags.cs.{"${searchLower}"},tags.cs.{"${searchUpper}"},tags.cs.{"${searchCapitalized}"},title.ilike.%${searchTerm}%`);
     }
 
     const { data: posts, error } = await query;

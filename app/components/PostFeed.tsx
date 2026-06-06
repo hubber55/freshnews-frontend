@@ -155,14 +155,10 @@ export default function PostFeed({
                           {formatTimeAgo(post.created_at || post.published_at)}
                         </span>
                       </div>
-                      <LockNewsButton postId={post.id} />
+                      <LockNewsButton postId={post.id} isLocked={post.is_locked} />
                     </div>
 
                     <h3 className="card-title mb-2 text-white">{limitWords(post.title, 10)}</h3>
-
-                    {post.is_locked && (
-                      <div className="text-[#00ffff] text-[11px] font-bold uppercase tracking-wider mb-2">LOCKED</div>
-                    )}
                   </div>
                 </TrackedLink>
               </article>

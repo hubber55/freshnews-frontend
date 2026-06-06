@@ -6,9 +6,10 @@ import Link from 'next/link';
 
 interface LockNewsButtonProps {
   postId: number;
+  isLocked?: boolean;
 }
 
-export default function LockNewsButton({ postId }: LockNewsButtonProps) {
+export default function LockNewsButton({ postId, isLocked }: LockNewsButtonProps) {
   return (
     <div className="relative flex items-center gap-1.5">
       <Link 
@@ -16,7 +17,9 @@ export default function LockNewsButton({ postId }: LockNewsButtonProps) {
         className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-[#00ffff]/10 border border-[#00ffff]/30 text-[#00ffff] hover:bg-[#00ffff] hover:text-black transition-all group"
       >
         <Lock size={10} className="group-hover:scale-110 transition-transform" />
-        <span className="text-[9px] font-black uppercase tracking-wider">Lock News</span>
+        <span className="text-[9px] font-black uppercase tracking-wider">
+          {isLocked ? 'LOCKED' : 'Lock News'}
+        </span>
       </Link>
     </div>
   );
