@@ -17,7 +17,7 @@ type Post = {
   locked_until?: string | null
 }
 
-export default function EditPostForm({ post }: { post: Post }) {
+export default function EditPostForm({ post, lockPositions = [2, 8, 16, 24] }: { post: Post; lockPositions?: number[] }) {
   // We use useActionState to handle the potential error return from server actions
   const [updateState, updateAction, isUpdatePending] = useActionState(updatePost.bind(null, post.id), null)
   const [deleteState, deleteAction, isDeletePending] = useActionState(deletePostWithRedirect.bind(null, post.id), null)
@@ -118,15 +118,19 @@ export default function EditPostForm({ post }: { post: Post }) {
               Lock this News Item
             </label>
             <div>
-              <label className="mb-1 block text-xs font-semibold text-[var(--text-secondary)]">Position (e.g. 1, 2, 3)</label>
-              <input
-                type="number"
+              <label className="mb-1 block text-xs font-semibold text-[var(--text-secondary)]">Position</label>
+              <select
                 name="locked_position"
-                min="1"
-                max="10"
                 defaultValue={post.locked_position || ''}
                 className="w-full rounded-lg bg-[var(--bg-primary)] border border-[var(--border)] px-3 py-2 text-sm text-[var(--text-primary)] focus:border-[#ffd42a] focus:outline-none"
-              />
+              >
+                <option value="">Select Position</option>
+                {lockPositions.map((pos) => (
+                  <option key={pos} value={pos}>
+                    Position {pos}
+                  </option>
+                ))}
+              </select>
             </div>
             <div>
               <label className="mb-1 block text-xs font-semibold text-[var(--text-secondary)]">Locked Until</label>
@@ -134,7 +138,8 @@ export default function EditPostForm({ post }: { post: Post }) {
                 type="datetime-local"
                 name="locked_until"
                 defaultValue={post.locked_until ? new Date(new Date(post.locked_until).getTime() - (new Date().getTimezoneOffset() * 60000)).toISOString().slice(0, 16) : ''}
-                className="w-full rounded-lg bg-[var(--bg-primary)] border border-[var(--border)] px-3 py-2 text-sm text-[var(--text-primary)] focus:border-[#ffd42a] focus:outline-none"
+                onClick={(e) => e.currentTarget.showPicker?.()}
+                className="w-full rounded-lg bg-[var(--bg-primary)] border border-[var(--border)] px-3 py-2 text-sm text-[var(--text-primary)] focus:border-[#ffd42a] focus:outline-none cursor-pointer"
               />
             </div>
             <button

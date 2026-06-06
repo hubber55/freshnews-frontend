@@ -110,6 +110,23 @@ async function getAdjacentPosts(currentId: number, publishedAt: string | null) {
   return { prevPost: prev, nextPost: next };
 }
 
+function getPrimaryImage(imageUrl: string | null | undefined): string | null {
+  if (!imageUrl) return null;
+  const trimmed = imageUrl.trim();
+  if (!trimmed) return null;
+  if (trimmed.startsWith('[')) {
+    try {
+      const parsed = JSON.parse(trimmed);
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        return typeof parsed[0] === 'string' ? parsed[0] : null;
+      }
+    } catch {
+      return trimmed;
+    }
+  }
+  return trimmed;
+}
+
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { id } = await params;
   const post = await getPost(id);
@@ -121,6 +138,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const siteUrl = getSiteUrl();
   const articleUrl = `${siteUrl}/posts/${post.id}`;
   const seoDescription = stripHtml(post.summary).slice(0, 220);
+  const imageUrl = getPrimaryImage(post.image_url) || '/og_image.png';
 
   return {
     title: `${post.title} | FreshNews.top`,
@@ -133,16 +151,16 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
       description: seoDescription,
       images: [
         {
-          url: post.image_url || '/og_image.png',
+          url: imageUrl,
           alt: post.title,
         }
       ],
     },
     twitter: {
-      card: post.image_url ? 'summary_large_image' : 'summary',
+      card: getPrimaryImage(post.image_url) ? 'summary_large_image' : 'summary',
       title: post.title,
       description: seoDescription,
-      images: [post.image_url || '/og_image.png'],
+      images: [imageUrl],
     },
   };
 }
@@ -246,7 +264,7 @@ export default async function PostPage({ params }: PageProps) {
     '@context': 'https://schema.org',
     '@type': 'NewsArticle',
     headline: post.title,
-    image: post.image_url ? [post.image_url] : undefined,
+    image: getPrimaryImage(post.image_url) ? [getPrimaryImage(post.image_url)!] : undefined,
     datePublished: post.published_at || undefined,
     author: { '@type': 'Organization', name: formatSourceName(post.source_name) || 'FreshNews.top' },
     publisher: {

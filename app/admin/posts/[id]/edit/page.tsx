@@ -21,6 +21,22 @@ export default async function EditPostPage({
     notFound()
   }
 
+  // Fetch lock positions dynamically from admin settings (e.g. lock_rate_pos_2)
+  const { data: lockSettings } = await supabase
+    .from('admin_settings')
+    .select('key')
+    .like('key', 'lock_rate_pos_%')
+
+  const parsedPositions = (lockSettings || [])
+    .map((s) => {
+      const match = s.key.match(/^lock_rate_pos_(\d+)$/)
+      return match ? parseInt(match[1], 10) : null
+    })
+    .filter((pos): pos is number => pos !== null)
+    .sort((a, b) => a - b)
+
+  const lockPositions = parsedPositions.length > 0 ? parsedPositions : [2, 8, 16, 24]
+
   return (
     <div className="mx-auto max-w-5xl">
       <div className="mb-6 flex items-center justify-between">
@@ -36,7 +52,7 @@ export default async function EditPostPage({
         </div>
       )}
 
-      <EditPostForm post={post} />
+      <EditPostForm post={post} lockPositions={lockPositions} />
     </div>
   )
 }

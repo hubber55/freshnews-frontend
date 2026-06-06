@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { connection } from 'next/server';
@@ -9,7 +10,7 @@ import Footer from '../../components/footer';
 import ImageGallery from '../../components/ImageGallery';
 import { createAdminClient } from '@/lib/supabase-admin';
 import ShareButtons from '../../posts/[id]/share-buttons';
-import { getSiteUrl } from '@/lib/posts';
+import { getSiteUrl, stripHtml } from '@/lib/posts';
 
 type ClassifiedSubmission = {
   id: number;
@@ -43,6 +44,58 @@ function getPrimaryImage(imageUrl: string | null) {
     }
   }
   return trimmed;
+}
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const { id } = await params;
+  const numericId = Number(id);
+
+  if (!Number.isFinite(numericId)) {
+    return { title: 'Classified Not Found | FreshNews.top' };
+  }
+
+  const supabase = createAdminClient();
+  const { data: item } = await supabase
+    .from('submissions')
+    .select('id, title, content, image_url')
+    .eq('id', numericId)
+    .eq('type', 'classified')
+    .eq('status', 'approved')
+    .single();
+
+  if (!item) {
+    return { title: 'Classified Not Found | FreshNews.top' };
+  }
+
+  const siteUrl = getSiteUrl();
+  const articleUrl = `${siteUrl}/classifieds/${item.id}`;
+  const rawImage = getPrimaryImage(item.image_url);
+  const imageUrl = rawImage || `${siteUrl}/og_image.png`;
+  const seoDescription = item.content ? stripHtml(item.content).slice(0, 220) : '';
+
+  return {
+    title: `${item.title} | Classifieds | FreshNews.top`,
+    description: seoDescription,
+    alternates: { canonical: articleUrl },
+    openGraph: {
+      type: 'article',
+      url: articleUrl,
+      title: item.title,
+      description: seoDescription,
+      images: [
+        {
+          url: imageUrl,
+          alt: item.title,
+        }
+      ],
+    },
+    twitter: {
+      card: imageUrl ? 'summary_large_image' : 'summary',
+      title: item.title,
+      description: seoDescription,
+      images: [imageUrl],
+    },
+  };
 }
 
 export default async function ClassifiedDetailPage({ params }: { params: Promise<{ id: string }> }) {
