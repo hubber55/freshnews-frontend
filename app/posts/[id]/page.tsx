@@ -214,24 +214,24 @@ export default async function PostPage({ params }: PageProps) {
   const relatedPromise = (post.tags && post.tags.length > 0)
     ? supabase
         .from('posts')
-        .select('id, title, image_url')
+        .select('id, title, image_url, submission_id')
         .neq('id', post.id)
         .eq('is_deleted', false)
         .overlaps('tags', post.tags)
         .order('published_at', { ascending: false })
         .limit(4)
-    : Promise.resolve({ data: [] as Pick<PostRecord, 'id' | 'title' | 'image_url'>[] });
+    : Promise.resolve({ data: [] as Pick<PostRecord, 'id' | 'title' | 'image_url' | 'submission_id'>[] });
 
   const sourcePromise = post.source_name
     ? supabase
         .from('posts')
-        .select('id, title, image_url')
+        .select('id, title, image_url, submission_id')
         .neq('id', post.id)
         .eq('is_deleted', false)
         .eq('source_name', post.source_name)
         .order('published_at', { ascending: false })
         .limit(3)
-    : Promise.resolve({ data: [] as Pick<PostRecord, 'id' | 'title' | 'image_url'>[] });
+    : Promise.resolve({ data: [] as Pick<PostRecord, 'id' | 'title' | 'image_url' | 'submission_id'>[] });
 
   const adminSupabase = createAdminClient();
   const adPromise = adminSupabase
@@ -246,8 +246,33 @@ export default async function PostPage({ params }: PageProps) {
     { data: adSettings },
   ] = await Promise.all([adjacentPromise, relatedPromise, sourcePromise, adPromise]);
 
-  const relatedPosts = related ?? [];
-  const moreFromSource = fromSource ?? [];
+  const relatedPostsRaw = related ?? [];
+  const moreFromSourceRaw = fromSource ?? [];
+
+  // Filter out posts that are ads (type === 'ad' or type === 'classified') in submissions table
+  const submissionIds = Array.from(new Set([
+    ...relatedPostsRaw.map(p => p.submission_id).filter(Boolean),
+    ...moreFromSourceRaw.map(p => p.submission_id).filter(Boolean)
+  ])) as number[];
+
+  const adSubmissionIds = new Set<number>();
+  if (submissionIds.length > 0) {
+    const { data: subs } = await supabase
+      .from('submissions')
+      .select('id, type')
+      .in('id', submissionIds);
+    
+    if (subs) {
+      subs.forEach(s => {
+        if (s.type === 'ad' || s.type === 'classified') {
+          adSubmissionIds.add(s.id);
+        }
+      });
+    }
+  }
+
+  const relatedPosts = relatedPostsRaw.filter(p => !p.submission_id || !adSubmissionIds.has(p.submission_id));
+  const moreFromSource = moreFromSourceRaw.filter(p => !p.submission_id || !adSubmissionIds.has(p.submission_id));
 
   const adSettingsMap = new Map((adSettings ?? []).map((s) => [s.key, s.value]));
   const legacyAdsterra = typeof adSettingsMap.get('adsterra_code') === 'string' ? adSettingsMap.get('adsterra_code')!.trim() : '';
@@ -384,9 +409,9 @@ export default async function PostPage({ params }: PageProps) {
                       href={`/posts/${rp.id}`}
                       className="group rounded-xl border border-[var(--border)] overflow-hidden transition-colors hover:border-[#ffd42a]/50 hover:bg-[var(--bg-primary)]"
                     >
-                      {rp.image_url && (
+                      {getPrimaryImage(rp.image_url) && (
                         <img
-                          src={rp.image_url}
+                          src={getPrimaryImage(rp.image_url)!}
                           alt={rp.title}
                           className="w-full h-24 object-cover"
                           loading="lazy"
@@ -417,9 +442,9 @@ export default async function PostPage({ params }: PageProps) {
                       href={`/posts/${sp.id}`}
                       className="group flex items-center gap-4 rounded-xl border border-[var(--border)] p-2 transition-colors hover:border-[#ffd42a]/50 hover:bg-[var(--bg-primary)]"
                     >
-                      {sp.image_url && (
+                      {getPrimaryImage(sp.image_url) && (
                         <img
-                          src={sp.image_url}
+                          src={getPrimaryImage(sp.image_url)!}
                           alt={sp.title}
                           className="h-14 w-14 flex-shrink-0 rounded-lg object-cover"
                           loading="lazy"

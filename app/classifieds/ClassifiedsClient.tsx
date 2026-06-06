@@ -7,7 +7,6 @@ import { formatDistanceToNow } from 'date-fns';
 import { CalendarDays, Clock, MapPin, Megaphone, Home, Phone, Banknote, Building, Briefcase } from 'lucide-react';
 import ImageGallery from '../components/ImageGallery';
 import ClassifiedsFilter from './ClassifiedsFilter';
-import ClassifiedsRefreshRedirect from '../components/ClassifiedsRefreshRedirect';
 import FeedReadAloud from '../components/FeedReadAloud';
 
 type ClassifiedSubmission = {
@@ -69,7 +68,6 @@ export default function ClassifiedsClient({
 
   return (
     <main className="mx-auto w-full max-w-[1100px] px-5 py-6 sm:px-6">
-      <ClassifiedsRefreshRedirect />
       {/* BREADCRUMBS & TOP ACTIONS */}
       <div className="mb-6 flex items-center justify-between gap-4 border-b border-white/5 pb-4">
         <div className="flex items-center gap-2 text-[13px] text-[var(--text-muted)]" style={{ fontFamily: 'var(--font-en)' }}>

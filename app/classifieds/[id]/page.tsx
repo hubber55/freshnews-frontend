@@ -27,6 +27,8 @@ type ClassifiedSubmission = {
   price?: string | null;
   contact_phone?: string | null;
   tags?: string[] | null;
+  category_id?: number | null;
+  subcategory_id?: number | null;
 };
 
 function getPrimaryImage(imageUrl: string | null) {
@@ -119,6 +121,8 @@ export default async function ClassifiedDetailPage({ params }: { params: Promise
       status,
       created_at,
       expires_at,
+      category_id,
+      subcategory_id,
       wa_users (name),
       ad_categories (name),
       ad_subcategories (name),
@@ -138,6 +142,27 @@ export default async function ClassifiedDetailPage({ params }: { params: Promise
   const item = data as ClassifiedSubmission;
   const image = getPrimaryImage(item.image_url);
   const articleUrl = `${getSiteUrl()}/classifieds/${item.id}`;
+
+  // Fetch similar ads (from same subcategory)
+  const { data: similarAdsData } = item.subcategory_id ? await supabase
+    .from('submissions')
+    .select(`
+      id,
+      title,
+      image_url,
+      location,
+      price,
+      created_at,
+      ad_subcategories (name)
+    `)
+    .eq('type', 'classified')
+    .eq('status', 'approved')
+    .eq('subcategory_id', item.subcategory_id)
+    .neq('id', item.id)
+    .order('created_at', { ascending: false })
+    .limit(4) : { data: [] };
+
+  const similarAds = (similarAdsData || []) as any[];
 
   return (
     <div className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)]">
@@ -263,6 +288,62 @@ export default async function ClassifiedDetailPage({ params }: { params: Promise
             </div>
           </div>
         </article>
+
+        {/* SIMILAR ADS SECTION */}
+        {similarAds.length > 0 && (
+          <div className="mt-10 border-t border-[var(--border)] pt-8">
+            <h2 className="text-lg font-bold text-[#00cfff] mb-5 flex items-center gap-2" style={{ fontFamily: 'var(--font-en)' }}>
+              <Megaphone size={18} className="text-[#ffd42a]" />
+              Similar Ads
+            </h2>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              {similarAds.map((ad) => {
+                const adImage = getPrimaryImage(ad.image_url);
+                return (
+                  <Link
+                    key={ad.id}
+                    href={`/classifieds/${ad.id}`}
+                    className="group rounded-xl border border-[var(--border)] overflow-hidden transition-colors hover:border-[#00cfff]/50 hover:bg-[var(--bg-primary)] flex flex-col h-full bg-[var(--bg-card)]"
+                  >
+                    <div className="relative w-full h-28 bg-black/20 overflow-hidden flex-shrink-0">
+                      {adImage ? (
+                        <img
+                          src={adImage}
+                          alt={ad.title}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                          loading="lazy"
+                        />
+                      ) : (
+                        <div className="flex h-full items-center justify-center text-[10px] text-[var(--text-muted)]">
+                          No Image
+                        </div>
+                      )}
+                    </div>
+                    <div className="p-3 flex-1 flex flex-col justify-between">
+                      <div>
+                        <div className="text-[12px] font-bold text-white group-hover:text-[#00cfff] transition-colors line-clamp-2 mb-1.5 leading-snug">
+                          {ad.title}
+                        </div>
+                      </div>
+                      <div className="space-y-1">
+                        {ad.price && (
+                          <div className="text-[11px] font-black text-[#ffd42a] flex items-center gap-0.5">
+                            <Banknote size={11} /> {ad.price}
+                          </div>
+                        )}
+                        {ad.location && (
+                          <div className="text-[10px] text-[var(--text-muted)] truncate flex items-center gap-0.5">
+                            <MapPin size={10} /> {ad.location.split(',').pop()?.trim()}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
       </main>
 

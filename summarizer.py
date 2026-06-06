@@ -66,8 +66,10 @@ def clean_hallucinations(text):
     cleaned = re.sub(r'\bbeniath\b', '', text, flags=re.IGNORECASE)
     # Remove any word that repeats 4 or more times in a row
     cleaned = re.sub(r'\b(\w+)(?:\s+\1){3,}\b', r'\1', cleaned, flags=re.IGNORECASE)
-    # Clean up extra spaces
-    cleaned = re.sub(r'\s{2,}', ' ', cleaned)
+    # Clean up extra spaces (excluding newlines)
+    cleaned = re.sub(r'[ \t]{2,}', ' ', cleaned)
+    # Collapse multiple newlines (3 or more) to exactly two
+    cleaned = re.sub(r'\n{3,}', '\n\n', cleaned)
     return cleaned.strip()
 
 

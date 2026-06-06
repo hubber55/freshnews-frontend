@@ -19,8 +19,8 @@ export default function HomeRefreshRedirect({ page, activeTag = '' }: HomeRefres
       navigationEntry?.type === 'reload' || 
       (window.performance.navigation && window.performance.navigation.type === 1);
 
-    if (isReload && (activeTag || page > 1)) {
-      // Refreshing a tag page or paginated home should reset to Latest home
+    if (isReload && activeTag) {
+      // Refreshing a tag page should reset to Latest home
       window.location.replace('/');
     }
   }, [activeTag, page]);

@@ -2,6 +2,7 @@
 
 import { useActionState } from 'react'
 import { updatePost, deletePostWithRedirect } from '../../actions'
+import { splitParagraphs } from '@/lib/posts'
 
 type Post = {
   id: string
@@ -50,7 +51,7 @@ export default function EditPostForm({ post, lockPositions = [2, 8, 16, 24] }: {
             <textarea
               name="summary"
               rows={12}
-              defaultValue={post.summary}
+              defaultValue={splitParagraphs(post.summary).join('\n\n')}
               required
               className="w-full rounded-lg bg-[var(--bg-primary)] border border-[var(--border)] px-4 py-2.5 text-[var(--text-primary)] focus:border-[#ffd42a] focus:outline-none focus:ring-1 focus:ring-[#ffd42a]"
             />

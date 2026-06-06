@@ -13,6 +13,7 @@ export type PostRecord = {
   is_locked?: boolean;
   locked_position?: number | null;
   locked_until?: string | null;
+  submission_id?: number | null;
 };
 
 export function stripHtml(value: string | null | undefined) {
