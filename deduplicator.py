@@ -234,12 +234,31 @@ def ai_semantic_dedup(candidate_title, existing_titles):
     if not candidate_title or not existing_titles or not MISTRAL_API_KEY:
         return False
         
-    logger.info(f"  🧠 Running AI Semantic Deduplication for: '{candidate_title[:50]}...'")
+    # Filter existing titles by fast similarity heuristics first.
+    # If the candidate doesn't share any similarity or token overlap with an existing title,
+    # it is guaranteed not to be a duplicate.
+    similar_titles_with_scores = []
+    for t in existing_titles:
+        if not t:
+            continue
+        sim = title_similarity(candidate_title, t)
+        overlap = token_overlap_ratio(candidate_title, t)
+        if sim >= 0.30 or overlap >= 0.20:
+            similar_titles_with_scores.append((t, max(sim, overlap)))
+
+    if not similar_titles_with_scores:
+        logger.debug(f"  ⏭️ Skipping AI Semantic Deduplication for '{candidate_title[:50]}...' (No similar titles found by heuristics)")
+        return False
+
+    # Sort by score (descending) and take top 10 most similar to keep the prompt small
+    similar_titles_with_scores.sort(key=lambda x: x[1], reverse=True)
+    similar_titles = [item[0] for item in similar_titles_with_scores[:10]]
+
+    logger.info(f"  🧠 Running AI Semantic Deduplication for: '{candidate_title[:50]}...' against {len(similar_titles)} candidate matches")
     
     prompt = f"You are a news deduplication system.\n\nCandidate News Title: {candidate_title}\n\nRecent Published Titles:\n"
-    for t in existing_titles[:50]:  # Limit to 50 to ensure fast response and low token usage
-        if t:
-            prompt += f"- {t}\n"
+    for t in similar_titles:
+        prompt += f"- {t}\n"
             
     prompt += """
 Is the Candidate News Title reporting the EXACT SAME specific news event or story as ANY of the Recent Published Titles?

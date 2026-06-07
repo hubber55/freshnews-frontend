@@ -276,6 +276,11 @@ def daemon_mode():
                 logger.critical(f"⚠️ WATCHDOG: Rotation stuck for {elapsed}s! Killing all browsers and moving on...")
                 os.system("pkill -f playwright; pkill -f chrome; pkill -f chromium")
                 time.sleep(5)  # Brief cooldown after force-kill
+            else:
+                # Normal completion: add a cooldown delay before the next rotation starts
+                delay = get_current_delay()
+                logger.info(f"✨ Rotation complete. Waiting {delay}s before starting next rotation...\n")
+                time.sleep(delay)
         except Exception as e:
             logger.error(f"Critical error in rotation: {e}")
             time.sleep(get_current_delay())
