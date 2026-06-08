@@ -2,12 +2,14 @@ import google.generativeai as genai
 import config
 import time
 import os
+import sys
+import io
 
-from google.generativeai.types import generation_types
+sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8')
 
 prompt = "Say 'Hello' in Malayalam."
 
-for i, key in enumerate(config.GEMINI_API_KEYS_LIST):
+for i, key in enumerate(config.GOOGLE_API_KEYS):
     print(f"Testing Key {i+1}...")
     try:
         genai.configure(api_key=key)

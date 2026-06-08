@@ -12,7 +12,8 @@ import json
 import requests
 from urllib.parse import urlparse, parse_qsl, urlencode
 
-from config import SIMILARITY_THRESHOLD, MISTRAL_API_KEY, MISTRAL_MODEL
+from config import SIMILARITY_THRESHOLD, MISTRAL_API_KEY, MISTRAL_MODEL, GOOGLE_API_KEYS
+from summarizer import call_gemini, call_mistral
 
 logger = logging.getLogger(__name__)
 
@@ -227,11 +228,14 @@ def rank_articles(articles):
 
 def ai_semantic_dedup(candidate_title, existing_titles):
     """
-    Use Mistral AI to perform a semantic check of the candidate title against 
-    the last 50 published titles to catch duplicates with different wordings.
+    Use Gemini (with key rotation) or Mistral AI to perform a semantic check of the candidate title
+    against the last 50 published titles to catch duplicates with different wordings.
     Returns True if duplicate, False otherwise.
     """
-    if not candidate_title or not existing_titles or not MISTRAL_API_KEY:
+    if not candidate_title or not existing_titles:
+        return False
+        
+    if not GOOGLE_API_KEYS and not MISTRAL_API_KEY:
         return False
         
     # Filter existing titles by fast similarity heuristics first.
@@ -265,29 +269,34 @@ Is the Candidate News Title reporting the EXACT SAME specific news event or stor
 Focus on the core meaning. If they are about the exact same incident involving the same people, return YES. If it is a different event, return NO.
 Reply with a valid JSON object ONLY: {"is_duplicate": true} or {"is_duplicate": false}
 """
-    headers = {
-        "Authorization": f"Bearer {MISTRAL_API_KEY}",
-        "Content-Type": "application/json"
-    }
-    payload = {
-        "model": MISTRAL_MODEL,
-        "messages": [{"role": "user", "content": prompt}],
-        "response_format": {"type": "json_object"},
-        "max_tokens": 50,
-        "temperature": 0.0
-    }
     
-    try:
-        response = requests.post("https://api.mistral.ai/v1/chat/completions", headers=headers, json=payload, timeout=20)
-        if response.status_code == 200:
-            data = response.json()
-            content = data["choices"][0]["message"]["content"]
-            result = json.loads(content)
-            is_dup = result.get("is_duplicate", False)
-            if is_dup:
-                logger.warning(f"  🛑 AI Semantic Dedup flagged as duplicate!")
-            return is_dup
-    except Exception as e:
-        logger.warning(f"  ⚠️ AI Semantic Dedup failed: {e}")
+    # 1. Try Gemini first
+    if GOOGLE_API_KEYS:
+        try:
+            gemini_resp = call_gemini(prompt)
+            if gemini_resp:
+                # Clean potential markdown block fences if any
+                cleaned = re.sub(r"^```json\s*|\s*```$", "", gemini_resp.strip(), flags=re.IGNORECASE)
+                result = json.loads(cleaned)
+                is_dup = result.get("is_duplicate", False)
+                if is_dup:
+                    logger.warning(f"  🛑 AI Semantic Dedup (Gemini) flagged as duplicate!")
+                return is_dup
+        except Exception as e:
+            logger.warning(f"  ⚠️ AI Semantic Dedup (Gemini) failed/skipped: {e}")
+
+    # 2. Fallback to Mistral AI
+    if MISTRAL_API_KEY:
+        try:
+            mistral_resp = call_mistral(prompt)
+            if mistral_resp:
+                cleaned = re.sub(r"^```json\s*|\s*```$", "", mistral_resp.strip(), flags=re.IGNORECASE)
+                result = json.loads(cleaned)
+                is_dup = result.get("is_duplicate", False)
+                if is_dup:
+                    logger.warning(f"  🛑 AI Semantic Dedup (Mistral) flagged as duplicate!")
+                return is_dup
+        except Exception as e:
+            logger.warning(f"  ⚠️ AI Semantic Dedup (Mistral) failed: {e}")
         
     return False

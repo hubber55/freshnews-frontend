@@ -156,8 +156,8 @@ export async function POST(req: NextRequest) {
       return await handleViolation(user.id, postId, attempts, 'external link');
     }
 
-    // 6. Mistral AI Moderation & Auto-Correction
-    const scanResult = await scanWithMistral(trimmedContent);
+    // 6. AI Moderation & Auto-Correction (Gemini with Mistral Fallback)
+    const scanResult = await scanWithAI(trimmedContent);
     
     if (scanResult.startsWith('REJECT:')) {
       const reason = scanResult.split('REJECT:')[1];
@@ -212,12 +212,21 @@ async function handleViolation(userId: number, postId: number, currentAttempts: 
   }, { status: 400 });
 }
 
-async function scanWithMistral(text: string): Promise<string> {
-  const apiKey = process.env.MISTRAL_API_KEY;
-  if (!apiKey) return 'SAFE:' + text; 
+function getGoogleAPIKeys(): string[] {
+  const keys: string[] = [];
+  for (let i = 1; i <= 20; i++) {
+    const keyName = i === 1 ? 'GOOGLE_API_KEY' : `GOOGLE_API_KEY_${i}`;
+    const val = process.env[keyName];
+    if (val) keys.push(val);
+  }
+  return keys;
+}
 
-  try {
-    const prompt = `You are an extremely lenient and permissive comment moderator.
+async function scanWithGemini(text: string, apiKey: string): Promise<string> {
+  const model = process.env.GEMINI_MODEL || 'gemini-1.5-flash';
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+  
+  const prompt = `You are an extremely lenient and permissive comment moderator.
 Analyze this comment for a news aggregator site.
 
 RULES:
@@ -232,30 +241,113 @@ RULES:
 
 Comment: "${text}"`;
 
-    const res = await fetch('https://api.mistral.ai/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${apiKey}`,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        model: 'mistral-tiny',
-        messages: [{ role: 'user', content: prompt }],
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      contents: [{ parts: [{ text: prompt }] }],
+      generationConfig: {
         temperature: 0.1
-      })
-    });
+      }
+    })
+  });
 
-    const data = await res.json();
-    const result = data.choices[0].message.content.trim();
-    
-    if (result.toUpperCase().startsWith('SAFE:')) return result;
-    if (result.toUpperCase().startsWith('REJECT:')) return result;
-    
-    return 'SAFE:' + text;
-  } catch (e) {
-    console.error('Mistral scan error:', e);
-    return 'SAFE:' + text;
+  if (!res.ok) {
+    throw new Error(`Gemini status ${res.status}`);
   }
+
+  const data = await res.json();
+  if (data.candidates && data.candidates[0]?.content?.parts?.[0]?.text) {
+    return data.candidates[0].content.parts[0].text.trim();
+  }
+  throw new Error('Invalid Gemini response structure');
+}
+
+async function scanWithMistral(text: string, apiKey: string): Promise<string> {
+  const prompt = `You are an extremely lenient and permissive comment moderator.
+Analyze this comment for a news aggregator site.
+
+RULES:
+1. The moderation MUST BE VERY LIGHT.
+2. ALLOW casual abuse, insults, strong opinions, and words like "stupid", "pervert", "idiot", "fool", etc. These are perfectly fine and should be marked SAFE.
+3. ONLY disallow/reject comments that contain EXTREME hate speech (inciting violence, communal hatred), highly explicit sexual obscenity, severe pornography, automated spam, or completely meaningless gibberish (e.g., "asdfgh").
+4. If the comment is safe (almost always):
+   - Keep the original wording and spelling intact.
+   - Respond ONLY with "SAFE:" followed by the comment.
+5. If the comment is highly objectionable under the rules above:
+   - Respond with "REJECT:reason" (choose one: "extreme hate speech", "obscene content", "spam", "nonsensical content").
+
+Comment: "${text}"`;
+
+  const res = await fetch('https://api.mistral.ai/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({
+      model: 'mistral-tiny',
+      messages: [{ role: 'user', content: prompt }],
+      temperature: 0.1
+    })
+  });
+
+  if (!res.ok) {
+    throw new Error(`Mistral status ${res.status}`);
+  }
+
+  const data = await res.json();
+  if (data.choices && data.choices[0]?.message?.content) {
+    return data.choices[0].message.content.trim();
+  }
+  throw new Error('Invalid Mistral response structure');
+}
+
+async function scanWithAI(text: string): Promise<string> {
+  // 1. Try Gemini first (with rotation)
+  const geminiKeys = getGoogleAPIKeys();
+  if (geminiKeys.length > 0) {
+    const shuffledKeys = [...geminiKeys].sort(() => Math.random() - 0.5);
+    for (const key of shuffledKeys) {
+      try {
+        const result = await scanWithGemini(text, key);
+        if (result) {
+          const cleaned = result.replace(/^```[a-zA-Z]*\n?|```$/g, '').trim();
+          if (cleaned.toUpperCase().startsWith('SAFE:')) {
+            return 'SAFE:' + cleaned.substring(5).trim();
+          }
+          if (cleaned.toUpperCase().startsWith('REJECT:')) {
+            return 'REJECT:' + cleaned.substring(7).trim();
+          }
+        }
+      } catch (e) {
+        console.error(`Gemini scan error with key ${key.substring(0, 8)}...:`, e);
+      }
+    }
+  }
+
+  // 2. Fallback to Mistral
+  const mistralKey = process.env.MISTRAL_API_KEY;
+  if (mistralKey) {
+    try {
+      const result = await scanWithMistral(text, mistralKey);
+      if (result) {
+        if (result.toUpperCase().startsWith('SAFE:')) {
+          return 'SAFE:' + result.substring(5).trim();
+        }
+        if (result.toUpperCase().startsWith('REJECT:')) {
+          return 'REJECT:' + result.substring(7).trim();
+        }
+      }
+    } catch (e) {
+      console.error('Mistral fallback scan error:', e);
+    }
+  }
+
+  // 3. Fallback to safe if all APIs fail
+  return 'SAFE:' + text;
 }
 
 

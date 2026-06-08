@@ -73,7 +73,7 @@ def clean_hallucinations(text):
     return cleaned.strip()
 
 
-def _call_mistral(prompt):
+def call_mistral(prompt):
     """Call Mistral AI API (PRIMARY provider)."""
     if not MISTRAL_API_KEY or MISTRAL_API_KEY == "PASTE_YOUR_MISTRAL_KEY_HERE":
         logger.debug("  ⏭️ Mistral: No API key configured, skipping.")
@@ -120,7 +120,7 @@ def _call_mistral(prompt):
     return None
 
 
-def _call_gemini(prompt):
+def call_gemini(prompt):
     """Call Google Gemini API (PRIMARY provider) with key rotation."""
     if not GOOGLE_API_KEYS:
         logger.debug("  ⏭️ Gemini: No API keys configured, skipping.")
@@ -179,8 +179,8 @@ def _call_gemini(prompt):
 # ─── Cascade: Try each provider in order ───
 
 PROVIDERS = [
-    ("Gemini", _call_gemini),
-    ("Mistral", _call_mistral),
+    ("Gemini", call_gemini),
+    ("Mistral", call_mistral),
 ]
 
 
