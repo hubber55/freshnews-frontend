@@ -25,7 +25,7 @@ Your task is to REWRITE the following news article while ensuring ABSOLUTE accur
 Instructions:
 1. MEANINGFUL TITLE: Create a highly engaging, professional, and meaningful title in Malayalam that perfectly captures the essence of the news. IT MUST BE UNDER 12 WORDS.
 2. REWRITE THE CONTENT: Rephrase the article professionally in Malayalam. Target 250 to 500 words. Ensure the Malayalam is natural and fluent. DO NOT repeat words.
-3. ACCURACY & MEANING: DO NOT change the original meaning. NO HALLUCINATIONS. Do not generate fake words or endless repetitions (like "beniath").
+3. ACCURACY & MEANING: DO NOT change the original meaning. Rely ONLY on the provided original content. DO NOT correct facts, names, roles, or titles using external knowledge or pre-trained memory (even if you believe the original text has a typo, error, or factually incorrect statement, you MUST summarize it exactly as stated in the original content). Do not extrapolate, assume, or guess anything that is not explicitly present in the original text. NO HALLUCINATIONS. Do not generate fake words or endless repetitions (like "beniath").
 4. QUOTES: Keep direct quotes translated with zero change in essence.
 5. LANGUAGE RULES: Use Malayalam script. English is ONLY allowed for proper nouns.
 6. READABILITY & STRUCTURE: Use liberal paragraph breaks. Start a new paragraph every 4 to 6 lines (approx. 50-70 words) to ensure the article is easy to read on mobile devices. Use well-structured paragraphs with \n\n between them.
@@ -47,6 +47,8 @@ You must reply with a valid JSON object in EXACTLY this format:
 
 Original Title: {title}
 Original Content: {description}
+
+STRICT RULE: Do not change the title, role, or name of any person from the original text (e.g. if the original text describes someone as "Chief Minister" / "മുഖ്യമന്ത്രി", keep them as "Chief Minister" / "മുഖ്യമന്ത്രി" in your output Malayalam translation/summary, even if you think they are actually the "Opposition Leader" / "പ്രതിപക്ഷ നേതാവ്"). Do not use any external knowledge to correct the input text. Treat the original text as the absolute truth.
 """
 
 def truncate_title(title, max_words=10):
@@ -88,7 +90,7 @@ def call_mistral(prompt):
     payload = {
         "model": MISTRAL_MODEL,
         "messages": [
-            {"role": "system", "content": "You are a professional news editor. You only output valid JSON."},
+            {"role": "system", "content": "You are a professional Malayalam news editor. You strictly rewrite and summarize only what is present in the source text. You never correct facts, names, roles, or titles using external knowledge. You must treat the provided text as the absolute truth, even if it has errors. You only output valid JSON."},
             {"role": "user", "content": prompt}
         ],
         "response_format": {"type": "json_object"},
@@ -143,6 +145,11 @@ def call_gemini(prompt):
             "contents": [{
                 "parts": [{"text": prompt}]
             }],
+            "systemInstruction": {
+                "parts": [{
+                    "text": "You are a professional Malayalam news editor. You strictly rewrite and summarize only what is present in the source text. You never correct facts, names, roles, or titles using external knowledge. You must treat the provided text as the absolute truth, even if it has errors. You only output valid JSON."
+                }]
+            },
             "generationConfig": {
                 "response_mime_type": "application/json",
                 "temperature": 0.2

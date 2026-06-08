@@ -46,6 +46,7 @@ export default function PostFeed({
   const [posts, setPosts] = useState(initialPosts);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasLoadedMore, setHasLoadedMore] = useState(false);
+  const [scrollRestored, setScrollRestored] = useState(false);
 
   useEffect(() => {
     // If we only have 10 posts initially, fetch the rest in the background
@@ -78,10 +79,39 @@ export default function PostFeed({
     }
   }, [initialPosts, activeTag, page, pageSize, hasLoadedMore]);
 
+  // Restore scroll position when ready (either loading finished, or initially < 10 posts)
+  useEffect(() => {
+    const ready = initialPosts.length < 10 || hasLoadedMore;
+    if (ready && !scrollRestored) {
+      try {
+        const key = 'scroll_pos_' + window.location.pathname + window.location.search;
+        const savedPos = sessionStorage.getItem(key);
+        if (savedPos) {
+          const y = parseInt(savedPos, 10);
+          if (!isNaN(y)) {
+            setTimeout(() => {
+              window.scrollTo({ top: y, behavior: 'instant' as any });
+              sessionStorage.removeItem(key);
+              setScrollRestored(true);
+            }, 100);
+          } else {
+            setScrollRestored(true);
+          }
+        } else {
+          setScrollRestored(true);
+        }
+      } catch (err) {
+        console.error('Failed to restore scroll position:', err);
+        setScrollRestored(true);
+      }
+    }
+  }, [initialPosts, hasLoadedMore, scrollRestored]);
+
   // Keep posts in sync if initialPosts change (e.g. tag filter changed)
   useEffect(() => {
     setPosts(initialPosts);
     setHasLoadedMore(false);
+    setScrollRestored(false);
   }, [initialPosts]);
 
   // Weave locked posts dynamically during rendering

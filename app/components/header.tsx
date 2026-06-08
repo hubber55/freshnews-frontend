@@ -270,7 +270,19 @@ export default function Header() {
             <div id="fx" aria-hidden="true"></div>
           </div>
 
-          <Link href="/" className="flex-1 flex items-center justify-center h-full mx-2">
+          <Link
+            href="/"
+            className="flex-1 flex items-center justify-center h-full mx-2"
+            onClick={() => {
+              try {
+                Object.keys(sessionStorage).forEach((key) => {
+                  if (key.startsWith('scroll_pos_')) {
+                    sessionStorage.removeItem(key);
+                  }
+                });
+              } catch {}
+            }}
+          >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src="/logos/freshnews_header.png"
@@ -395,7 +407,18 @@ export default function Header() {
                   <Link
                     key={link.href}
                     href={targetHref}
-                    onClick={() => setMenuOpen(false)}
+                    onClick={() => {
+                      setMenuOpen(false);
+                      if (link.href === '/') {
+                        try {
+                          Object.keys(sessionStorage).forEach((key) => {
+                            if (key.startsWith('scroll_pos_')) {
+                              sessionStorage.removeItem(key);
+                            }
+                          });
+                        } catch {}
+                      }
+                    }}
                     className="block px-6 py-4 text-[17px] font-semibold transition-colors border-b border-[var(--border)]/30"
                     style={{ 
                       color: isDimmed ? 'var(--text-muted)' : (link.color || 'var(--text-primary)'),

@@ -56,6 +56,13 @@ export default function TrackedLink({ trackEvent, onClick, ...props }: TrackedLi
     <Link
       {...props}
       onClick={(e) => {
+        try {
+          const key = 'scroll_pos_' + window.location.pathname + window.location.search;
+          sessionStorage.setItem(key, window.scrollY.toString());
+        } catch (err) {
+          console.error('Failed to save scroll position:', err);
+        }
+
         track({
           postId: trackEvent.postId,
           sessionId,

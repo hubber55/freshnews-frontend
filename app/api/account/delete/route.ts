@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@/app/utils/supabase/server';
+import { createAdminClient } from '@/lib/supabase-admin';
 import { getCurrentUser } from '@/lib/auth';
 
 async function hashOtp(otp: string) {
@@ -52,7 +52,7 @@ async function sendOtpViaEvolution(receiverDigits: string, otp: string) {
   }
 }
 
-async function deleteUserData(supabase: Awaited<ReturnType<typeof createClient>>, userId: number, whatsappNumber: string) {
+async function deleteUserData(supabase: any, userId: number, whatsappNumber: string) {
   await supabase.from('submissions').delete().eq('user_id', userId);
   await supabase.from('posts').delete().eq('user_id', userId);
   await supabase.from('comments').delete().eq('user_id', userId);
@@ -70,7 +70,7 @@ export async function POST(req: Request) {
 
     const body = await req.json().catch(() => ({}));
     const action = String(body?.action || 'request').toLowerCase();
-    const supabase = await createClient();
+    const supabase = createAdminClient();
 
     if (action === 'request') {
       const { data: userRow, error: userError } = await supabase
@@ -92,12 +92,13 @@ export async function POST(req: Request) {
       const otpHash = await hashOtp(otp);
       const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
 
-      await supabase.from('wa_otps').insert({
+      const { error: insertError } = await supabase.from('wa_otps').insert({
         whatsapp_number: digits,
         otp_hash: otpHash,
         expires_at: expiresAt,
         consumed_at: null,
       });
+      if (insertError) throw insertError;
 
       await sendOtpViaEvolution(digits, otp);
 
