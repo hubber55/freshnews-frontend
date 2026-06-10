@@ -122,20 +122,15 @@ def call_mistral(prompt):
     return None
 
 
-def call_gemini(prompt):
-    """Call Google Gemini API (PRIMARY provider) with key rotation."""
-    if not GOOGLE_API_KEYS:
-        logger.debug("  ⏭️ Gemini: No API keys configured, skipping.")
-        return None
-
-    # Shuffle keys for this attempt
+def _try_gemini_keys(prompt, model_name):
+    """Try all Gemini keys for a given model. Returns content string or None."""
     shuffled_keys = list(GOOGLE_API_KEYS)
     random.shuffle(shuffled_keys)
 
     for api_key in shuffled_keys:
-        logger.info(f"  🤖 Using Google Gemini ({GEMINI_MODEL}) - Key: {api_key[:8]}...")
+        logger.info(f"  🤖 Using Google Gemini ({model_name}) - Key: {api_key[:8]}...")
 
-        url = f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent?key={api_key}"
+        url = f"https://generativelanguage.googleapis.com/v1beta/models/{model_name}:generateContent?key={api_key}"
         
         headers = {
             "Content-Type": "application/json"
@@ -158,14 +153,18 @@ def call_gemini(prompt):
 
         for attempt in range(2): # 2 attempts per key
             try:
-                response = requests.post(url, headers=headers, json=payload, timeout=60)
+                response = requests.post(url, headers=headers, json=payload, timeout=90)
                 
                 if response.status_code == 429:
                     logger.warning(f"  ⏳ Gemini rate limit hit for key {api_key[:8]}. Trying another key...")
                     break # Break out of attempt loop to try next key
 
+                if response.status_code == 403:
+                    logger.warning(f"  🚫 Gemini key {api_key[:8]} rejected (leaked/disabled). Skipping...")
+                    break # Try next key
+
                 if response.status_code != 200:
-                    logger.warning(f"  ⚠️ Gemini API error: {response.status_code} - {response.text}")
+                    logger.warning(f"  ⚠️ Gemini API error: {response.status_code} - {response.text[:200]}")
                     break # Try next key
 
                 data = response.json()
@@ -180,6 +179,36 @@ def call_gemini(prompt):
                 logger.warning(f"  ⚠️ Gemini error: {e}")
                 time.sleep(2)
     
+    return None
+
+
+def call_gemini(prompt):
+    """Call Google Gemini API (PRIMARY provider) with key rotation and wait-retry."""
+    if not GOOGLE_API_KEYS:
+        logger.debug("  ⏭️ Gemini: No API keys configured, skipping.")
+        return None
+
+    # Attempt 1: Try all keys with the configured model
+    result = _try_gemini_keys(prompt, GEMINI_MODEL)
+    if result:
+        return result
+
+    # Attempt 2: If primary model failed, try a fallback model before waiting
+    fallback_models = ["gemini-2.5-flash-lite", "gemini-2.5-flash"]
+    for fallback in fallback_models:
+        if fallback != GEMINI_MODEL:
+            logger.info(f"  🔄 Trying fallback model: {fallback}")
+            result = _try_gemini_keys(prompt, fallback)
+            if result:
+                return result
+
+    # Attempt 3: All keys + all models rate-limited. Wait 30s and retry once.
+    logger.warning(f"  ⏳ All Gemini keys rate-limited. Waiting 30s before retry...")
+    time.sleep(30)
+    result = _try_gemini_keys(prompt, GEMINI_MODEL)
+    if result:
+        return result
+
     return None
 
 

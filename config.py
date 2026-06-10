@@ -141,9 +141,9 @@ BLOGGER_LABELS_MAP = {
 # Mistral = PRIMARY (1B tokens/month free tier!)
 # Groq   = FALLBACK (500K tokens/day)
 MISTRAL_MODEL = os.getenv("MISTRAL_MODEL", "mistral-small-latest")
-# IMPORTANT: Force gemini-2.5-flash regardless of .env to avoid deprecated/quota-exhausted models
-# Old models like gemini-flash-lite-latest and gemini-1.5-flash have 0 free-tier quota.
-_env_gemini = os.getenv("GEMINI_MODEL", "gemini-2.5-flash")
+# IMPORTANT: Force gemini-2.5-flash-lite regardless of .env to avoid deprecated/quota-exhausted models
+# gemini-2.5-flash burns free-tier quota fast due to thinking tokens. Use the lite variant.
+_env_gemini = os.getenv("GEMINI_MODEL", "gemini-2.5-flash-lite")
 _DEPRECATED_MODELS = {"gemini-flash-lite-latest", "gemini-1.5-flash", "gemini-2.0-flash-lite", "gemini-2.0-flash-lite-001"}
-GEMINI_MODEL = "gemini-2.5-flash" if _env_gemini in _DEPRECATED_MODELS else _env_gemini
+GEMINI_MODEL = "gemini-2.5-flash-lite" if _env_gemini in _DEPRECATED_MODELS else _env_gemini
 GROQ_MODEL = os.getenv("GROQ_MODEL", "llama-3.1-8b-instant")
