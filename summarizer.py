@@ -112,6 +112,10 @@ def call_mistral(prompt):
                 time.sleep(10)
                 continue
 
+            if response.status_code == 401:
+                logger.error("  🚫 Mistral API key invalid or expired (401). Skipping Mistral entirely.")
+                return None  # No point retrying — key is bad
+
             response.raise_for_status()
             data = response.json()
             return data["choices"][0]["message"]["content"].strip()
@@ -204,15 +208,10 @@ def call_gemini(prompt, fast_fail=False):
         logger.debug("  ⏭️ Gemini: all keys rate-limited (fast_fail=True), giving up.")
         return None
 
-    # Attempt 2: Try a fallback model — only if genuinely different from primary
-    # (avoids re-hitting the same quota on a duplicate model name)
-    fallback_models = ["gemini-2.5-flash-lite", "gemini-2.5-flash"]
-    for fallback in fallback_models:
-        if fallback != GEMINI_MODEL:
-            logger.info(f"  🔄 Trying fallback model: {fallback}")
-            result = _try_gemini_keys(prompt, fallback)
-            if result:
-                return result
+    # Attempt 2: No model fallback — gemini-2.5-flash uses thinking tokens
+    # (10x quota cost) and shares the same rate-limit pool as flash-lite.
+    # Falling back to it wastes quota without improving success rate.
+    # Go straight to the timed wait.
 
     # Attempt 3: All keys + all models exhausted. Wait 30 minutes (the free-tier
     # quota reset window) then do one final retry before giving up.
