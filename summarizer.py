@@ -215,8 +215,8 @@ def call_gemini(prompt):
 # ─── Cascade: Try each provider in order ───
 
 PROVIDERS = [
-    ("Gemini", call_gemini),
-    ("Mistral", call_mistral),
+    ("Mistral", call_mistral),  # PRIMARY: 1B tokens/month free tier — use first
+    ("Gemini", call_gemini),    # FALLBACK: only when Mistral fails/rate-limits
 ]
 
 
