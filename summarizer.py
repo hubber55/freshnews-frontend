@@ -218,16 +218,9 @@ def call_gemini(prompt, fast_fail=False):
     # Attempt 2: No model fallback — gemini-2.5-flash uses thinking tokens
     # (10x quota cost) and shares the same rate-limit pool as flash-lite.
     # Falling back to it wastes quota without improving success rate.
-    # Go straight to the timed wait.
+    # Go straight to giving up (to prevent blocking the pipeline/watchdog).
 
-    # Attempt 3: All keys + all models exhausted. Wait 30 minutes (the free-tier
-    # quota reset window) then do one final retry before giving up.
-    logger.warning("  ⏳ All Gemini keys rate-limited. Waiting 30 minutes for quota reset...")
-    time.sleep(1800)
-    result = _try_gemini_keys(prompt, GEMINI_MODEL)
-    if result:
-        return result
-
+    logger.warning("  ⏳ All Gemini keys rate-limited. Failing fast to avoid blocking the pipeline.")
     return None
 
 
