@@ -117,12 +117,12 @@ FETCH_TIMEOUT_SECONDS = 15        # Timeout for HTTP requests
 MAX_RECENT_POSTS_CHECK = 200      # Check last 200 posts to ensure no duplicates today
 
 # ─── Day/Night Scheduling ───
-# Daytime: 5 AM - 11 PM IST → 30 seconds interval
-# Nighttime: 11 PM - 5 AM IST → 3 minutes interval
+# Daytime: 5 AM - 11 PM IST → 90 seconds interval (3x less Playwright = much lower CPU)
+# Nighttime: 11 PM - 5 AM IST → 5 minutes interval
 DAY_START_HOUR = 5                # 5 AM IST
 DAY_END_HOUR = 23                 # 11 PM IST
-DAY_DELAY_SECONDS = 30            # 30 seconds
-NIGHT_DELAY_SECONDS = 180         # 3 minutes
+DAY_DELAY_SECONDS = 90            # 90 seconds (was 30 — Playwright launches every 30s caused 100% CPU)
+NIGHT_DELAY_SECONDS = 300         # 5 minutes
 
 # â”€â”€â”€ Blogger Post Settings â”€â”€â”€
 BLOGGER_LABELS_MAP = {
