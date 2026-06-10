@@ -2,6 +2,7 @@ import Link from 'next/link';
 import TagScroller from './components/TagScroller';
 import { redirect } from 'next/navigation';
 import { unstable_cache } from 'next/cache';
+import PullToRefresh from './components/PullToRefresh';
 
 import { supabase } from '@/lib/supabase';
 import { Clock, Home as HomeIcon } from 'lucide-react';
@@ -63,7 +64,7 @@ function weaveLockedPosts(posts: any[], lockedPosts: any[], page: number, active
   return woven;
 }
 
-export const revalidate = 600; // Cache for 10 minutes (news arrives every 10-15 min)
+export const revalidate = false; // Cache forever — only refreshed by pull-to-refresh (on-demand revalidation)
 
 type HeaderInsert = {
   enabled?: boolean;
@@ -320,6 +321,7 @@ export default async function Home({ searchParams }: HomeProps) {
 
   return (
     <div className="min-h-screen bg-[var(--bg-primary)] text-[var(--text-primary)]">
+      <PullToRefresh />
       <HomeRefreshRedirect page={page} activeTag={activeTag} />
       <Header />
       {homepageHeaderHtml ? (
@@ -410,7 +412,7 @@ export default async function Home({ searchParams }: HomeProps) {
                       </div>
   
                       <h2 className="card-title-hero mb-2 text-white">
-                        {limitWords(heroPost.title, 10)}
+                        {limitWords(heroPost.title, 7)}
                       </h2>
                     </div>
                   </TrackedLink>

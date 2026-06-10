@@ -188,7 +188,7 @@ export default function PostFeed({
                       <LockNewsButton postId={post.id} isLocked={post.is_locked} />
                     </div>
 
-                    <h3 className="card-title mb-2 text-white">{limitWords(post.title, 10)}</h3>
+                    <h3 className="card-title mb-2 text-white">{limitWords(post.title, 7)}</h3>
                   </div>
                 </TrackedLink>
               </article>

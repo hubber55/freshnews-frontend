@@ -124,13 +124,6 @@ export default function ArticleContent({ post, bodyItems, readingTime }: Article
         )}
       </div>
 
-      {/* SUMMARY DISCLAIMER - DIRECTLY BELOW IMAGE */}
-      <div className="mb-8 px-2">
-        <p className="text-[12px] font-bold text-[#00ffff] italic leading-relaxed">
-          Note: This is just a Summary . Full source below
-        </p>
-      </div>
-
       {/* BODY WITH HIGHLIGHTING */}
       <div className="article-body text-[var(--text-primary)]">
 
