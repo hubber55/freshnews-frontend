@@ -14,7 +14,7 @@ build/
 
 # ── Environment / Secrets ────────────────────────────────────
 .env
-*.env
+.env*
 secrets.json
 token.json
 
@@ -31,9 +31,8 @@ desktop.ini
 .vscode/
 .idea/
 *.swp
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
-# dependencies
+# ── Node / Next.js ───────────────────────────────────────────
 /node_modules
 /.pnp
 .pnp.*
@@ -42,34 +41,41 @@ desktop.ini
 !.yarn/plugins
 !.yarn/releases
 !.yarn/versions
-
-# testing
 /coverage
-
-# next.js
 /.next/
+/.next-local/
 /out/
+*.tsbuildinfo
+next-env.d.ts
 
-# production
-/build
+# ── Vercel ───────────────────────────────────────────────────
+.vercel
 
-# misc
-.DS_Store
+# ── Misc ─────────────────────────────────────────────────────
 *.pem
-
-# debug
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
-.env*
+# ── Playwright / Browser Cache ───────────────────────────────
+playwright_profile/
+playwright_debug.png
 
-# vercel
-.vercel
+# ── Scratch / Temp Scripts ───────────────────────────────────
+scratch/
 
-# typescript
-*.tsbuildinfo
-next-env.d.ts
-/.next-local/
+# ── Misc Project Noise ───────────────────────────────────────
+gemini_lite_test_result.json
+*.sql
+*.zip
+vlink.log
+vlink_utf8.log
+build-output.log
+local-start.log
+local-start.err.log
+local3010.log
+local3010.err.log
+key2_out.txt
+test_out.txt
+vercel_out.txt
