@@ -19,6 +19,13 @@ from config import GROQ_API_KEY, GROQ_MODEL, MISTRAL_API_KEY, MISTRAL_MODEL, GOO
 
 logger = logging.getLogger(__name__)
 
+# ─── TEMPORARY: Pause AI title/summary rewriting ───────────────────────────
+# Set to True  → articles pass through with ORIGINAL title & content.
+#                 FAQ, comments, and tags are still AI-generated.
+# Set to False → full Mistral/Gemini rewrite is enabled (normal mode).
+PAUSE_AI_REWRITE = True
+# ────────────────────────────────────────────────────────────────────────────
+
 SUMMARIZE_PROMPT = """You are an expert Malayalam News Editor.
 Your task is to REWRITE the following news article while ensuring ABSOLUTE accuracy and maintaining the original message perfectly.
 
@@ -320,6 +327,9 @@ def summarize_article(article):
     """
     Generate a Malayalam summary, rewritten title, tags, and bogus comments using AI.
     Returns (rewritten_title, summary_string, list_of_tags, faq_list, bogus_comments) or None.
+
+    When PAUSE_AI_REWRITE=True: skips title+summary rewriting, uses original content.
+    FAQ, comments and tags are still AI-generated.
     """
     title = article.get("title", "")
     description = article.get("description", "")
@@ -327,6 +337,55 @@ def summarize_article(article):
     if not description:
         description = title
 
+    # ── PAUSED MODE: skip rewrite, keep FAQ + comments + tags ──
+    if PAUSE_AI_REWRITE:
+        logger.info("  ⏸️ AI rewrite paused — using original title & content.")
+
+        # Still generate FAQ and tags using AI (these are valuable)
+        faq_prompt = SUMMARIZE_PROMPT.format(
+            title=title,
+            description=description[:3000]
+        )
+        faq = []
+        tags = []
+
+        for provider_name, provider_fn in PROVIDERS:
+            content = provider_fn(faq_prompt)
+            if content:
+                try:
+                    parsed = json.loads(content)
+                    raw_tags = [str(t).strip() for t in parsed.get("keywords", []) if str(t).strip()]
+                    raw_faq = parsed.get("faq", [])
+
+                    # Tags
+                    content_to_check = (title + " " + description).lower()
+                    cinema_keywords = ['cinema', 'film', 'movie', 'actor', 'actress', 'director',
+                                       'mollywood', 'bollywood', 'സിനിമ', 'ചിത്രം', 'നടൻ', 'നടി', 'സംവിധായകൻ']
+                    is_cinema = any(kw in content_to_check for kw in cinema_keywords)
+                    if is_cinema and 'Movies' not in [t.capitalize() for t in raw_tags]:
+                        raw_tags.insert(0, 'Movies')
+                    tags = [t for t in raw_tags if len(t) < 20][:5]
+
+                    # FAQ
+                    if isinstance(raw_faq, list):
+                        for item in raw_faq[:5]:
+                            if isinstance(item, dict) and item.get("q") and item.get("a"):
+                                faq.append({"q": str(item["q"]).strip(), "a": str(item["a"]).strip()})
+                    break
+                except Exception as e:
+                    logger.warning(f"  ⚠️ Error parsing AI response (paused mode): {e}")
+                    continue
+
+        # Use original title (truncated) and original description
+        kept_title = truncate_title(title, 10)
+        kept_summary = clean_hallucinations(description[:5000])
+
+        bogus_comments = generate_bogus_comments(kept_title, kept_summary[:500])
+
+        logger.info(f"  ✅ Passed through (no rewrite): {kept_title[:50]}...")
+        return kept_title, kept_summary, tags, faq, bogus_comments
+
+    # ── NORMAL MODE: full AI rewrite ──
     prompt = SUMMARIZE_PROMPT.format(
         title=title,
         description=description[:3000]
@@ -378,8 +437,12 @@ def summarize_article(article):
 def summarize_batch(articles, delay_seconds=15):
     """
     Summarize a list of articles. Returns only the successfully summarized ones.
+    In PAUSE_AI_REWRITE mode, all articles pass through (none are dropped).
     """
-    logger.info(f"🤖 Summarizing {len(articles)} articles with AI (Gemini → Mistral cascade)...")
+    if PAUSE_AI_REWRITE:
+        logger.info(f"⏸️ AI rewrite PAUSED — passing through {len(articles)} articles with original content (FAQ+comments still AI-generated).")
+    else:
+        logger.info(f"🤖 Summarizing {len(articles)} articles with AI (Mistral → Gemini cascade)...")
 
     valid_articles = []
     for i, article in enumerate(articles):
@@ -395,10 +458,17 @@ def summarize_batch(articles, delay_seconds=15):
             article["bogus_comments"] = bogus_comments
             valid_articles.append(article)
         else:
-            logger.warning(f"  ⚠️ Dropping article '{article['title'][:40]}' due to summarization failure.")
+            if PAUSE_AI_REWRITE:
+                # In paused mode, never drop articles — pass through as-is
+                article.setdefault("tags", [])
+                article.setdefault("faq", [])
+                article.setdefault("bogus_comments", [])
+                valid_articles.append(article)
+            else:
+                logger.warning(f"  ⚠️ Dropping article '{article['title'][:40]}' due to summarization failure.")
 
         if i < len(articles) - 1:
             time.sleep(delay_seconds)
 
-    logger.info(f"✅ Summarization complete! {len(valid_articles)}/{len(articles)} succeeded.")
+    logger.info(f"✅ Done! {len(valid_articles)}/{len(articles)} articles ready.")
     return valid_articles
