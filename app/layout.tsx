@@ -96,8 +96,13 @@ export default async function RootLayout({
         
         {/* Preload critical resources */}
         <link rel="preload" href="/logos/freshnews_header.png" as="image" type="image/png" />
+        {/* Google Fonts — loaded as non-blocking <link> (not CSS @import) */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          rel="stylesheet"
+          href="https://fonts.googleapis.com/css2?family=Noto+Sans+Malayalam:wght@400;500;600;700;800&family=Inter:wght@400;500;600;700;800&display=swap"
+        />
         <link rel="dns-prefetch" href="https://luvdgrpykesexfuqgvvt.supabase.co" />
         
         {/* Preconnect to common external image domains for faster loading */}

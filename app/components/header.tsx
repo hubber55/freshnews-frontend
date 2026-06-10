@@ -41,6 +41,9 @@ type MenuItem = {
 
 import { useAuth } from './AuthProvider';
 
+// Module-level cache for tags — avoids re-fetching on every navigation
+let _cachedTags: string[] | null = null;
+
 export default function Header() {
   const { user, refresh } = useAuth();
   const [menuOpen, setMenuOpen] = useState(false);
@@ -58,11 +61,19 @@ export default function Header() {
   const navLinks = allLinks;
 
   useEffect(() => {
+    // Use cached tags if available (avoids re-fetch on every navigation)
+    if (_cachedTags) {
+      setAllTags(_cachedTags);
+      return;
+    }
     // Fetch tags for autocomplete - cached at browser level for 5 mins
     fetch('/api/news-tags')
       .then(res => res.json())
       .then(data => {
-        if (Array.isArray(data)) setAllTags(data);
+        if (Array.isArray(data)) {
+          _cachedTags = data;
+          setAllTags(data);
+        }
       })
       .catch(() => {});
   }, []);

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase-admin';
 
+export const revalidate = 600;
 
 export async function GET() {
   try {
@@ -15,7 +16,7 @@ export async function GET() {
     }
 
     const response = NextResponse.json({ settings: data ?? [] });
-    response.headers.set('Cache-Control', 'public, max-age=300, stale-while-revalidate=3600');
+    response.headers.set('Cache-Control', 'public, max-age=600, stale-while-revalidate=3600');
     return response;
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unknown error';

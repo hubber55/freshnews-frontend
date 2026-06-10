@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import TagScroller from './components/TagScroller';
 import { redirect } from 'next/navigation';
+import { unstable_cache } from 'next/cache';
 
 import { supabase } from '@/lib/supabase';
 import { Clock, Home as HomeIcon } from 'lucide-react';
@@ -21,6 +22,29 @@ import PollCard from './components/PollCard';
 import LockNewsButton from './components/LockNewsButton';
 import PostFeed from './components/PostFeed';
 
+// Cached admin settings fetch — only hits Supabase once per 10 minutes across all requests
+const getCachedAdSettings = unstable_cache(
+  async () => {
+    const adminSupabase = createAdminClient();
+    return adminSupabase
+      .from('admin_settings')
+      .select('key, value')
+      .in('key', [
+        'adsterra_code',
+        'header_inserts',
+        'ad_networks',
+        'ad_networks_random',
+        'admin_added_tags',
+        'lock_rate_pos_2',
+        'lock_rate_pos_8',
+        'lock_rate_pos_16',
+        'lock_rate_pos_24'
+      ]);
+  },
+  ['admin-settings-v1'],
+  { revalidate: 600 }
+);
+
 function weaveLockedPosts(posts: any[], lockedPosts: any[], page: number, activeTag: string) {
   if (page !== 1 || activeTag || !lockedPosts || lockedPosts.length === 0) {
     return posts;
@@ -39,7 +63,7 @@ function weaveLockedPosts(posts: any[], lockedPosts: any[], page: number, active
   return woven;
 }
 
-export const revalidate = 120; // Cache for 2 minutes (articles arrive every 10-15 min)
+export const revalidate = 600; // Cache for 10 minutes (news arrives every 10-15 min)
 
 type HeaderInsert = {
   enabled?: boolean;
@@ -188,8 +212,6 @@ export default async function Home({ searchParams }: HomeProps) {
     nextPageQuery = nextPageQuery.or(filterStr);
   }
 
-  const adminSupabase = createAdminClient();
-
   const [{ data: posts, error: postsError }, { data: nextPageCheck }, { data: lockedPosts, error: lockedError }, { data: adSettings }] = await Promise.all([
     query,
     nextPageQuery,
@@ -200,20 +222,7 @@ export default async function Home({ searchParams }: HomeProps) {
       .eq('is_deleted', false)
       .gt('locked_until', new Date().toISOString())
       .limit(10),
-    adminSupabase
-      .from('admin_settings')
-      .select('key, value')
-      .in('key', [
-        'adsterra_code', 
-        'header_inserts', 
-        'ad_networks', 
-        'ad_networks_random', 
-        'admin_added_tags',
-        'lock_rate_pos_2',
-        'lock_rate_pos_8',
-        'lock_rate_pos_16',
-        'lock_rate_pos_24'
-      ])
+    getCachedAdSettings()
   ]);
 
   const adSettingsMap = new Map((adSettings ?? []).map((setting) => [setting.key, setting.value]));
