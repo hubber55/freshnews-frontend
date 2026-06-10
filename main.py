@@ -58,6 +58,7 @@ def trim_log_file():
 # --- IST Timezone ---
 IST = timezone(timedelta(hours=5, minutes=30))
 MIN_ARTICLE_WORDS = 50
+MAX_AI_DEDUP_PER_ROTATION = 5   # Cap AI semantic dedup calls to preserve token quota
 BLOCKED_TITLE_PATTERNS = [
     r"\bcontact\b",
     r"\babout\b",
@@ -99,6 +100,9 @@ def run_rotation():
     # 2. Get existing posts for deduplication straight from DB
     existing_posts = get_existing_posts()
 
+    # Per-rotation counter — AI semantic dedup is capped to save token quota
+    ai_dedup_calls = 0
+
     # Shuffle feeds to randomize the order each rotation
     feeds = list(MALAYALAM_RSS_FEEDS)
     random.shuffle(feeds)
@@ -138,10 +142,16 @@ def run_rotation():
                 logger.info(f"  ⏭️ Candidate {idx}: skipped low-value page title '{title[:40]}...'")
                 continue
 
-            # AI Semantic Deduplication (early skip before scraping)
-            if ai_semantic_dedup(title, [ep.get("title") for ep in existing_posts]):
-                logger.info(f"  ⏭️ Candidate {idx}: AI flagged as semantic duplicate '{title[:40]}...'")
-                continue
+            # AI Semantic Deduplication — capped at MAX_AI_DEDUP_PER_ROTATION
+            # to prevent burning token quota on every candidate
+            if ai_dedup_calls < MAX_AI_DEDUP_PER_ROTATION:
+                if ai_semantic_dedup(title, [ep.get("title") for ep in existing_posts]):
+                    logger.info(f"  ⏭️ Candidate {idx}: AI flagged as semantic duplicate '{title[:40]}...'")
+                    ai_dedup_calls += 1
+                    continue
+                ai_dedup_calls += 1
+            else:
+                logger.debug(f"  ℹ️ AI dedup cap reached ({MAX_AI_DEDUP_PER_ROTATION}/rotation) — heuristic-only for '{title[:40]}...'")
 
             candidate = scrape_full_text_if_needed(candidate)
             wc = len((candidate.get("description", "") or "").split())

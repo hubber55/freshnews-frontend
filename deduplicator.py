@@ -270,10 +270,11 @@ Focus on the core meaning. If they are about the exact same incident involving t
 Reply with a valid JSON object ONLY: {"is_duplicate": true} or {"is_duplicate": false}
 """
     
-    # 1. Try Gemini first
+    # 1. Try Gemini first — fast_fail=True so we never block the pipeline
+    # waiting on rate limits just for a dedup check
     if GOOGLE_API_KEYS:
         try:
-            gemini_resp = call_gemini(prompt)
+            gemini_resp = call_gemini(prompt, fast_fail=True)
             if gemini_resp:
                 # Clean potential markdown block fences if any
                 cleaned = re.sub(r"^```json\s*|\s*```$", "", gemini_resp.strip(), flags=re.IGNORECASE)

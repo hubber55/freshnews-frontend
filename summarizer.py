@@ -182,8 +182,14 @@ def _try_gemini_keys(prompt, model_name):
     return None
 
 
-def call_gemini(prompt):
-    """Call Google Gemini API (PRIMARY provider) with key rotation and wait-retry."""
+def call_gemini(prompt, fast_fail=False):
+    """Call Google Gemini API with key rotation and optional wait-retry.
+
+    fast_fail=True: return immediately when all keys are rate-limited.
+    Use this for low-priority calls (e.g. semantic dedup) so they never
+    block the pipeline. Full summarization calls use fast_fail=False (default)
+    and will wait 30 minutes for the quota window to reset.
+    """
     if not GOOGLE_API_KEYS:
         logger.debug("  ⏭️ Gemini: No API keys configured, skipping.")
         return None
@@ -193,7 +199,13 @@ def call_gemini(prompt):
     if result:
         return result
 
-    # Attempt 2: If primary model failed, try a fallback model before waiting
+    # Low-priority call — don't burn time on fallbacks or long waits
+    if fast_fail:
+        logger.debug("  ⏭️ Gemini: all keys rate-limited (fast_fail=True), giving up.")
+        return None
+
+    # Attempt 2: Try a fallback model — only if genuinely different from primary
+    # (avoids re-hitting the same quota on a duplicate model name)
     fallback_models = ["gemini-2.5-flash-lite", "gemini-2.5-flash"]
     for fallback in fallback_models:
         if fallback != GEMINI_MODEL:
@@ -202,9 +214,10 @@ def call_gemini(prompt):
             if result:
                 return result
 
-    # Attempt 3: All keys + all models rate-limited. Wait 30s and retry once.
-    logger.warning(f"  ⏳ All Gemini keys rate-limited. Waiting 30s before retry...")
-    time.sleep(30)
+    # Attempt 3: All keys + all models exhausted. Wait 30 minutes (the free-tier
+    # quota reset window) then do one final retry before giving up.
+    logger.warning("  ⏳ All Gemini keys rate-limited. Waiting 30 minutes for quota reset...")
+    time.sleep(1800)
     result = _try_gemini_keys(prompt, GEMINI_MODEL)
     if result:
         return result
@@ -263,7 +276,14 @@ Article Summary: {summary}
 """
 
 def generate_bogus_comments(title, summary):
-    """Generate 0-4 AI comments for an article randomly."""
+    """Generate 0-4 AI comments for an article randomly.
+    Skipped 50% of the time to conserve AI token quota."""
+    # 50% chance to skip entirely — halves comment-related token spend
+    # without affecting core news summarization
+    if random.random() < 0.5:
+        logger.debug("  💬 Bogus comments: skipped (token-save roll)")
+        return []
+
     # Determine number of comments to keep (0 to 4)
     num_comments = random.randint(0, 4)
     if num_comments == 0:
