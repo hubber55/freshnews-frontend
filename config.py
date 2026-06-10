@@ -144,6 +144,15 @@ MISTRAL_MODEL = os.getenv("MISTRAL_MODEL", "mistral-small-latest")
 # IMPORTANT: Force gemini-2.5-flash-lite regardless of .env to avoid deprecated/quota-exhausted models
 # gemini-2.5-flash burns free-tier quota fast due to thinking tokens. Use the lite variant.
 _env_gemini = os.getenv("GEMINI_MODEL", "gemini-2.5-flash-lite")
-_DEPRECATED_MODELS = {"gemini-flash-lite-latest", "gemini-1.5-flash", "gemini-2.0-flash-lite", "gemini-2.0-flash-lite-001"}
-GEMINI_MODEL = "gemini-2.5-flash-lite" if _env_gemini in _DEPRECATED_MODELS else _env_gemini
+# Force gemini-2.5-flash-lite for any model that burns quota too fast.
+# gemini-2.5-flash (non-lite) uses thinking tokens — ~10x heavier on free tier.
+_HEAVY_MODELS = {
+    "gemini-flash-lite-latest",
+    "gemini-1.5-flash",
+    "gemini-2.0-flash-lite",
+    "gemini-2.0-flash-lite-001",
+    "gemini-2.5-flash",       # thinking tokens — way too heavy for free tier
+    "gemini-2.5-flash-latest",
+}
+GEMINI_MODEL = "gemini-2.5-flash-lite" if _env_gemini in _HEAVY_MODELS else _env_gemini
 GROQ_MODEL = os.getenv("GROQ_MODEL", "llama-3.1-8b-instant")
