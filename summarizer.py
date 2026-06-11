@@ -103,12 +103,32 @@ def truncate_title(title, max_words=10):
         return title
     return " ".join(words[:max_words]) + "......"
 
-def clean_hallucinations(text):
-    """Remove repeating hallucinated words like 'beniath' from AI output."""
+def clean_boilerplate(text):
+    """Remove common newspaper disclaimers and metadata boilerplates."""
     if not text:
         return ""
+    # Remove Mathrubhumi comment disclaimers
+    disclaimer_pat = r"Kindly avoid objectionable,\s*derogatory,\s*unlawful\s*and\s*lewd\s*comments,\s*while\s*responding\s*to\s*reports\.\s*Such\s*comments\s*are\s*punishable\s*under\s*cyber\s*laws\.\s*Please\s*keep\s*away\s*from\s*personal\s*attacks\.\s*The\s*opinions\s*expressed\s*here\s*are\s*the\s*personal\s*opinions\s*of\s*readers\s*and\s*not\s*that\s*of\s*[A-Za-z0-9]+\.?"
+    text = re.sub(disclaimer_pat, "", text, flags=re.IGNORECASE)
+    
+    # Clean split fragments of it
+    text = re.sub(r"Such comments are punishable under cyber laws\.", "", text, flags=re.IGNORECASE)
+    text = re.sub(r"Please keep away from personal attacks\.", "", text, flags=re.IGNORECASE)
+    text = re.sub(r"Disclaimer:\s*Kindly avoid objectionable.*", "", text, flags=re.IGNORECASE)
+    text = re.sub(r"Published:\s*\d+\s+[A-Za-z]+\s+\d{4},\s*\d+:\d+\s*(?:am|pm)\s*IST", "", text, flags=re.IGNORECASE)
+    
+    return text.strip()
+
+
+def clean_hallucinations(text):
+    """Remove repeating hallucinated words like 'beniath' from AI output and clean disclaimers."""
+    if not text:
+        return ""
+    # Clean boilerplate disclaimers first
+    cleaned = clean_boilerplate(text)
+    
     # Remove the specific word that was hallucinated
-    cleaned = re.sub(r'\bbeniath\b', '', text, flags=re.IGNORECASE)
+    cleaned = re.sub(r'\bbeniath\b', '', cleaned, flags=re.IGNORECASE)
     # Remove any word that repeats 4 or more times in a row
     cleaned = re.sub(r'\b(\w+)(?:\s+\1){3,}\b', r'\1', cleaned, flags=re.IGNORECASE)
     # Clean up extra spaces (excluding newlines)
