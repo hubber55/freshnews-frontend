@@ -58,6 +58,42 @@ Original Content: {description}
 STRICT RULE: Do not change the title, role, or name of any person from the original text (e.g. if the original text describes someone as "Chief Minister" / "മുഖ്യമന്ത്രി", keep them as "Chief Minister" / "മുഖ്യമന്ത്രി" in your output Malayalam translation/summary, even if you think they are actually the "Opposition Leader" / "പ്രതിപക്ഷ നേതാവ്"). Do not use any external knowledge to correct the input text. Treat the original text as the absolute truth.
 """
 
+CLEAN_CONTENT_PROMPT = """You are an expert Malayalam News Editor.
+Your task is to clean the provided news article content by identifying and removing all non-article/extraneous text. 
+
+Non-article text to remove:
+- Navigation menus, headers, footers, website names.
+- Advertisements, sponsor promotions, or commercial messages.
+- Social media sharing icons/prompts, follow us text, or email subscription prompts.
+- Cookie consents, privacy policy notifications, or terms of service agreements.
+- "Also Read", "Related Articles", "Read More" links, or bulletins linking to other stories.
+- Links to download apps (e.g., "Click here to download app", Play Store/App Store icons).
+- Author signatures, email addresses, or phone numbers that are not part of the news body.
+- Any other boilerplate, utility, or junk text.
+
+STRICT RULES:
+1. DO NOT summarize the article. Do not shorten or condense the actual news content.
+2. DO NOT reword, rephrase, edit, translate, or rewrite any part of the actual news content.
+3. Keep the original wording, sentences, grammar, and paragraph structure of the actual article exactly as is.
+4. If the content is already clean, return it exactly as it is.
+5. Extract 5 relevant English keywords (strictly English) based on the news. If the article is about cinema, include "Movies" as one of the keywords.
+6. Generate 3 FAQ items (q and a) in Malayalam based on the news.
+
+You must reply with a valid JSON object in EXACTLY this format:
+{{
+  "cleaned_content": "The exact original article text with extraneous/non-article text removed. Original wording must be preserved.",
+  "keywords": ["Word1", "Word2", "Word3", "Word4", "Word5"],
+  "faq": [
+    {{"q": "Question?", "a": "Answer."}},
+    {{"q": "Question?", "a": "Answer."}},
+    {{"q": "Question?", "a": "Answer."}}
+  ]
+}}
+
+Original Title: {title}
+Original Content: {description}
+"""
+
 def truncate_title(title, max_words=10):
     """Truncate title to max_words without cutting words in half."""
     if not title:
@@ -97,7 +133,7 @@ def call_mistral(prompt):
     payload = {
         "model": MISTRAL_MODEL,
         "messages": [
-            {"role": "system", "content": "You are a professional Malayalam news editor. You strictly rewrite and summarize only what is present in the source text. You never correct facts, names, roles, or titles using external knowledge. You must treat the provided text as the absolute truth, even if it has errors. You only output valid JSON."},
+            {"role": "system", "content": "You are a professional Malayalam news editor. You strictly follow instructions to process only what is present in the source text. You never correct facts, names, roles, or titles using external knowledge. You must treat the provided text as the absolute truth, even if it has errors. You only output valid JSON."},
             {"role": "user", "content": prompt}
         ],
         "response_format": {"type": "json_object"},
@@ -153,7 +189,7 @@ def _try_gemini_keys(prompt, model_name):
             }],
             "systemInstruction": {
                 "parts": [{
-                    "text": "You are a professional Malayalam news editor. You strictly rewrite and summarize only what is present in the source text. You never correct facts, names, roles, or titles using external knowledge. You must treat the provided text as the absolute truth, even if it has errors. You only output valid JSON."
+                    "text": "You are a professional Malayalam news editor. You strictly follow instructions to process only what is present in the source text. You never correct facts, names, roles, or titles using external knowledge. You must treat the provided text as the absolute truth, even if it has errors. You only output valid JSON."
                 }]
             },
             "generationConfig": {
@@ -334,19 +370,21 @@ def summarize_article(article):
     if PAUSE_AI_REWRITE:
         logger.info("  ⏸️ AI rewrite paused — using original title & content.")
 
-        # Still generate FAQ and tags using AI (these are valuable)
-        faq_prompt = SUMMARIZE_PROMPT.format(
+        # Call AI to clean extraneous text and generate tags/FAQs
+        faq_prompt = CLEAN_CONTENT_PROMPT.format(
             title=title,
             description=description[:3000]
         )
         faq = []
         tags = []
+        cleaned_content = None
 
         for provider_name, provider_fn in PROVIDERS:
             content = provider_fn(faq_prompt)
             if content:
                 try:
                     parsed = json.loads(content)
+                    cleaned_content = str(parsed.get("cleaned_content", description)).strip()
                     raw_tags = [str(t).strip() for t in parsed.get("keywords", []) if str(t).strip()]
                     raw_faq = parsed.get("faq", [])
 
@@ -369,9 +407,10 @@ def summarize_article(article):
                     logger.warning(f"  ⚠️ Error parsing AI response (paused mode): {e}")
                     continue
 
-        # Use original title (truncated) and original description
+        # Use original title (truncated) and cleaned content
         kept_title = truncate_title(title, 10)
-        kept_summary = clean_hallucinations(description[:5000])
+        final_description = cleaned_content if (cleaned_content and len(cleaned_content) > 50) else description
+        kept_summary = clean_hallucinations(final_description[:5000])
 
         bogus_comments = generate_bogus_comments(kept_title, kept_summary[:500])
 
