@@ -20,10 +20,66 @@ from datetime import datetime, timezone, timedelta
 
 from config import (
     MALAYALAM_RSS_FEEDS,
+    DAY_START_HOUR, DAY_END_HOUR,
+    DAY_DELAY_SECONDS, NIGHT_DELAY_SECONDS,
 )
 from news_fetcher import fetch_feed_articles, enrich_with_images, scrape_full_text_if_needed, set_shared_browser
+from deduplicator import deduplicate_articles, rank_articles, is_duplicate_title, ai_semantic_dedup
+from summarizer import summarize_article
+from supabase_publisher import publish_via_supabase, get_existing_posts, prune_oldest_post
 
-# ... (rest of file)
+# --- Logging Setup ---
+LOG_FILE = "freshnews.log"
+MAX_LOG_LINES = 100
+
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s [%(levelname)s] %(message)s",
+    datefmt="%H:%M:%S",
+    handlers=[
+        logging.StreamHandler(sys.stdout),
+        logging.FileHandler(LOG_FILE, encoding="utf-8"),
+    ]
+)
+logger = logging.getLogger(__name__)
+
+
+def trim_log_file():
+    """Keep only the last MAX_LOG_LINES lines in the log file."""
+    try:
+        with open(LOG_FILE, "r", encoding="utf-8", errors="replace") as f:
+            lines = f.readlines()
+        if len(lines) > MAX_LOG_LINES:
+            with open(LOG_FILE, "w", encoding="utf-8") as f:
+                f.writelines(lines[-MAX_LOG_LINES:])
+    except Exception:
+        pass  # Non-critical; never crash the daemon over log trimming
+
+# --- IST Timezone ---
+IST = timezone(timedelta(hours=5, minutes=30))
+MIN_ARTICLE_WORDS = 50
+MAX_AI_DEDUP_PER_ROTATION = 5   # Cap AI semantic dedup calls to preserve token quota
+BLOCKED_TITLE_PATTERNS = [
+    r"\bcontact\b",
+    r"\babout\b",
+    r"\bprivacy\b",
+    r"\bterms\b",
+    r"\blogin\b",
+    r"\bsign[\s-]?in\b",
+    r"\bsubscribe\b",
+]
+
+# Global state for source rotation
+recent_sources = []
+
+def get_current_delay():
+    """Return the appropriate delay based on current IST time."""
+    now_ist = datetime.now(IST)
+    hour = now_ist.hour
+    if DAY_START_HOUR <= hour < DAY_END_HOUR:
+        return DAY_DELAY_SECONDS
+    else:
+        return NIGHT_DELAY_SECONDS
 
 def run_rotation():
     logger.info("=" * 60)
