@@ -29,6 +29,60 @@ def http_request(method, url, **kwargs):
         session.trust_env = False
         return session.request(method=method, url=url, **kwargs)
 
+_playwright_instance = None
+_playwright_browser = None
+_playwright_context = None
+
+def get_shared_browser():
+    global _playwright_instance, _playwright_browser, _playwright_context
+    if _playwright_browser is None:
+        try:
+            from playwright.sync_api import sync_playwright
+            _playwright_instance = sync_playwright().start()
+            _playwright_browser = _playwright_instance.chromium.launch(
+                headless=True,
+                args=[
+                    '--disable-blink-features=AutomationControlled',
+                    '--disable-web-security',
+                    '--disable-features=IsolateOrigins,site-per-process',
+                    '--disable-site-isolation-trials',
+                    '--disable-setuid-sandbox',
+                    '--no-sandbox',
+                    '--disable-dev-shm-usage',
+                    '--disable-accelerated-2d-canvas',
+                    '--disable-gpu',
+                    '--window-size=1920,1080',
+                ]
+            )
+            _playwright_context = _playwright_browser.new_context(
+                user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                viewport={'width': 1920, 'height': 1080},
+                locale='en-US',
+                timezone_id='America/New_York',
+            )
+            logger.info("    🌐 Shared Playwright browser initialized successfully.")
+        except Exception as e:
+            logger.error(f"Failed to init shared playwright: {e}")
+            return None
+    return _playwright_context
+
+def cleanup_shared_browser():
+    global _playwright_instance, _playwright_browser, _playwright_context
+    try:
+        if _playwright_context:
+            _playwright_context.close()
+        if _playwright_browser:
+            _playwright_browser.close()
+        if _playwright_instance:
+            _playwright_instance.stop()
+    except Exception as e:
+        logger.debug(f"Error cleaning up shared browser: {e}")
+    finally:
+        _playwright_instance = None
+        _playwright_browser = None
+        _playwright_context = None
+        logger.info("    🧹 Shared Playwright browser cleaned up.")
+
 
 def is_placeholder_image_url(url):
     """Reject known generic/logo/placeholder image URLs."""
@@ -222,135 +276,87 @@ def _playwright_inner(url):
     
     # Use native Playwright timeouts instead of signal.alarm to prevent Node driver zombies
     try:
-        # Check if playwright is available
-        try:
-            from playwright.sync_api import sync_playwright
-            logger.info("    🎭 PLAYWRIGHT: Import successful")
-        except ImportError as ie:
-            logger.error(f"    💥 PLAYWRIGHT: Import failed - {ie}")
+        context = get_shared_browser()
+        if not context:
+            logger.error("    💥 PLAYWRIGHT: Could not get shared browser context")
             return None
-        
-        logger.info(f"    🎭 PLAYWRIGHT: Launching browser for {url[:50]}...")
-        
-        with sync_playwright() as p:
-            # Launch with stealth arguments to bypass detection
-            browser = p.chromium.launch(
-                headless=True,
-                args=[
-                    '--disable-blink-features=AutomationControlled',
-                    '--disable-web-security',
-                    '--disable-features=IsolateOrigins,site-per-process',
-                    '--disable-site-isolation-trials',
-                    '--disable-setuid-sandbox',
-                    '--no-sandbox',
-                    '--disable-dev-shm-usage',
-                    '--disable-accelerated-2d-canvas',
-                    '--disable-gpu',
-                    '--window-size=1920,1080',
-                ]
-            )
             
+        page = context.new_page()
+        
+        # Set default timeout for all page operations
+        page.set_default_timeout(30000)
+        
+        # Navigate and wait for redirect
+        logger.info(f"    🎭 PLAYWRIGHT: Navigating to {url[:50]}...")
+        try:
+            page.goto(url, wait_until="domcontentloaded", timeout=30000)
+        except Exception as nav_e:
+            logger.warning(f"    ⚠️ Navigation timeout/error, continuing anyway: {nav_e}")
+        
+        # Wait for either content or cloudflare challenge
+        try:
+            # Wait for article content to appear
+            page.wait_for_selector('article, .article-content, .entry-content, .post-content, main', timeout=5000)
+            logger.info(f"    ✅ Content selector found")
+        except:
+            logger.info(f"    ⏳ No content selector found, waiting 3s...")
+            page.wait_for_timeout(3000)
+        
+        # Check if page loaded successfully
+        try:
+            title = page.title()
+            logger.info(f"    📝 Page title: {title[:60]}")
+            if title == "404 Not Found" or "not found" in title.lower():
+                logger.warning(f"    ⚠️ Page returned 404, skipping")
+                page.close()
+                return None
+        except:
+            pass
+        
+        # Try to find article content with more specific selectors
+        content_selectors = [
+            "article",
+            "[itemprop='articleBody']",
+            ".article-content",
+            ".article-body",
+            ".entry-content",
+            ".post-content",
+            ".story-content",
+            ".content-body",
+            ".ds-text-content",
+            ".ds-article-content",
+            ".ds-news-content",
+            "#news-content",
+            ".news-detail-content",
+            ".story-details",
+            "[class*='article']",
+            "[class*='content']",
+            "main",
+            ".content",
+            "#content",
+            "#article-body",
+        ]
+        
+        content_html = None
+        used_selector = None
+        for selector in content_selectors:
             try:
-                # Create context with realistic user agent
-                context = browser.new_context(
-                    user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                    viewport={'width': 1920, 'height': 1080},
-                    locale='en-US',
-                    timezone_id='America/New_York',
-                )
-                
-                page = context.new_page()
-                
-                # Set extra headers to appear more like a real browser
-                page.set_extra_http_headers({
-                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
-                    'Accept-Language': 'en-US,en;q=0.5',
-                    'Accept-Encoding': 'gzip, deflate, br',
-                    'DNT': '1',
-                    'Connection': 'keep-alive',
-                    'Upgrade-Insecure-Requests': '1',
-                    'Sec-Fetch-Dest': 'document',
-                    'Sec-Fetch-Mode': 'navigate',
-                    'Sec-Fetch-Site': 'none',
-                    'Sec-Fetch-User': '?1',
-                    'Cache-Control': 'max-age=0',
-                })
-                
-                # Set default timeout for all page operations
-                page.set_default_timeout(30000)
-                
-                # Navigate and wait for redirect
-                logger.info(f"    🎭 PLAYWRIGHT: Navigating to {url[:50]}...")
-                try:
-                    page.goto(url, wait_until="domcontentloaded", timeout=30000)
-                except Exception as nav_e:
-                    logger.warning(f"    ⚠️ Navigation timeout/error, continuing anyway: {nav_e}")
-                
-                # Wait for either content or cloudflare challenge
-                try:
-                    # Wait for article content to appear
-                    page.wait_for_selector('article, .article-content, .entry-content, .post-content, main', timeout=5000)
-                    logger.info(f"    ✅ Content selector found")
-                except:
-                    logger.info(f"    ⏳ No content selector found, waiting 3s...")
-                    page.wait_for_timeout(3000)
-                
-                # Check if page loaded successfully
-                try:
-                    title = page.title()
-                    logger.info(f"    📝 Page title: {title[:60]}")
-                    if title == "404 Not Found" or "not found" in title.lower():
-                        logger.warning(f"    ⚠️ Page returned 404, skipping")
-                        return None
-                except:
-                    pass
-                
-                # Try to find article content with more specific selectors
-                # Include Kerala Kaumudi specific selectors
-                content_selectors = [
-                    "article",
-                    "[itemprop='articleBody']",
-                    ".article-content",
-                    ".article-body",
-                    ".entry-content",
-                    ".post-content",
-                    ".story-content",
-                    ".content-body",
-                    ".ds-text-content",
-                    ".ds-article-content",
-                    ".ds-news-content",
-                    "#news-content",  # Kerala Kaumudi
-                    ".news-detail-content",  # Kerala Kaumudi
-                    ".story-details",  # Kerala Kaumudi
-                    "[class*='article']",
-                    "[class*='content']",
-                    "main",
-                    ".content",
-                    "#content",
-                    "#article-body",
-                ]
-                
-                content_html = None
-                used_selector = None
-                for selector in content_selectors:
-                    try:
-                        element = page.locator(selector).first
-                        if element.is_visible():
-                            content_html = element.inner_html()
-                            used_selector = selector
-                            logger.info(f"    📍 Found content with selector: {selector}")
-                            break
-                    except Exception as e:
-                        logger.debug(f"    Selector {selector} failed: {e}")
-                        continue
-                
-                # Fallback to body if no article container found
-                if not content_html:
-                    logger.info(f"    ⚠️ No article container found, using body")
-                    content_html = page.locator("body").inner_html()
-                    used_selector = "body"
-            finally:
-                browser.close()
+                element = page.locator(selector).first
+                if element.is_visible():
+                    content_html = element.inner_html()
+                    used_selector = selector
+                    logger.info(f"    📍 Found content with selector: {selector}")
+                    break
+            except Exception as e:
+                continue
+        
+        # Fallback to body if no article container found
+        if not content_html:
+            logger.info(f"    ⚠️ No article container found, using body")
+            content_html = page.locator("body").inner_html()
+            used_selector = "body"
+            
+        page.close()
             
             # Parse with BeautifulSoup
             soup = BeautifulSoup(content_html, "html.parser")
@@ -462,88 +468,77 @@ def extract_image_with_playwright(url):
             return None
     
     try:
-        from playwright.sync_api import sync_playwright
-        logger.info(f"    🖼️  Using Playwright to extract image from {url[:50]}...")
+        logger.info(f"    🖼️  Using shared Playwright to extract image from {url[:50]}...")
         
-        with sync_playwright() as p:
-            browser = p.chromium.launch(
-                headless=True,
-                args=[
-                    '--disable-blink-features=AutomationControlled',
-                    '--no-sandbox',
-                    '--disable-dev-shm-usage',
-                ]
-            )
-            try:
-                context = browser.new_context(
-                    user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                    viewport={'width': 1920, 'height': 1080},
-                )
-                
-                page = context.new_page()
-                # Use domcontentloaded for faster page load (don't wait for all network requests)
-                try:
-                    page.goto(url, wait_until="domcontentloaded", timeout=15000)
-                except:
-                    # If timeout, try with even shorter wait
-                    logger.info(f"    ⏱️  Timeout waiting for page, trying immediate extraction...")
-                page.wait_for_timeout(3000)  # Give JS time to set meta tags
-                
-                # Try to get image URL from page
-                image_url = None
-                
-                # Method 1: Get og:image meta tag
-                try:
-                    og_image = page.locator("meta[property='og:image']").first
-                    if og_image:
-                        image_url = og_image.get_attribute("content")
-                        logger.info(f"    ✅ Found og:image: {image_url[:60]}..." if image_url else "    ⚠️ og:image empty")
-                except:
-                    pass
-                
-                # Method 2: Get first large image in article
-                if not image_url:
-                    try:
-                        # Try article images first
-                        images = page.locator("article img, .article-content img, .entry-content img").all()
-                        for img in images:
-                            src = img.get_attribute("src")
-                            if src and not any(skip in src.lower() for skip in ["logo", "icon", "avatar", "ad"]):
-                                image_url = src
-                                logger.info(f"    ✅ Found article image: {image_url[:60]}...")
-                                break
-                    except:
-                        pass
-                
-                # Method 3: Get any large image on page
-                if not image_url:
-                    try:
-                        all_images = page.locator("img").all()
-                        for img in all_images:
-                            src = img.get_attribute("src")
-                            if src and (src.startswith("http") or src.startswith("//")):
-                                if not any(skip in src.lower() for skip in ["logo", "icon", "avatar", "ad", "banner", "pixel", "tracking"]):
-                                    image_url = src
-                                    logger.info(f"    ✅ Found page image: {image_url[:60]}...")
-                                    break
-                    except:
-                        pass
-            finally:
-                browser.close()
+        context = get_shared_browser()
+        if not context:
+            logger.error("    💥 PLAYWRIGHT: Could not get shared browser context")
+            return None
             
-            if image_url:
-                # Handle relative URLs
-                if image_url.startswith("//"):
-                    image_url = "https:" + image_url
-                elif image_url.startswith("/"):
-                    from urllib.parse import urljoin
-                    image_url = urljoin(url, image_url)
+        page = context.new_page()
+        # Use domcontentloaded for faster page load (don't wait for all network requests)
+        try:
+            page.goto(url, wait_until="domcontentloaded", timeout=15000)
+        except:
+            # If timeout, try with even shorter wait
+            logger.info(f"    ⏱️  Timeout waiting for page, trying immediate extraction...")
+        page.wait_for_timeout(3000)  # Give JS time to set meta tags
+        
+        # Try to get image URL from page
+        image_url = None
+        
+        # Method 1: Get og:image meta tag
+        try:
+            og_image = page.locator("meta[property='og:image']").first
+            if og_image:
+                image_url = og_image.get_attribute("content")
+                logger.info(f"    ✅ Found og:image: {image_url[:60]}..." if image_url else "    ⚠️ og:image empty")
+        except:
+            pass
+        
+        # Method 2: Get first large image in article
+        if not image_url:
+            try:
+                # Try article images first
+                images = page.locator("article img, .article-content img, .entry-content img").all()
+                for img in images:
+                    src = img.get_attribute("src")
+                    if src and not any(skip in src.lower() for skip in ["logo", "icon", "avatar", "ad"]):
+                        image_url = src
+                        logger.info(f"    ✅ Found article image: {image_url[:60]}...")
+                        break
+            except:
+                pass
+        
+        # Method 3: Get any large image on page
+        if not image_url:
+            try:
+                all_images = page.locator("img").all()
+                for img in all_images:
+                    src = img.get_attribute("src")
+                    if src and (src.startswith("http") or src.startswith("//")):
+                        if not any(skip in src.lower() for skip in ["logo", "icon", "avatar", "ad", "banner", "pixel", "tracking"]):
+                            image_url = src
+                            logger.info(f"    ✅ Found page image: {image_url[:60]}...")
+                            break
+            except:
+                pass
                 
-                logger.info(f"    🖼️  Returning image URL: {image_url[:60]}...")
-                return image_url
-            else:
-                logger.warning(f"    ❌ No image found with Playwright")
-                return None
+        page.close()
+        
+        if image_url:
+            # Handle relative URLs
+            if image_url.startswith("//"):
+                image_url = "https:" + image_url
+            elif image_url.startswith("/"):
+                from urllib.parse import urljoin
+                image_url = urljoin(url, image_url)
+            
+            logger.info(f"    🖼️  Returning image URL: {image_url[:60]}...")
+            return image_url
+        else:
+            logger.warning(f"    ❌ No image found with Playwright")
+            return None
                 
     except Exception as e:
         logger.error(f"    💥 Playwright image extraction failed: {e}")
@@ -703,6 +698,7 @@ def scrape_full_text_if_needed(article):
     actual_url = original_link
     if "news.google.com" in original_link:
         try:
+            # 1st attempt: Fast Base64 decode (fails on new AU_ tokens)
             import urllib.parse, base64
             base64_str = urllib.parse.urlparse(original_link).path.split('/')[-1]
             base64_str += "=" * ((4 - len(base64_str) % 4) % 4)
@@ -712,8 +708,25 @@ def scrape_full_text_if_needed(article):
                 actual_url = match.group(1).decode('utf-8', errors='ignore')
                 article["link"] = actual_url
                 logger.info(f"    🔗 Fast decoded Google News URL to: {actual_url[:60]}...")
-        except Exception as e:
-            logger.debug(f"Could not fast decode URL: {e}")
+            else:
+                raise ValueError("Base64 regex failed")
+        except Exception:
+            # 2nd attempt: Playwright via shared browser
+            try:
+                context = get_shared_browser()
+                if context:
+                    page = context.new_page()
+                    try:
+                        page.goto(original_link, wait_until="domcontentloaded", timeout=15000)
+                        page.wait_for_timeout(3000)
+                        actual_url = page.url
+                    finally:
+                        page.close()
+                if "news.google.com" not in actual_url:
+                    article["link"] = actual_url  # Update with resolved URL
+                    logger.info(f"    🔗 Playwright resolved Google News URL to: {actual_url[:60]}...")
+            except Exception as pe:
+                logger.debug(f"Could not resolve URL with Playwright: {pe}")
     
     if len(desc) < 400 or desc.strip().endswith("..."):
         logger.info(f"    -> Text truncated for '{article['title'][:30]}...'. Scraping web for full article...")

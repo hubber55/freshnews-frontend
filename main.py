@@ -23,7 +23,7 @@ from config import (
     DAY_START_HOUR, DAY_END_HOUR,
     DAY_DELAY_SECONDS, NIGHT_DELAY_SECONDS,
 )
-from news_fetcher import fetch_feed_articles, enrich_with_images, scrape_full_text_if_needed
+from news_fetcher import fetch_feed_articles, enrich_with_images, scrape_full_text_if_needed, cleanup_shared_browser
 from deduplicator import deduplicate_articles, rank_articles, is_duplicate_title, ai_semantic_dedup
 from summarizer import summarize_article
 from supabase_publisher import publish_via_supabase, get_existing_posts, prune_oldest_post
@@ -269,6 +269,9 @@ def run_rotation():
         logger.info(f"  [{mode_str}] Waiting {current_delay}s before next article ({now_ist.strftime('%I:%M %p')} IST)\n")
         time.sleep(current_delay)
 
+    # Clean up the shared browser at the very end of the rotation
+    cleanup_shared_browser()
+
 
 def daemon_mode():
     logger.info(f"FreshNews Supabase Daemon Started | AI: Mistral->Groq | Publisher: Supabase (No Limits!)")
@@ -284,6 +287,7 @@ def daemon_mode():
             if rotation_thread.is_alive():
                 elapsed = int(time.time() - rotation_start)
                 logger.critical(f"⚠️ WATCHDOG: Rotation stuck for {elapsed}s! Killing all browsers and moving on...")
+                cleanup_shared_browser()
                 os.system("pkill -f playwright; pkill -f chrome; pkill -f chromium")
                 time.sleep(5)  # Brief cooldown after force-kill
             else:
