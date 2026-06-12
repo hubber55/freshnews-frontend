@@ -703,25 +703,17 @@ def scrape_full_text_if_needed(article):
     actual_url = original_link
     if "news.google.com" in original_link:
         try:
-            from playwright.sync_api import sync_playwright
-            with sync_playwright() as p:
-                browser = p.chromium.launch(headless=True, args=['--no-sandbox', '--disable-dev-shm-usage'])
-                try:
-                    context = browser.new_context(user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36')
-                    page = context.new_page()
-                    try:
-                        page.goto(original_link, wait_until="domcontentloaded", timeout=10000)
-                        page.wait_for_timeout(2000)
-                    except:
-                        pass
-                    actual_url = page.url
-                finally:
-                    browser.close()
-            if "news.google.com" not in actual_url:
-                article["link"] = actual_url  # Update with resolved URL
-                logger.info(f"    🔗 Updated article URL to: {actual_url[:60]}...")
+            import urllib.parse, base64
+            base64_str = urllib.parse.urlparse(original_link).path.split('/')[-1]
+            base64_str += "=" * ((4 - len(base64_str) % 4) % 4)
+            decoded = base64.urlsafe_b64decode(base64_str)
+            match = re.search(b'(https?://[a-zA-Z0-9.-]+[a-zA-Z0-9./_?&%=-]*)', decoded)
+            if match:
+                actual_url = match.group(1).decode('utf-8', errors='ignore')
+                article["link"] = actual_url
+                logger.info(f"    🔗 Fast decoded Google News URL to: {actual_url[:60]}...")
         except Exception as e:
-            logger.debug(f"Could not resolve URL: {e}")
+            logger.debug(f"Could not fast decode URL: {e}")
     
     if len(desc) < 400 or desc.strip().endswith("..."):
         logger.info(f"    -> Text truncated for '{article['title'][:30]}...'. Scraping web for full article...")
