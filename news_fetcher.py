@@ -29,59 +29,15 @@ def http_request(method, url, **kwargs):
         session.trust_env = False
         return session.request(method=method, url=url, **kwargs)
 
-_playwright_instance = None
-_playwright_browser = None
-_playwright_context = None
+_shared_playwright_context = None
+
+def set_shared_browser(context):
+    global _shared_playwright_context
+    _shared_playwright_context = context
 
 def get_shared_browser():
-    global _playwright_instance, _playwright_browser, _playwright_context
-    if _playwright_browser is None:
-        try:
-            from playwright.sync_api import sync_playwright
-            _playwright_instance = sync_playwright().start()
-            _playwright_browser = _playwright_instance.chromium.launch(
-                headless=True,
-                args=[
-                    '--disable-blink-features=AutomationControlled',
-                    '--disable-web-security',
-                    '--disable-features=IsolateOrigins,site-per-process',
-                    '--disable-site-isolation-trials',
-                    '--disable-setuid-sandbox',
-                    '--no-sandbox',
-                    '--disable-dev-shm-usage',
-                    '--disable-accelerated-2d-canvas',
-                    '--disable-gpu',
-                    '--window-size=1920,1080',
-                ]
-            )
-            _playwright_context = _playwright_browser.new_context(
-                user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                viewport={'width': 1920, 'height': 1080},
-                locale='en-US',
-                timezone_id='America/New_York',
-            )
-            logger.info("    🌐 Shared Playwright browser initialized successfully.")
-        except Exception as e:
-            logger.error(f"Failed to init shared playwright: {e}")
-            return None
-    return _playwright_context
-
-def cleanup_shared_browser():
-    global _playwright_instance, _playwright_browser, _playwright_context
-    try:
-        if _playwright_context:
-            _playwright_context.close()
-        if _playwright_browser:
-            _playwright_browser.close()
-        if _playwright_instance:
-            _playwright_instance.stop()
-    except Exception as e:
-        logger.debug(f"Error cleaning up shared browser: {e}")
-    finally:
-        _playwright_instance = None
-        _playwright_browser = None
-        _playwright_context = None
-        logger.info("    🧹 Shared Playwright browser cleaned up.")
+    global _shared_playwright_context
+    return _shared_playwright_context
 
 
 def is_placeholder_image_url(url):
@@ -357,46 +313,46 @@ def _playwright_inner(url):
             used_selector = "body"
             
         page.close()
-            
-            # Parse with BeautifulSoup
-            soup = BeautifulSoup(content_html, "html.parser")
-            
-            # Remove unwanted elements
-            for tag in soup(["script", "style", "noscript", "svg", "iframe", "footer", "nav", "aside", "form", "header", "button", "a"]):
-                tag.decompose()
-            
-            # Try multiple extraction strategies
-            # Strategy 1: All paragraphs and divs with text
-            blocks = []
-            for el in soup.find_all(["p", "div", "section", "span"]):
-                text = el.get_text(" ", strip=True)
-                # Filter out short fragments and navigation-like text
-                if len(text) >= 20 and not any(skip in text.lower() for skip in ["home", "menu", "login", "sign up", "subscribe", "copyright"]):
-                    blocks.append(text)
-            
-            # Strategy 2: All visible text if strategy 1 is weak
-            if len(" ".join(blocks)) < 200:
-                logger.info(f"    🔄 Trying aggressive text extraction")
-                # Get all text nodes
-                all_text = soup.get_text(" ", strip=True)
-                # Split into sentences/paragraphs
-                lines = [line.strip() for line in all_text.split("\n") if len(line.strip()) >= 15]
-                blocks = lines
-            
-            full_text = " ".join(blocks).strip()
-            
-            # Debug logging
-            logger.info(f"    📊 Extracted {len(blocks)} text blocks, total {len(full_text)} chars using {used_selector}")
-            if len(full_text) > 0:
-                preview = full_text[:150].replace("\n", " ")
-                logger.info(f"    👁️ Preview: {preview}...")
-            
-            if len(full_text) > 200:
-                logger.info(f"    ✅ Playwright extracted {len(full_text)} chars")
-                return full_text
-            else:
-                logger.warning(f"    ❌ Playwright only got {len(full_text)} chars (need >200)")
-                return None
+        
+        # Parse with BeautifulSoup
+        soup = BeautifulSoup(content_html, "html.parser")
+        
+        # Remove unwanted elements
+        for tag in soup(["script", "style", "noscript", "svg", "iframe", "footer", "nav", "aside", "form", "header", "button", "a"]):
+            tag.decompose()
+        
+        # Try multiple extraction strategies
+        # Strategy 1: All paragraphs and divs with text
+        blocks = []
+        for el in soup.find_all(["p", "div", "section", "span"]):
+            text = el.get_text(" ", strip=True)
+            # Filter out short fragments and navigation-like text
+            if len(text) >= 20 and not any(skip in text.lower() for skip in ["home", "menu", "login", "sign up", "subscribe", "copyright"]):
+                blocks.append(text)
+        
+        # Strategy 2: All visible text if strategy 1 is weak
+        if len(" ".join(blocks)) < 200:
+            logger.info(f"    🔄 Trying aggressive text extraction")
+            # Get all text nodes
+            all_text = soup.get_text(" ", strip=True)
+            # Split into sentences/paragraphs
+            lines = [line.strip() for line in all_text.split("\n") if len(line.strip()) >= 15]
+            blocks = lines
+        
+        full_text = " ".join(blocks).strip()
+        
+        # Debug logging
+        logger.info(f"    📊 Extracted {len(blocks)} text blocks, total {len(full_text)} chars using {used_selector}")
+        if len(full_text) > 0:
+            preview = full_text[:150].replace("\n", " ")
+            logger.info(f"    👁️ Preview: {preview}...")
+        
+        if len(full_text) > 200:
+            logger.info(f"    ✅ Playwright extracted {len(full_text)} chars")
+            return full_text
+        else:
+            logger.warning(f"    ❌ Playwright only got {len(full_text)} chars (need >200)")
+            return None
             
     except Exception as e:
         logger.error(f"    💥 Playwright extraction failed for {url}: {e}")
