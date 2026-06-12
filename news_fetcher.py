@@ -666,23 +666,32 @@ def scrape_full_text_if_needed(article):
                 logger.info(f"    🔗 Fast decoded Google News URL to: {actual_url[:60]}...")
             else:
                 raise ValueError("Base64 regex failed")
-        except Exception:
+        except Exception as e:
+            logger.debug(f"    Fast decode failed: {e}")
             # 2nd attempt: Playwright via shared browser
             try:
                 context = get_shared_browser()
-                if context:
+                if context is None:
+                    logger.error("    ❌ SHARED BROWSER CONTEXT IS NONE!")
+                else:
+                    logger.info("    🌐 Opening new page in shared browser...")
                     page = context.new_page()
                     try:
+                        logger.info("    🌐 Navigating...")
                         page.goto(original_link, wait_until="domcontentloaded", timeout=15000)
+                        logger.info("    🌐 Waiting 3s...")
                         page.wait_for_timeout(3000)
                         actual_url = page.url
+                        logger.info(f"    🌐 Result URL: {actual_url}")
                     finally:
                         page.close()
                 if "news.google.com" not in actual_url:
                     article["link"] = actual_url  # Update with resolved URL
                     logger.info(f"    🔗 Playwright resolved Google News URL to: {actual_url[:60]}...")
+                else:
+                    logger.error("    ❌ Playwright failed to resolve! URL is still news.google.com")
             except Exception as pe:
-                logger.debug(f"Could not resolve URL with Playwright: {pe}")
+                logger.error(f"    ❌ Could not resolve URL with Playwright: {pe}")
     
     if len(desc) < 400 or desc.strip().endswith("..."):
         logger.info(f"    -> Text truncated for '{article['title'][:30]}...'. Scraping web for full article...")
