@@ -101,40 +101,8 @@ def extract_full_article_text(url):
     Returns tuple of (text, resolved_url)."""
     logger.info(f"    🔍 extract_full_article_text called for: {url[:60]}...")
     
-    # Follow Google News redirects to get actual URL (they use JS redirects)
+    # Use the URL directly (it should already be resolved by scrape_full_text_if_needed)
     actual_url = url
-    if "news.google.com" in url:
-        try:
-            from playwright.sync_api import sync_playwright
-            # Navigate and wait for redirect
-            logger.info(f"    🌐 Using Playwright to resolve Google News redirect...")
-            
-            with sync_playwright() as p:
-                browser = p.chromium.launch(
-                    headless=True,
-                    args=['--no-sandbox', '--disable-dev-shm-usage']
-                )
-                context = browser.new_context(
-                    user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-                )
-                page = context.new_page()
-                # Navigate with shorter wait - just need the redirect
-                try:
-                    page.goto(url, wait_until="domcontentloaded", timeout=10000)
-                    # Poll every 200ms until page redirects away from news.google.com
-                    for _ in range(30):
-                        if "news.google.com" not in page.url:
-                            break
-                        page.wait_for_timeout(200)
-                except:
-                    pass  # Timeout is OK, we just need the URL
-                # Get final URL after all redirects
-                actual_url = page.url
-                browser.close()
-            
-            logger.info(f"    🔄 Google News resolved to: {actual_url[:80]}...")
-        except Exception as e:
-            logger.warning(f"    Could not resolve Google News redirect with Playwright: {e}")
     
     # Skip index, archive, category, tag, author, photo gallery and cartoon pages
     url_lower = actual_url.lower()
@@ -233,34 +201,13 @@ def extract_full_article_text(url):
 
 
 def extract_with_playwright(url):
-    """Use Playwright to render JavaScript-heavy pages and extract article text.
-    Has a hard 45-second timeout — if anything hangs, we kill the browser and skip."""
+    """Use Playwright to render JavaScript-heavy pages and extract article text."""
     logger.info(f"    🎭 PLAYWRIGHT: Starting extraction for {url[:60]}...")
-    
-    import threading
-    result_container = [None]
-    error_container = [None]
-    
-    def _do_extract():
-        try:
-            result_container[0] = _playwright_inner(url)
-        except Exception as e:
-            error_container[0] = e
-    
-    thread = threading.Thread(target=_do_extract, daemon=True)
-    thread.start()
-    thread.join(timeout=45)  # Hard 45-second deadline
-    
-    if thread.is_alive():
-        logger.error(f"    💀 PLAYWRIGHT TIMEOUT: Extraction hung for >45s on {url[:60]}. Killing browsers...")
-        os.system("pkill -f chromium; pkill -f chrome")
+    try:
+        return _playwright_inner(url)
+    except Exception as e:
+        logger.error(f"    💥 Playwright extraction failed for {url[:60]}: {e}")
         return None
-    
-    if error_container[0]:
-        logger.error(f"    💥 Playwright extraction failed for {url[:60]}: {error_container[0]}")
-        return None
-    
-    return result_container[0]
 
 
 def _playwright_inner(url):
@@ -303,107 +250,107 @@ def _playwright_inner(url):
                 ]
             )
             
-            # Create context with realistic user agent
-            context = browser.new_context(
-                user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                viewport={'width': 1920, 'height': 1080},
-                locale='en-US',
-                timezone_id='America/New_York',
-            )
-            
-            page = context.new_page()
-            
-            # Set extra headers to appear more like a real browser
-            page.set_extra_http_headers({
-                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
-                'Accept-Language': 'en-US,en;q=0.5',
-                'Accept-Encoding': 'gzip, deflate, br',
-                'DNT': '1',
-                'Connection': 'keep-alive',
-                'Upgrade-Insecure-Requests': '1',
-                'Sec-Fetch-Dest': 'document',
-                'Sec-Fetch-Mode': 'navigate',
-                'Sec-Fetch-Site': 'none',
-                'Sec-Fetch-User': '?1',
-                'Cache-Control': 'max-age=0',
-            })
-            
-            # Set default timeout for all page operations
-            page.set_default_timeout(30000)
-            
-            # Navigate and wait for redirect
-            logger.info(f"    🎭 PLAYWRIGHT: Navigating to {url[:50]}...")
             try:
-                page.goto(url, wait_until="domcontentloaded", timeout=30000)
-            except Exception as nav_e:
-                logger.warning(f"    ⚠️ Navigation timeout/error, continuing anyway: {nav_e}")
-            
-            # Wait for either content or cloudflare challenge
-            try:
-                # Wait for article content to appear
-                page.wait_for_selector('article, .article-content, .entry-content, .post-content, main', timeout=5000)
-                logger.info(f"    ✅ Content selector found")
-            except:
-                logger.info(f"    ⏳ No content selector found, waiting 3s...")
-                page.wait_for_timeout(3000)
-            
-            # Check if page loaded successfully
-            try:
-                title = page.title()
-                logger.info(f"    📝 Page title: {title[:60]}")
-                if title == "404 Not Found" or "not found" in title.lower():
-                    logger.warning(f"    ⚠️ Page returned 404, skipping")
-                    browser.close()
-                    return None
-            except:
-                pass
-            
-            # Try to find article content with more specific selectors
-            # Include Kerala Kaumudi specific selectors
-            content_selectors = [
-                "article",
-                "[itemprop='articleBody']",
-                ".article-content",
-                ".article-body",
-                ".entry-content",
-                ".post-content",
-                ".story-content",
-                ".content-body",
-                ".ds-text-content",
-                ".ds-article-content",
-                ".ds-news-content",
-                "#news-content",  # Kerala Kaumudi
-                ".news-detail-content",  # Kerala Kaumudi
-                ".story-details",  # Kerala Kaumudi
-                "[class*='article']",
-                "[class*='content']",
-                "main",
-                ".content",
-                "#content",
-                "#article-body",
-            ]
-            
-            content_html = None
-            used_selector = None
-            for selector in content_selectors:
+                # Create context with realistic user agent
+                context = browser.new_context(
+                    user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                    viewport={'width': 1920, 'height': 1080},
+                    locale='en-US',
+                    timezone_id='America/New_York',
+                )
+                
+                page = context.new_page()
+                
+                # Set extra headers to appear more like a real browser
+                page.set_extra_http_headers({
+                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8',
+                    'Accept-Language': 'en-US,en;q=0.5',
+                    'Accept-Encoding': 'gzip, deflate, br',
+                    'DNT': '1',
+                    'Connection': 'keep-alive',
+                    'Upgrade-Insecure-Requests': '1',
+                    'Sec-Fetch-Dest': 'document',
+                    'Sec-Fetch-Mode': 'navigate',
+                    'Sec-Fetch-Site': 'none',
+                    'Sec-Fetch-User': '?1',
+                    'Cache-Control': 'max-age=0',
+                })
+                
+                # Set default timeout for all page operations
+                page.set_default_timeout(30000)
+                
+                # Navigate and wait for redirect
+                logger.info(f"    🎭 PLAYWRIGHT: Navigating to {url[:50]}...")
                 try:
-                    element = page.locator(selector).first
-                    if element.is_visible():
-                        content_html = element.inner_html()
-                        used_selector = selector
-                        logger.info(f"    📍 Found content with selector: {selector}")
-                        break
-                except Exception as e:
-                    logger.debug(f"    Selector {selector} failed: {e}")
-                    continue
-            
-            # Fallback to body if no article container found
-            if not content_html:
-                logger.info(f"    ⚠️ No article container found, using body")
-                content_html = page.locator("body").inner_html()
-                used_selector = "body"
-            
-            browser.close()
+                    page.goto(url, wait_until="domcontentloaded", timeout=30000)
+                except Exception as nav_e:
+                    logger.warning(f"    ⚠️ Navigation timeout/error, continuing anyway: {nav_e}")
+                
+                # Wait for either content or cloudflare challenge
+                try:
+                    # Wait for article content to appear
+                    page.wait_for_selector('article, .article-content, .entry-content, .post-content, main', timeout=5000)
+                    logger.info(f"    ✅ Content selector found")
+                except:
+                    logger.info(f"    ⏳ No content selector found, waiting 3s...")
+                    page.wait_for_timeout(3000)
+                
+                # Check if page loaded successfully
+                try:
+                    title = page.title()
+                    logger.info(f"    📝 Page title: {title[:60]}")
+                    if title == "404 Not Found" or "not found" in title.lower():
+                        logger.warning(f"    ⚠️ Page returned 404, skipping")
+                        return None
+                except:
+                    pass
+                
+                # Try to find article content with more specific selectors
+                # Include Kerala Kaumudi specific selectors
+                content_selectors = [
+                    "article",
+                    "[itemprop='articleBody']",
+                    ".article-content",
+                    ".article-body",
+                    ".entry-content",
+                    ".post-content",
+                    ".story-content",
+                    ".content-body",
+                    ".ds-text-content",
+                    ".ds-article-content",
+                    ".ds-news-content",
+                    "#news-content",  # Kerala Kaumudi
+                    ".news-detail-content",  # Kerala Kaumudi
+                    ".story-details",  # Kerala Kaumudi
+                    "[class*='article']",
+                    "[class*='content']",
+                    "main",
+                    ".content",
+                    "#content",
+                    "#article-body",
+                ]
+                
+                content_html = None
+                used_selector = None
+                for selector in content_selectors:
+                    try:
+                        element = page.locator(selector).first
+                        if element.is_visible():
+                            content_html = element.inner_html()
+                            used_selector = selector
+                            logger.info(f"    📍 Found content with selector: {selector}")
+                            break
+                    except Exception as e:
+                        logger.debug(f"    Selector {selector} failed: {e}")
+                        continue
+                
+                # Fallback to body if no article container found
+                if not content_html:
+                    logger.info(f"    ⚠️ No article container found, using body")
+                    content_html = page.locator("body").inner_html()
+                    used_selector = "body"
+            finally:
+                browser.close()
             
             # Parse with BeautifulSoup
             soup = BeautifulSoup(content_html, "html.parser")
@@ -454,38 +401,8 @@ def extract_og_image(url):
     """Extract Open Graph image from article URL."""
     logger.info(f"    🖼️  extract_og_image called for: {url[:60]}...")
     
-    # Resolve Google News redirects first
+    # URL is already resolved in scrape_full_text_if_needed
     actual_url = url
-    if "news.google.com" in url:
-        try:
-            from playwright.sync_api import sync_playwright
-            logger.info(f"    🌐 Resolving Google News redirect for image...")
-            
-            resolved_url = url
-            with sync_playwright() as p:
-                browser = p.chromium.launch(headless=True, args=['--no-sandbox'])
-                context = browser.new_context(user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36')
-                page = context.new_page()
-                try:
-                    page.goto(url, wait_until="domcontentloaded", timeout=10000)
-                    # Poll every 200ms until page redirects away from news.google.com
-                    for _ in range(30):
-                        if "news.google.com" not in page.url:
-                            break
-                        page.wait_for_timeout(200)
-                    resolved_url = page.url
-                except:
-                    pass
-                browser.close()
-            
-            # If we got a real URL (not still Google News), use it
-            if "news.google.com" not in resolved_url:
-                actual_url = resolved_url
-                logger.info(f"    🔄 Resolved to: {actual_url[:60]}...")
-            else:
-                logger.info(f"    ⚠️  Could not resolve Google News URL, using cached URL if available")
-        except Exception as e:
-            logger.warning(f"    Could not resolve redirect: {e}")
     
     # For JavaScript-heavy sites, use Playwright to bypass Cloudflare
     url_lower = actual_url.lower()
@@ -557,62 +474,62 @@ def extract_image_with_playwright(url):
                     '--disable-dev-shm-usage',
                 ]
             )
-            
-            context = browser.new_context(
-                user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                viewport={'width': 1920, 'height': 1080},
-            )
-            
-            page = context.new_page()
-            # Use domcontentloaded for faster page load (don't wait for all network requests)
             try:
-                page.goto(url, wait_until="domcontentloaded", timeout=15000)
-            except:
-                # If timeout, try with even shorter wait
-                logger.info(f"    ⏱️  Timeout waiting for page, trying immediate extraction...")
-            page.wait_for_timeout(3000)  # Give JS time to set meta tags
-            
-            # Try to get image URL from page
-            image_url = None
-            
-            # Method 1: Get og:image meta tag
-            try:
-                og_image = page.locator("meta[property='og:image']").first
-                if og_image:
-                    image_url = og_image.get_attribute("content")
-                    logger.info(f"    ✅ Found og:image: {image_url[:60]}..." if image_url else "    ⚠️ og:image empty")
-            except:
-                pass
-            
-            # Method 2: Get first large image in article
-            if not image_url:
+                context = browser.new_context(
+                    user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                    viewport={'width': 1920, 'height': 1080},
+                )
+                
+                page = context.new_page()
+                # Use domcontentloaded for faster page load (don't wait for all network requests)
                 try:
-                    # Try article images first
-                    images = page.locator("article img, .article-content img, .entry-content img").all()
-                    for img in images:
-                        src = img.get_attribute("src")
-                        if src and not any(skip in src.lower() for skip in ["logo", "icon", "avatar", "ad"]):
-                            image_url = src
-                            logger.info(f"    ✅ Found article image: {image_url[:60]}...")
-                            break
+                    page.goto(url, wait_until="domcontentloaded", timeout=15000)
+                except:
+                    # If timeout, try with even shorter wait
+                    logger.info(f"    ⏱️  Timeout waiting for page, trying immediate extraction...")
+                page.wait_for_timeout(3000)  # Give JS time to set meta tags
+                
+                # Try to get image URL from page
+                image_url = None
+                
+                # Method 1: Get og:image meta tag
+                try:
+                    og_image = page.locator("meta[property='og:image']").first
+                    if og_image:
+                        image_url = og_image.get_attribute("content")
+                        logger.info(f"    ✅ Found og:image: {image_url[:60]}..." if image_url else "    ⚠️ og:image empty")
                 except:
                     pass
-            
-            # Method 3: Get any large image on page
-            if not image_url:
-                try:
-                    all_images = page.locator("img").all()
-                    for img in all_images:
-                        src = img.get_attribute("src")
-                        if src and (src.startswith("http") or src.startswith("//")):
-                            if not any(skip in src.lower() for skip in ["logo", "icon", "avatar", "ad", "banner", "pixel", "tracking"]):
+                
+                # Method 2: Get first large image in article
+                if not image_url:
+                    try:
+                        # Try article images first
+                        images = page.locator("article img, .article-content img, .entry-content img").all()
+                        for img in images:
+                            src = img.get_attribute("src")
+                            if src and not any(skip in src.lower() for skip in ["logo", "icon", "avatar", "ad"]):
                                 image_url = src
-                                logger.info(f"    ✅ Found page image: {image_url[:60]}...")
+                                logger.info(f"    ✅ Found article image: {image_url[:60]}...")
                                 break
-                except:
-                    pass
-            
-            browser.close()
+                    except:
+                        pass
+                
+                # Method 3: Get any large image on page
+                if not image_url:
+                    try:
+                        all_images = page.locator("img").all()
+                        for img in all_images:
+                            src = img.get_attribute("src")
+                            if src and (src.startswith("http") or src.startswith("//")):
+                                if not any(skip in src.lower() for skip in ["logo", "icon", "avatar", "ad", "banner", "pixel", "tracking"]):
+                                    image_url = src
+                                    logger.info(f"    ✅ Found page image: {image_url[:60]}...")
+                                    break
+                    except:
+                        pass
+            finally:
+                browser.close()
             
             if image_url:
                 # Handle relative URLs
@@ -788,16 +705,18 @@ def scrape_full_text_if_needed(article):
         try:
             from playwright.sync_api import sync_playwright
             with sync_playwright() as p:
-                browser = p.chromium.launch(headless=True, args=['--no-sandbox'])
-                context = browser.new_context(user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36')
-                page = context.new_page()
+                browser = p.chromium.launch(headless=True, args=['--no-sandbox', '--disable-dev-shm-usage'])
                 try:
-                    page.goto(original_link, wait_until="domcontentloaded", timeout=10000)
-                    page.wait_for_timeout(2000)
-                except:
-                    pass
-                actual_url = page.url
-                browser.close()
+                    context = browser.new_context(user_agent='Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36')
+                    page = context.new_page()
+                    try:
+                        page.goto(original_link, wait_until="domcontentloaded", timeout=10000)
+                        page.wait_for_timeout(2000)
+                    except:
+                        pass
+                    actual_url = page.url
+                finally:
+                    browser.close()
             if "news.google.com" not in actual_url:
                 article["link"] = actual_url  # Update with resolved URL
                 logger.info(f"    🔗 Updated article URL to: {actual_url[:60]}...")
