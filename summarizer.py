@@ -33,6 +33,7 @@ Instructions:
 1. MEANINGFUL TITLE: Create a highly engaging, professional, and meaningful title in Malayalam that perfectly captures the essence of the news. IT MUST BE UNDER 12 WORDS.
 2. REWRITE THE CONTENT: Rephrase the article professionally in Malayalam. Target 250 to 500 words. Ensure the Malayalam is natural and fluent. DO NOT repeat words.
 3. ACCURACY & MEANING: DO NOT change the original meaning. Rely ONLY on the provided original content. DO NOT correct facts, names, roles, or titles using external knowledge or pre-trained memory (even if you believe the original text has a typo, error, or factually incorrect statement, you MUST summarize it exactly as stated in the original content). Do not extrapolate, assume, or guess anything that is not explicitly present in the original text. NO HALLUCINATIONS. Do not generate fake words or endless repetitions (like "beniath").
+10. URLS: If a URL appears in the content (e.g. https://se.census.gov.in/), copy it EXACTLY as-is with NO spaces added between characters, dots, or slashes. Never break a URL.
 4. QUOTES: Keep direct quotes translated with zero change in essence.
 5. LANGUAGE RULES: Use Malayalam script. English is ONLY allowed for proper nouns.
 6. READABILITY & STRUCTURE: Use liberal paragraph breaks. Start a new paragraph every 4 to 6 lines (approx. 50-70 words) to ensure the article is easy to read on mobile devices. Use well-structured paragraphs with \n\n between them.
@@ -72,6 +73,7 @@ Non-article text to remove:
 - Any other boilerplate, utility, or junk text.
 
 STRICT RULES:
+0. URLS: If a URL appears in the content (e.g. https://se.census.gov.in/), copy it EXACTLY as-is with NO spaces added. Never break a URL by adding spaces.
 1. DO NOT summarize the article. Do not shorten or condense the actual news content.
 2. DO NOT reword, rephrase, edit, translate, or rewrite any part of the actual news content.
 3. Keep the original wording, sentences, grammar, and paragraph structure of the actual article exactly as is.
@@ -120,12 +122,36 @@ def clean_boilerplate(text):
     return text.strip()
 
 
+def fix_broken_urls(text):
+    """Fix URLs that AI has broken by inserting spaces after dots.
+    e.g. 'https://se. census. gov. in' -> 'https://se.census.gov.in'
+    """
+    if not text:
+        return text
+    # Pattern: find URL-like strings where spaces were inserted around dots
+    # Match http/https followed by any sequence of word chars, dots (with optional spaces), slashes etc.
+    def fix_url(m):
+        url = m.group(0)
+        # Remove spaces around dots inside the URL
+        url = re.sub(r'\s*\.\s*', '.', url)
+        # Remove spaces around slashes inside the URL
+        url = re.sub(r'\s*/\s*', '/', url)
+        return url
+
+    # Match anything that looks like a URL (starts with http/https or www.)
+    text = re.sub(r'https?\s*:\s*//[\w\s./\-_%?=&#@:]+', fix_url, text)
+    text = re.sub(r'www\s*\.\s*[\w\s./\-_%?=&#@:]+', fix_url, text)
+    return text
+
+
 def clean_hallucinations(text):
     """Remove repeating hallucinated words like 'beniath' from AI output and clean disclaimers."""
     if not text:
         return ""
+    # Fix URLs broken by AI (spaces inserted around dots)
+    cleaned = fix_broken_urls(text)
     # Clean boilerplate disclaimers first
-    cleaned = clean_boilerplate(text)
+    cleaned = clean_boilerplate(cleaned)
     
     # Remove the specific word that was hallucinated
     cleaned = re.sub(r'\bbeniath\b', '', cleaned, flags=re.IGNORECASE)
