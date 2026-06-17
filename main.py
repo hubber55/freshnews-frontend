@@ -304,8 +304,32 @@ def run_rotation():
 def daemon_mode():
     logger.info(f"FreshNews Supabase Daemon Started | AI: Mistral->Groq | Publisher: Supabase (No Limits!)")
     logger.info(f"   Schedule: DAY ({DAY_START_HOUR}:00-{DAY_END_HOUR}:00 IST) = {DAY_DELAY_SECONDS}s | NIGHT = {NIGHT_DELAY_SECONDS}s")
+
+    # Auto-restart settings: exit cleanly so PM2 restarts a fresh process
+    MAX_ROTATIONS = 50            # Restart after this many rotations
+    MAX_UPTIME_SECONDS = 6 * 3600 # Restart after 6 hours
+    daemon_start_time = time.time()
+    rotation_count = 0
+
+    logger.info(f"   Auto-restart: every {MAX_ROTATIONS} rotations or {MAX_UPTIME_SECONDS // 3600}h uptime")
+
     while True:
         try:
+            # ── Check if it's time for a fresh restart ──
+            uptime = time.time() - daemon_start_time
+            rotation_count += 1
+
+            if rotation_count > MAX_ROTATIONS or uptime > MAX_UPTIME_SECONDS:
+                hrs = int(uptime // 3600)
+                mins = int((uptime % 3600) // 60)
+                logger.critical(f"🔄 AUTO-RESTART: {rotation_count} rotations, {hrs}h {mins}m uptime. Killing browsers and exiting for PM2 restart...")
+                os.system("pkill -f playwright; pkill -f chrome; pkill -f chromium")
+                gc.collect()
+                time.sleep(3)
+                os._exit(0)  # Clean exit — PM2 will restart us fresh
+
+            logger.info(f"📊 Rotation #{rotation_count} | Uptime: {int(uptime // 60)}m | Next restart at #{MAX_ROTATIONS} or {MAX_UPTIME_SECONDS // 3600}h")
+
             import threading
             rotation_thread = threading.Thread(target=run_rotation, daemon=True)
             rotation_start = time.time()
@@ -334,3 +358,4 @@ def daemon_mode():
 
 if __name__ == "__main__":
     daemon_mode()
+
