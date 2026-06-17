@@ -6,6 +6,30 @@ import { revalidatePath } from 'next/cache'
 import { v4 as uuidv4 } from 'uuid'
 import { createAdminClient } from '@/lib/supabase-admin'
 
+/**
+ * Fix URLs that have been broken by AI inserting spaces around dots/slashes.
+ * e.g. "cached://se. census. gov. in" → "https://se.census.gov.in"
+ * Also fixes wrong protocols like cached://, checking:// → https://
+ */
+function fixBrokenUrls(text: string): string {
+  if (!text) return text
+
+  // Step 1: Fix spaces inside URLs (around dots and slashes)
+  text = text.replace(/(https?|ftp|cached|checking|http):\/\/[\w\s./\-_%?=&#@:]+/gi, (match) => {
+    // Fix the protocol first (replace any wrong protocol with https://)
+    let fixed = match.replace(/^(cached|checking|http):\/\//i, 'https://')
+    // Remove spaces around dots
+    fixed = fixed.replace(/\s*\.\s*/g, '.')
+    // Remove spaces around slashes
+    fixed = fixed.replace(/\s*\/\s*/g, '/')
+    // Remove trailing punctuation that's not part of URL
+    fixed = fixed.replace(/[.,;)\]'"]+$/, '')
+    return fixed
+  })
+
+  return text
+}
+
 export async function updatePost(postId: string, prevState: any, formData: FormData) {
   const supabase = await createClient()
 
@@ -14,7 +38,9 @@ export async function updatePost(postId: string, prevState: any, formData: FormD
   if (!user) throw new Error('Unauthorized')
 
   const title = formData.get('title') as string
-  const summary = formData.get('summary') as string
+  const rawSummary = formData.get('summary') as string
+  // Auto-fix any broken URLs before saving
+  const summary = fixBrokenUrls(rawSummary)
   const tagsString = formData.get('tags') as string
   const imageUrlInput = (formData.get('image_url') as string || '').trim()
   const clearImage = String(formData.get('clear_image') || '') === 'on'
@@ -45,6 +71,7 @@ export async function updatePost(postId: string, prevState: any, formData: FormD
 
   redirect('/admin/posts')
 }
+
 
 export async function deletePostWithRedirect(postId: string, prevState: any, formData: FormData) {
   const supabase = await createClient()
