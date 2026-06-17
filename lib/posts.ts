@@ -138,7 +138,15 @@ export function splitParagraphs(value: string | null | undefined) {
     return [];
   }
 
-  const sentences = flattened.match(/[^.!?]+[.!?]+|[^.!?]+$/g) || [flattened];
+  // Protect URLs from being split on their dots by temporarily replacing them
+  const urlPlaceholders: string[] = [];
+  const withPlaceholders = flattened.replace(/https?:\/\/[^\s]+/gi, (url) => {
+    const idx = urlPlaceholders.length;
+    urlPlaceholders.push(url);
+    return `__URL_PLACEHOLDER_${idx}__`;
+  });
+
+  const sentences = withPlaceholders.match(/[^.!?]+[.!?]+|[^.!?]+$/g) || [withPlaceholders];
   const chunks: string[] = [];
   let currentChunk: string[] = [];
   let currentWordCount = 0;
@@ -166,7 +174,10 @@ export function splitParagraphs(value: string | null | undefined) {
     chunks.push(currentChunk.join(' ').trim());
   }
 
-  return chunks.filter(Boolean);
+  // Restore URL placeholders
+  return chunks.filter(Boolean).map((chunk) =>
+    chunk.replace(/__URL_PLACEHOLDER_(\d+)__/g, (_, idx) => urlPlaceholders[Number(idx)])
+  );
 }
 
 export function getSiteUrl() {
