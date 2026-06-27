@@ -28,7 +28,7 @@ def get_existing_posts(limit=MAX_RECENT_POSTS_CHECK):
     try:
         response = (
             supabase.table('posts')
-            .select('title, original_url, image_url')
+            .select('title, original_url, image_url, faq')
             .eq('is_deleted', False)
             .order('published_at', desc=True)
             .limit(limit)
@@ -100,6 +100,17 @@ def publish_via_supabase(article):
 
     # FAQ data from AI (list of {q, a} dicts) — stored as JSONB
     faq = article.get("faq", [])
+    if not isinstance(faq, list):
+        faq = []
+    
+    # Store original feed title and unresolved URL in the faq list as metadata
+    original_title = article.get("original_title")
+    unresolved_url = article.get("unresolved_url")
+    if original_title or unresolved_url:
+        faq.append({
+            "original_title": original_title or "",
+            "unresolved_url": unresolved_url or ""
+        })
 
     from datetime import datetime, timezone
     published_at = article.get("published")

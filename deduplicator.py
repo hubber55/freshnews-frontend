@@ -124,15 +124,32 @@ def deduplicate_articles(articles, existing_posts):
     seen_images = set()
 
     # Backward compatible: accept either list[str] or list[dict]
+    seen_original_titles = []
+    seen_unresolved_urls = set()
+    
     for entry in existing_posts or []:
         if isinstance(entry, dict):
             title = entry.get("title", "")
             url = normalize_url(entry.get("original_url", ""))
             image_url = entry.get("image_url", "")
+            
+            # Parse original title and unresolved URL from the faq JSON list
+            faq = entry.get("faq")
+            if isinstance(faq, list):
+                for item in faq:
+                    if isinstance(item, dict) and "original_title" in item:
+                        orig_t = item.get("original_title", "")
+                        unres_u = normalize_url(item.get("unresolved_url", ""))
+                        if orig_t:
+                            seen_original_titles.append(orig_t)
+                        if unres_u:
+                            seen_unresolved_urls.add(unres_u)
+                        break
         else:
             title = str(entry or "")
             url = ""
             image_url = ""
+            
         if title:
             seen_titles.append(title)
         if url:
@@ -148,20 +165,33 @@ def deduplicate_articles(articles, existing_posts):
         is_duplicate = False
 
         # 1) URL-level duplicate (strongest signal)
-        if article_url and article_url in seen_urls:
+        if article_url and (article_url in seen_urls or article_url in seen_unresolved_urls):
             logger.debug(f"🔄 Duplicate URL: '{title[:50]}...' ({article_url})")
             is_duplicate = True
         
-        # 2) Title-level duplicate checks
-        for existing_title in seen_titles:
-            is_dup_title, similarity, overlap = is_duplicate_title(title, existing_title)
-            if is_dup_title:
-                logger.debug(
-                    f"🔄 Duplicate (sim={similarity:.0%}, overlap={overlap:.0%}): '{title[:50]}...' "
-                    f"≈ '{existing_title[:50]}...'"
-                )
-                is_duplicate = True
-                break
+        # 2) Title-level duplicate checks (rewritten titles)
+        if not is_duplicate:
+            for existing_title in seen_titles:
+                is_dup_title, similarity, overlap = is_duplicate_title(title, existing_title)
+                if is_dup_title:
+                    logger.debug(
+                        f"🔄 Duplicate rewritten title (sim={similarity:.0%}, overlap={overlap:.0%}): '{title[:50]}...' "
+                        f"≈ '{existing_title[:50]}...'"
+                    )
+                    is_duplicate = True
+                    break
+
+        # 2b) Title-level duplicate checks (original titles)
+        if not is_duplicate:
+            for orig_title in seen_original_titles:
+                is_dup_orig, similarity, overlap = is_duplicate_title(title, orig_title)
+                if is_dup_orig:
+                    logger.debug(
+                        f"🔄 Duplicate original title (sim={similarity:.0%}, overlap={overlap:.0%}): '{title[:50]}...' "
+                        f"≈ '{orig_title[:50]}...'"
+                    )
+                    is_duplicate = True
+                    break
 
         # 3) Snippet-level duplicate across current batch/source variants
         if not is_duplicate and article_snippet:

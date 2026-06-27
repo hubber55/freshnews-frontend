@@ -57,7 +57,7 @@ def trim_log_file():
 
 # --- IST Timezone ---
 IST = timezone(timedelta(hours=5, minutes=30))
-MIN_ARTICLE_WORDS = 50
+MIN_ARTICLE_WORDS = 150
 MAX_AI_DEDUP_PER_ROTATION = 5   # Cap AI semantic dedup calls to preserve token quota
 BLOCKED_TITLE_PATTERNS = [
     r"\bcontact\b",
@@ -71,6 +71,7 @@ BLOCKED_TITLE_PATTERNS = [
 
 # Global state for source rotation
 recent_sources = []
+global_published_count = 0
 
 def get_current_delay():
     """Return the appropriate delay based on current IST time."""
@@ -82,6 +83,8 @@ def get_current_delay():
         return NIGHT_DELAY_SECONDS
 
 def run_rotation():
+    global global_published_count
+    global_published_count = 0
     logger.info("=" * 60)
     logger.info("FreshNews (Supabase) -- Starting Source Rotation...")
     now_ist = datetime.now(IST)
@@ -148,12 +151,14 @@ def run_rotation():
 
                 articles = fetch_feed_articles(feed_config, max_articles=20)
                 if not articles:
+                    time.sleep(1.5)
                     continue
 
                 # 2. Deduplicate
                 unique_articles = deduplicate_articles(articles, existing_posts)
                 if not unique_articles:
                     logger.info(f"  No new unique articles for {feed_config['name']}. Skipping.")
+                    time.sleep(1.5)
                     continue
 
                 # 3. Rank and try candidates until we find a publishable article
@@ -180,6 +185,8 @@ def run_rotation():
                     else:
                         logger.debug(f"  ℹ️ AI dedup cap reached ({MAX_AI_DEDUP_PER_ROTATION}/rotation) — heuristic-only for '{title[:40]}...'")
 
+                    candidate["original_title"] = candidate.get("title", "")
+                    candidate["unresolved_url"] = candidate.get("link", "")
                     candidate = scrape_full_text_if_needed(candidate)
                     wc = len((candidate.get("description", "") or "").split())
 
@@ -238,6 +245,15 @@ def run_rotation():
                         continue
                     
                     new_title, summary, keywords, faq, bogus_comments = result
+                    
+                    # Enforce strict minimum word count on final summary text
+                    final_wc = len((summary or "").split())
+                    if final_wc < MIN_ARTICLE_WORDS:
+                        logger.warning(
+                            f"  ⏭️ Skipping article '{new_title[:30]}' because final summary/content is too short ({final_wc} words)."
+                        )
+                        continue
+                        
                     best_article["bogus_comments"] = bogus_comments
                     
                     # Update title with rewritten version
@@ -269,10 +285,12 @@ def run_rotation():
                     
                     # D. Publish directly to Supabase Postgre DB!
                     if publish_via_supabase(best_article):
+                        global_published_count += 1
                         existing_posts.append({
                             "title": best_article.get("title", ""),
                             "original_url": best_article.get("link", ""),
                             "image_url": best_article.get("image_url", ""),
+                            "faq": best_article.get("faq", []),
                         })
 
                         # Prune the oldest eligible post to keep the DB lean
@@ -343,9 +361,14 @@ def daemon_mode():
                 time.sleep(5)  # Brief cooldown after force-kill
             else:
                 # Normal completion: add a cooldown delay before the next rotation starts
-                delay = get_current_delay()
-                logger.info(f"✨ Rotation complete. Waiting {delay}s before starting next rotation...\n")
-                time.sleep(delay)
+                if global_published_count == 0:
+                    idle_delay = 300  # 5 minutes
+                    logger.info(f"✨ Rotation complete (0 articles published). Idle cooldown: waiting {idle_delay}s before starting next rotation...\n")
+                    time.sleep(idle_delay)
+                else:
+                    delay = get_current_delay()
+                    logger.info(f"✨ Rotation complete ({global_published_count} articles published). Waiting {delay}s before starting next rotation...\n")
+                    time.sleep(delay)
         except Exception as e:
             logger.error(f"Critical error in rotation: {e}")
             time.sleep(get_current_delay())

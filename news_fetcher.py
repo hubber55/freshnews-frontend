@@ -85,12 +85,19 @@ def is_placeholder_image_url(url):
             "keralakaumudidaily",
             "kaumudi-logo",
             "logo-og",
-            "default_image"
+            "default_image",
+            "editorial",
+            "siraj-logo",
+            "siraj_logo",
+            "sirajlogo",
+            "siraj-editorial",
+            "siraj_editorial",
+            "sirajeditorial"
         ]
 
         if any(h in host for h in blocked_hosts):
             return True
-        if any(token in full for token in blocked_tokens):
+        if any(token in path for token in blocked_tokens):
             return True
         return False
     except Exception:
@@ -722,7 +729,11 @@ def is_image_valid(url):
     if is_placeholder_image_url(url_str):
         return False
     try:
-        headers = {"User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"}
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            "Referer": "https://freshnews.top/",
+            "Origin": "https://freshnews.top"
+        }
         response = http_request("HEAD", url_str, headers=headers, timeout=10, allow_redirects=True)
         if response.status_code != 200:
             # Fallback to GET if HEAD is not allowed

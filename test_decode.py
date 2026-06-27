@@ -1,0 +1,6 @@
+from googlenewsdecoder import gnewsdecoder
+
+test_url = "https://news.google.com/rss/articles/CBMi7wFBVV95cUxQQlJubmFzSmNXZWtzMWZ6bVFTQUlId0Y3clE5WElDcklUbkMwNnhZbnEwdFp2Q1lCbzcwMjdYdTRsUm1fV3V1dUhIcHItWmpGSlBDVzJqOEYxZzdZdl9mNU40b1Z1SEZpT3N2cWtRb29lTkd6bVhmNXZmRjE5MndlTkJkdkpsNnFmUE5yckQ2V3pWTE5sSUtTR01pYW8zUmp6aU80Tk54WldjMEVnQWR0NzdUenI4OGY2Vnh6UUNFSkRtYWZlVjdCNE54MjlZTEtHTVdSV28tZWRKTE9sbm5wWG5fWk1uTktEczhXcm03MExuSVBpd1k1SFE?oc=5"
+
+res = gnewsdecoder(test_url)
+print("Result:", res)
