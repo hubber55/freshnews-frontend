@@ -23,7 +23,7 @@ from config import (
     DAY_START_HOUR, DAY_END_HOUR,
     DAY_DELAY_SECONDS, NIGHT_DELAY_SECONDS,
 )
-from news_fetcher import fetch_feed_articles, enrich_with_images, scrape_full_text_if_needed, set_shared_browser
+from news_fetcher import fetch_feed_articles, enrich_with_images, scrape_full_text_if_needed, set_shared_browser, is_primarily_malayalam
 from deduplicator import deduplicate_articles, rank_articles, is_duplicate_title, ai_semantic_dedup
 from summarizer import summarize_article
 from supabase_publisher import publish_via_supabase, get_existing_posts, prune_oldest_post
@@ -245,6 +245,13 @@ def run_rotation():
                         continue
                     
                     new_title, summary, keywords, faq, bogus_comments = result
+                    
+                    # Ensure title and summary are primarily Malayalam script
+                    if not is_primarily_malayalam(summary) or not is_primarily_malayalam(new_title):
+                        logger.warning(
+                            f"  ⏭️ Skipping article '{new_title[:30]}' because title/summary is not primarily Malayalam script."
+                        )
+                        continue
                     
                     # Enforce strict minimum word count on final summary text
                     final_wc = len((summary or "").split())

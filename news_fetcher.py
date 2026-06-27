@@ -113,6 +113,19 @@ def clean_html(text):
     return soup.get_text(strip=True)
 
 
+def is_primarily_malayalam(text, threshold=0.3):
+    """Check if the text has at least `threshold` ratio of Malayalam characters."""
+    if not text:
+        return False
+    import re
+    malayalam_chars = len(re.findall(r'[\u0d00-\u0d7f]', text))
+    total_chars = len(re.sub(r'\s+', '', text)) # total non-space characters
+    if total_chars == 0:
+        return False
+    ratio = malayalam_chars / total_chars
+    return ratio >= threshold
+
+
 def extract_full_article_text(url):
     """Scrape the original news site to extract the full article text from paragraph tags.
     Returns tuple of (text, resolved_url)."""
@@ -128,13 +141,15 @@ def extract_full_article_text(url):
         return None
     
     # Check if it's a JavaScript-heavy site that needs Playwright
-    if any(site in url_lower for site in ["drivespark.com", "keralakaumudi.com", "oneindia.com", "filmibeat.com"]):
+    if any(site in url_lower for site in ["drivespark.com", "keralakaumudi.com", "oneindia.com", "filmibeat.com", "marunadanmalayalee.com"]):
         if "drivespark" in url_lower:
             site_name = "DriveSpark"
         elif "keralakaumudi" in url_lower:
             site_name = "Kerala Kaumudi"
         elif "filmibeat" in url_lower:
             site_name = "Filmibeat"
+        elif "marunadanmalayalee" in url_lower:
+            site_name = "Marunadan Malayali"
         else:
             site_name = "OneIndia"
             
@@ -210,7 +225,10 @@ def extract_full_article_text(url):
 
         full_text = " ".join(best_blocks).strip()
         if len(full_text) > 200:
-            return full_text
+            if is_primarily_malayalam(full_text):
+                return full_text
+            else:
+                logger.warning(f"    ⚠️ Scraped text from {url} is not primarily Malayalam, skipping.")
         return None
     except Exception as e:
         logger.debug(f"Failed to extract full text from {url}: {e}")
@@ -221,7 +239,13 @@ def extract_with_playwright(url):
     """Use Playwright to render JavaScript-heavy pages and extract article text."""
     logger.info(f"    🎭 PLAYWRIGHT: Starting extraction for {url[:60]}...")
     try:
-        return _playwright_inner(url)
+        res = _playwright_inner(url)
+        if res:
+            if is_primarily_malayalam(res):
+                return res
+            else:
+                logger.warning(f"    ⚠️ PLAYWRIGHT: Extracted text is not primarily Malayalam, skipping.")
+        return None
     except Exception as e:
         logger.error(f"    💥 Playwright extraction failed for {url[:60]}: {e}")
         return None
@@ -375,13 +399,15 @@ def extract_og_image(url):
     
     # For JavaScript-heavy sites, use Playwright to bypass Cloudflare
     url_lower = actual_url.lower()
-    if any(site in url_lower for site in ["drivespark.com", "keralakaumudi.com", "oneindia.com", "filmibeat.com"]):
+    if any(site in url_lower for site in ["drivespark.com", "keralakaumudi.com", "oneindia.com", "filmibeat.com", "marunadanmalayalee.com"]):
         if "drivespark" in url_lower:
             site_name = "DriveSpark"
         elif "keralakaumudi" in url_lower:
             site_name = "Kerala Kaumudi"
         elif "filmibeat" in url_lower:
             site_name = "Filmibeat"
+        elif "marunadanmalayalee" in url_lower:
+            site_name = "Marunadan Malayali"
         else:
             site_name = "OneIndia"
             
