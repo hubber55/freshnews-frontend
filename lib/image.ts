@@ -1,4 +1,4 @@
-export const MAX_UPLOAD_BYTES = 3 * 1024 * 1024; // 3MB
+export const MAX_UPLOAD_BYTES = 950 * 1024; // 950KB (to fit under Nginx 1MB request limit)
 
 export async function compressImageFile(file: File, maxBytes = MAX_UPLOAD_BYTES): Promise<File> {
   if (!file.type.startsWith('image/')) {
@@ -58,7 +58,7 @@ export async function compressImageFile(file: File, maxBytes = MAX_UPLOAD_BYTES)
   }
 
   if (compressedBlob.size > maxBytes) {
-    throw new Error('Image is too large. Please choose an image smaller than 3MB.');
+    throw new Error('Image is too large. Please choose a smaller image (under 1MB).');
   }
 
   const baseName = file.name.replace(/\.[^.]+$/, '');

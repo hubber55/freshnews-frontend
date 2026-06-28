@@ -790,7 +790,7 @@ function SubmitContent() {
                         accept="image/*"
                         className="mt-2 w-full rounded-xl border border-[var(--border)] bg-[var(--bg-primary)] px-4 py-3 text-white file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-[#ffd42a] file:text-[#1a1a1a] hover:file:bg-[#ffe066]"
                       />
-                      <p className="mt-1 text-xs text-[var(--text-muted)]">Upload only. Max 3MB (auto-compressed when needed).</p>
+                      <p className="mt-1 text-xs text-[var(--text-muted)]">Upload only. Max 1MB (auto-compressed when needed).</p>
                     </div>
                   </div>
                 )}
