@@ -56,7 +56,7 @@ export default function ArticleContent({ post, bodyItems, readingTime }: Article
 
   // Helper to render text with word highlighting
   const renderHighlightedText = (text: string, isParagraphActive: boolean, currentCharIndex: number | null) => {
-    if (!isParagraphActive || currentCharIndex === null) return text;
+    const urlRegex = /(https?:\/\/[^\s/$.?#].[^\s]*|www\.[^\s/$.?#].[^\s]*)/gi;
 
     // Split into words but keep track of original char offsets
     const words = text.split(/(\s+)/);
@@ -65,18 +65,42 @@ export default function ArticleContent({ post, bodyItems, readingTime }: Article
     return words.map((word, idx) => {
       const start = offset;
       offset += word.length;
-      
-      // Check if this word contains the current char index
-      const isWordActive = currentCharIndex >= start && currentCharIndex < offset;
 
-      return (
-        <span 
-          key={idx} 
-          className={`transition-colors duration-200 ${isWordActive ? 'bg-yellow-400 text-black font-black px-0.5 rounded' : ''}`}
-        >
-          {word}
-        </span>
-      );
+      const isUrl = urlRegex.test(word);
+      urlRegex.lastIndex = 0; // reset
+
+      // Check if this word contains the current char index
+      const isWordActive = isParagraphActive && currentCharIndex !== null && currentCharIndex >= start && currentCharIndex < offset;
+      const elementClass = isWordActive ? 'bg-yellow-400 text-black font-black px-0.5 rounded' : '';
+
+      if (isUrl) {
+        const href = word.toLowerCase().startsWith('http') ? word : `http://${word}`;
+        return (
+          <a
+            key={idx}
+            href={href}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={`text-[#00ffff] hover:underline underline-offset-4 decoration-2 ${elementClass}`}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {word}
+          </a>
+        );
+      }
+
+      if (isWordActive) {
+        return (
+          <span 
+            key={idx} 
+            className={`transition-colors duration-200 ${elementClass}`}
+          >
+            {word}
+          </span>
+        );
+      }
+
+      return word;
     });
   };
 

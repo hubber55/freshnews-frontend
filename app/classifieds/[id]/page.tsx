@@ -100,6 +100,34 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   };
 }
 
+function linkifyText(text: string) {
+  if (!text) return '';
+  const urlRegex = /(https?:\/\/[^\s/$.?#].[^\s]*|www\.[^\s/$.?#].[^\s]*)/gi;
+  const tokens = text.split(/(\s+)/);
+  
+  return tokens.map((token, idx) => {
+    const isUrl = urlRegex.test(token);
+    urlRegex.lastIndex = 0; // reset
+    
+    if (isUrl) {
+      const href = token.toLowerCase().startsWith('http') ? token : `http://${token}`;
+      return (
+        <a
+          key={idx}
+          href={href}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-[#00ffff] hover:underline underline-offset-4 decoration-2"
+        >
+          {token}
+        </a>
+      );
+    }
+    
+    return token;
+  });
+}
+
 export default async function ClassifiedDetailPage({ params }: { params: Promise<{ id: string }> }) {
   await connection();
   const { id } = await params;
@@ -235,7 +263,7 @@ export default async function ClassifiedDetailPage({ params }: { params: Promise
 
               {item.content ? (
                 <p className="mt-5 whitespace-pre-line text-[16px] leading-7 text-white font-medium">
-                  {item.content}
+                  {linkifyText(item.content)}
                 </p>
               ) : null}
 

@@ -119,8 +119,8 @@ CREATE TABLE public.submissions (
     id SERIAL PRIMARY KEY,
     user_id INTEGER NOT NULL REFERENCES public.wa_users(id) ON DELETE CASCADE,
     type TEXT NOT NULL, -- 'news', 'classified', or 'ad'
-    title VARCHAR(70) NOT NULL,
-    content VARCHAR(500) NOT NULL,
+    title TEXT NOT NULL,
+    content TEXT NOT NULL,
     tags TEXT[],
     category_id INTEGER REFERENCES public.ad_categories(id),
     subcategory_id INTEGER REFERENCES public.ad_subcategories(id),
@@ -137,8 +137,8 @@ CREATE TABLE public.submissions (
 CREATE TABLE public.ad_news (
     id SERIAL PRIMARY KEY,
     submission_id INTEGER NOT NULL REFERENCES public.submissions(id) ON DELETE CASCADE,
-    title VARCHAR(70) NOT NULL,
-    content VARCHAR(500) NOT NULL,
+    title TEXT NOT NULL,
+    content TEXT NOT NULL,
     tags TEXT[],
     image_url TEXT,
     location TEXT, -- e.g. "Kerala, Ernakulam, Aluva"
