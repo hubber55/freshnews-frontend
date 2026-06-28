@@ -314,6 +314,7 @@ export async function POST(req: Request) {
   } catch (error: unknown) {
     console.error('Submission API Error:', error);
     const message = error instanceof Error ? error.message : 'An unexpected error occurred';
-    return NextResponse.json({ error: message }, { status: 500 });
+    // Use 400 status to prevent Nginx proxy_intercept_errors from replacing JSON with HTML
+    return NextResponse.json({ error: message }, { status: 400 });
   }
 }

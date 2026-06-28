@@ -327,7 +327,16 @@ function SubmitContent() {
         body: formData,
       });
 
-      const json = await res.json();
+      let json: any = {};
+      const contentType = res.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        json = await res.json();
+      } else {
+        const text = await res.text();
+        console.error('Submission non-JSON response:', text);
+        // Expose a database/server check error message
+        throw new Error(`Server error (${res.status}): Please run the database ALTER TABLE migration (to increase limits) and make sure your Nginx/server has not timed out.`);
+      }
 
       if (!res.ok) {
         throw new Error(json.error || 'Submission failed');
